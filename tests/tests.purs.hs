@@ -7,18 +7,16 @@ import Test.QuickCheck
 import Debug.Trace
 import Control.Monad.Eff
 
-testLookupEmpty = do
+main = do
   trace "testLookupEmpty: lookup _ empty == Nothing"
-  quickCheck $ \k -> 
-    case lookup (k :: Number) (empty :: Map Number Number) of
-      Nothing -> true
-      _ -> false
+  quickCheck $ \k -> lookup k (empty :: Map Number Number) == Nothing
 
-testLookupSingleton = do
   trace "testLookupSingleton: lookup k (singleton k v) == Just v"
   quickCheck $ \k v -> lookup (k :: Number) (singleton k (v :: Number)) == Just v
 
-main = do
-  testLookupEmpty
-  testLookupSingleton
+  trace "testInsertTwo: lookup k (insert k v1 (insert k v2) empty) == Just v1"
+  quickCheck $ \k v1 v2 -> (lookup (k :: Number) $ insert k (v1 :: Number) $ insert k (v2 :: Number) empty) == Just v1
+
+  trace "testInsertDelete: lookup k (delete k (insert k v empty) = Nothing)"
+  quickCheck $ \k v -> (lookup (k :: Number) $ delete k $ insert k (v :: Number) empty) == Nothing
 
