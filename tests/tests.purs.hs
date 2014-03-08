@@ -6,6 +6,7 @@ import Data.Maybe
 import Test.QuickCheck
 import Debug.Trace
 import Control.Monad.Eff
+import Data.Tuple
 
 main = do
   trace "testLookupEmpty: lookup _ empty == Nothing"
@@ -19,4 +20,7 @@ main = do
 
   trace "testInsertDelete: lookup k (delete k (insert k v empty) = Nothing)"
   quickCheck $ \k v -> (lookup (k :: Number) $ delete k $ insert k (v :: Number) empty) == Nothing
+
+  trace "testSingletonToList: toList (singleton k v) == [Tuple k v]"
+  quickCheck $ \k v -> toList (singleton k v :: Map Number Number) == [Tuple k v]
 

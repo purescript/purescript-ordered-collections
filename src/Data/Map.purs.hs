@@ -4,11 +4,16 @@ module Data.Map
     singleton,
     insert,
     lookup,
-    delete
+    delete,
+    toList,
+    fromList,
+    union
   ) where
 
-import Prelude ((<), (==), Eq, Ord)
+import Prelude ((<), (==), Eq, Ord, flip)
 import Data.Maybe
+import Data.Tuple
+import Data.Array (concat, foldl)
 
 data Map k v = Leaf | Branch { key :: k, value :: v, left :: Map k v, right :: Map k v }
 
@@ -45,3 +50,12 @@ delete k (Branch b@{ key = k1, left = Leaf }) | k == k1 =
 delete k (Branch b@{ key = k1 }) | k < k1 = Branch (b { left = delete k b.left })
 delete k (Branch b) = Branch (b { right = delete k b.right })
 
+toList :: forall k v. Map k v -> [Tuple k v]
+toList Leaf = []
+toList (Branch b) = toList b.left `concat` [Tuple b.key b.value] `concat` toList b.right 
+
+fromList :: forall k v. (Eq k, Ord k) => [Tuple k v] -> Map k v
+fromList = foldl (\m (Tuple k v) -> insert k v m) empty
+
+union :: forall k v. (Eq k, Ord k) => Map k v -> Map k v -> Map k v
+union m1 m2 = foldl (\m (Tuple k v) -> insert k v m) m2 (toList m1)
