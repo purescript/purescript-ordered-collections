@@ -1,5 +1,8 @@
 all: lib test
 
+deps:
+	git clone git@github.com:purescript/purescript-quickcheck.git
+
 lib:
 	mkdir -p js/Data/
 	psc src/Data/Map.purs.hs \
@@ -10,6 +13,7 @@ lib:
 test:
 	mkdir -p js/
 	psc src/Data/Map.purs.hs \
-	  examples/test.purs.hs \
-	  -o js/test.js \
+	  purescript-quickcheck/src/Test/QuickCheck.purs.hs\
+	  tests/tests.purs.hs \
+	  -o js/tests.js \
 	  --main --module Main --tco --magic-do
