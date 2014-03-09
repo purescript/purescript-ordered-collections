@@ -17,3 +17,9 @@ test:
 	  tests/tests.purs.hs \
 	  -o js/tests.js \
 	  --main --module Main --tco --magic-do
+
+docs: docs/README.md
+
+docs/README.md:
+	docgen src/Data/Map.purs.hs > docs/README.md
+
