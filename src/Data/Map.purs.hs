@@ -1,5 +1,7 @@
 module Data.Map
   ( Map(),
+    eqMap,
+    showMap,
     empty,
     singleton,
     insert,
@@ -10,12 +12,25 @@ module Data.Map
     union
   ) where
 
-import Prelude ((<), (==), Eq, Ord, flip)
+import Prelude ((<), (==), (/=), (++), Show, Eq, Ord, not, show)
 import Data.Maybe
 import Data.Tuple
 import Data.Array (concat, foldl)
 
 data Map k v = Leaf | Branch { key :: k, value :: v, left :: Map k v, right :: Map k v }
+
+instance eqMapI :: (Eq k, Eq v) => Eq (Map k v) where
+  (==) = eqMap
+  (/=) m1 m2 = not (m1 `eqMap` m2)
+
+eqMap :: forall k v. (Eq k, Eq v) => Map k v -> Map k v -> Boolean
+eqMap m1 m2 = toList m1 == toList m2
+
+instance showMapI :: (Show k, Show v) => Show (Map k v) where
+  show = showMap
+
+showMap :: forall k v. (Show k, Show v) => Map k v -> String
+showMap m = "fromList " ++ show (toList m)
 
 empty :: forall k v. Map k v
 empty = Leaf
