@@ -9,7 +9,8 @@ module Data.Map
     delete,
     toList,
     fromList,
-    union
+    union,
+    map
   ) where
 
 import Prelude ((<), (==), (/=), (++), Show, Eq, Ord, not, show)
@@ -76,3 +77,7 @@ fromList = foldl (\m (Tuple k v) -> insert k v m) empty
 
 union :: forall k v. (Eq k, Ord k) => Map k v -> Map k v -> Map k v
 union m1 m2 = foldl (\m (Tuple k v) -> insert k v m) m2 (toList m1)
+
+map :: forall k v1 v2. (Eq k, Ord k) => (v1 -> v2) -> Map k v1 -> Map k v2
+map _ Leaf = Leaf
+map f (Branch b) = Branch (b { value = f b.value, left = map f b.left, right = map f b.right })

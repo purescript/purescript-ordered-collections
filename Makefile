@@ -16,7 +16,7 @@ test:
 	  purescript-quickcheck/src/Test/QuickCheck.purs.hs\
 	  tests/tests.purs.hs \
 	  -o js/tests.js \
-	  --main --module Main --tco --magic-do
+	  --main --module Main --module Prelude --tco --magic-do
 
 docs: docs/README.md
 
