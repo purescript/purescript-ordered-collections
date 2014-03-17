@@ -1,0 +1,20 @@
+{
+  "name": "purescript-maps",
+  "version": "0.0.0",
+  "homepage": "https://github.com/purescript/purescript-maps",
+  "authors": [
+    "Phil Freeman <paf31@cantab.net>"
+  ],
+  "description": "Purely functional maps implemented in PureScript",
+  "keywords": [
+    "purescript"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "externs",
+    "js"
+  ]
+}
