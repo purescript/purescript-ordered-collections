@@ -1,0 +1,11 @@
+{
+  "name": "purescript-maps",
+  "version": "0.0.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/purescript/purescript-maps.git"
+  },
+  "devDependencies": {
+    "grunt-purescript": "~0.3.0"
+  }
+}

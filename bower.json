@@ -16,5 +16,8 @@
     "bower_components",
     "externs",
     "js"
-  ]
+  ],
+  "devDependencies": {
+    "purescript-quickcheck": "*"
+  }
 }
