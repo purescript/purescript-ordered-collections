@@ -19,5 +19,11 @@
   ],
   "devDependencies": {
     "purescript-quickcheck": "*"
+  },
+  "dependencies": {
+    "purescript-arrays": "*",
+    "purescript-maybe": "*",
+    "purescript-tuples": "*",
+    "purescript-foldable-traversable": "*"
   }
 }
