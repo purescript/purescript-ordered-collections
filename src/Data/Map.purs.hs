@@ -1,7 +1,5 @@
 module Data.Map
   ( Map(),
-    eqMap,
-    showMap,
     empty,
     singleton,
     insert,
@@ -13,7 +11,7 @@ module Data.Map
     map
   ) where
 
-import Prelude ((<), (==), (/=), (++), Show, Eq, Ord, not, show)
+import qualified Prelude as P
 
 import Data.Array (concat)
 import Data.Foldable (foldl)
@@ -22,18 +20,12 @@ import Data.Tuple
 
 data Map k v = Leaf | Branch { key :: k, value :: v, left :: Map k v, right :: Map k v }
 
-instance eqMapI :: (Eq k, Eq v) => Eq (Map k v) where
-  (==) = eqMap
-  (/=) m1 m2 = not (m1 `eqMap` m2)
+instance eqMap :: (P.Eq k, P.Eq v) => P.Eq (Map k v) where
+  (==) m1 m2 = toList m1 P.== toList m2
+  (/=) m1 m2 = P.not (m1 P.== m2)
 
-eqMap :: forall k v. (Eq k, Eq v) => Map k v -> Map k v -> Boolean
-eqMap m1 m2 = toList m1 == toList m2
-
-instance showMapI :: (Show k, Show v) => Show (Map k v) where
-  show = showMap
-
-showMap :: forall k v. (Show k, Show v) => Map k v -> String
-showMap m = "fromList " ++ show (toList m)
+instance showMap :: (P.Show k, P.Show v) => P.Show (Map k v) where
+  show m = "fromList " P.++ P.show (toList m)
 
 empty :: forall k v. Map k v
 empty = Leaf
@@ -41,43 +33,43 @@ empty = Leaf
 singleton :: forall k v. k -> v -> Map k v
 singleton k v = Branch { key: k, value: v, left: empty, right: empty }
 
-insert :: forall k v. (Eq k, Ord k) => k -> v -> Map k v -> Map k v
+insert :: forall k v. (P.Eq k, P.Ord k) => k -> v -> Map k v -> Map k v
 insert k v Leaf = singleton k v
-insert k v (Branch b@{ key = k1 }) | k == k1 = Branch (b { key = k, value = v })
-insert k v (Branch b@{ key = k1 }) | k < k1 = Branch (b { left = insert k v b.left })
+insert k v (Branch b@{ key = k1 }) | k P.== k1 = Branch (b { key = k, value = v })
+insert k v (Branch b@{ key = k1 }) | k P.< k1 = Branch (b { left = insert k v b.left })
 insert k v (Branch b) = Branch (b { right = insert k v b.right })
 
-lookup :: forall k v. (Eq k, Ord k) => k -> Map k v -> Maybe v
+lookup :: forall k v. (P.Eq k, P.Ord k) => k -> Map k v -> Maybe v
 lookup k Leaf = Nothing
-lookup k (Branch { key = k1, value = v }) | k == k1 = Just v
-lookup k (Branch { key = k1, left = left }) | k < k1 = lookup k left
+lookup k (Branch { key = k1, value = v }) | k P.== k1 = Just v
+lookup k (Branch { key = k1, left = left }) | k P.< k1 = lookup k left
 lookup k (Branch { right = right }) = lookup k right
 
-findMinKey :: forall k v. (Ord k) => Map k v -> k
+findMinKey :: forall k v. (P.Ord k) => Map k v -> k
 findMinKey (Branch { key = k, left = Leaf }) = k
 findMinKey (Branch b) = findMinKey b.left
 
-delete :: forall k v. (Eq k, Ord k) => k -> Map k v -> Map k v
+delete :: forall k v. (P.Eq k, P.Ord k) => k -> Map k v -> Map k v
 delete k Leaf = Leaf
-delete k (Branch b@{ key = k1, left = Leaf }) | k == k1 =
+delete k (Branch b@{ key = k1, left = Leaf }) | k P.== k1 =
   case b of
     { left = Leaf } -> b.right
     { right = Leaf } -> b.left
     _ -> let minKey = findMinKey b.right in
          Branch (b { key = minKey, right = delete minKey b.right })
-delete k (Branch b@{ key = k1 }) | k < k1 = Branch (b { left = delete k b.left })
+delete k (Branch b@{ key = k1 }) | k P.< k1 = Branch (b { left = delete k b.left })
 delete k (Branch b) = Branch (b { right = delete k b.right })
 
 toList :: forall k v. Map k v -> [Tuple k v]
 toList Leaf = []
 toList (Branch b) = toList b.left `concat` [Tuple b.key b.value] `concat` toList b.right
 
-fromList :: forall k v. (Eq k, Ord k) => [Tuple k v] -> Map k v
+fromList :: forall k v. (P.Eq k, P.Ord k) => [Tuple k v] -> Map k v
 fromList = foldl (\m (Tuple k v) -> insert k v m) empty
 
-union :: forall k v. (Eq k, Ord k) => Map k v -> Map k v -> Map k v
+union :: forall k v. (P.Eq k, P.Ord k) => Map k v -> Map k v -> Map k v
 union m1 m2 = foldl (\m (Tuple k v) -> insert k v m) m2 (toList m1)
 
-map :: forall k v1 v2. (Eq k, Ord k) => (v1 -> v2) -> Map k v1 -> Map k v2
+map :: forall k v1 v2. (P.Eq k, P.Ord k) => (v1 -> v2) -> Map k v1 -> Map k v2
 map _ Leaf = Leaf
 map f (Branch b) = Branch (b { value = f b.value, left = map f b.left, right = map f b.right })
