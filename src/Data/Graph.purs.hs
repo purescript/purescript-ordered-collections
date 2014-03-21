@@ -50,19 +50,23 @@ scc' es st v | M.lookup v st.indexMap == Nothing =
                , index            = st.index + 1 
                , path             = v : st.path
                } in
-  let st2 = foldl (\st (Edge v w) -> case indexOf st w of
-    Nothing -> let st' = scc' es st w in
-               case Math.min <$> lowlinkOf st' v <*> lowlinkOf st' w of
-                 Just min -> st' { lowlinkMap = M.insert v min st'.lowlinkMap }
-                 _ -> st'
-    _ -> case w `elem` st.path of
-      true -> case Math.min <$> lowlinkOf st v <*> indexOf st w of
-        Just min -> st { lowlinkMap = M.insert v min st.lowlinkMap }
-        _ -> st
-      false -> st) st1 es in
+  let st2 = foldl (\st (Edge v' w) -> 
+    if v == v'
+    then 
+      case indexOf st w of
+        Nothing -> let st' = scc' es st w in
+                   case lowlinkOf st' w of
+                     Just lowlink -> st' { lowlinkMap = M.alter (maybeMin lowlink) v st'.lowlinkMap }
+                     _ -> st'
+        _ -> case w `elem` st.path of
+          true -> case indexOf st w of
+            Just index -> st { lowlinkMap = M.alter (maybeMin index) v st.lowlinkMap }
+            _ -> st
+          false -> st
+    else st) st1 es in
   if st2 `indexOf` v == st2 `lowlinkOf` v
   then let newPath = popUntil v st2.path []
-       in st2 { components = newPath.component : st2.components
+       in st2 { components = st2.components `concat` [newPath.component]
               , path = newPath.path
               }
   else st2 
@@ -72,3 +76,7 @@ popUntil :: forall v. (Eq v) => v -> [v] -> [v] -> { path :: [v], component :: [
 popUntil _ [] popped = { path: [], component: popped } 
 popUntil v (w : path) popped | v == w = { path: path, component: w : popped }
 popUntil v (w : ws) popped = popUntil v ws (w : popped)
+
+maybeMin :: Index -> Maybe Index -> Maybe Index
+maybeMin i Nothing = Just i
+maybeMin i (Just j) = Just $ Math.min i j 

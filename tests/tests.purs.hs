@@ -116,7 +116,7 @@ main = do
   
   trace "testChain"
   quickCheck $ \vs -> let g = Graph (vs :: [Number]) (reverse $ chain vs) in
-                      scc g == map singleton vs
+                      scc g == reverse (map singleton vs)
 
 chain :: forall v. [v] -> [Edge v]
 chain [] = []
