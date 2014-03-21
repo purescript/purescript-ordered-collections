@@ -11,6 +11,8 @@ import Data.Tuple
 import qualified Data.Map as M
 import qualified Data.Set as S
 
+import Data.Graph
+
 instance arbMap :: (Eq k, Ord k, Arb k, Arb v) => Arb (M.Map k v) where
   arb = M.fromList <$> arb
 
@@ -87,4 +89,27 @@ main = do
   trace "testUnionIdempotent"
   quickCheck $ \s1 s2 -> (s1 `S.union` s2) == ((s1 `S.union` s2) `S.union` (s2 :: S.Set Number))
 
+  -- Data.Graph
 
+  trace "testOneVertex"
+  quickCheck $ \v -> let g = Graph ([v] :: [Number]) [] in
+                     let comps = scc g in
+                     comps == [[v]]
+  
+  trace "testOneComponent"
+  quickCheck $ \v1 v2 -> let g = Graph ([v1, v2] :: [Number]) [Edge v1 v2, Edge v2 v1] in
+                         let comps = scc g in
+                         comps == [[v1, v2]] || comps == [[v2, v1]]
+  
+  trace "testTwoComponents"
+  quickCheck $ \v1 v2 -> let g = Graph ([v1, v2] :: [Number]) [] in
+                         let comps = scc g in
+                         comps == [[v1], [v2]] || comps == [[v2], [v1]]
+
+  trace "testManyEdges"
+  quickCheck $ \vs -> let g = Graph (vs :: [Number]) (Edge <$> vs <*> vs) in
+                      vs == [] || length (scc g) == 1
+  
+  trace "testNoEdges"
+  quickCheck $ \vs -> let g = Graph (vs :: [Number]) [] in
+                      length (scc g) == length vs

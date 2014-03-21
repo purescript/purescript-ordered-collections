@@ -24,6 +24,7 @@
     "purescript-arrays": "*",
     "purescript-maybe": "*",
     "purescript-tuples": "*",
+    "purescript-math": "*",
     "purescript-foldable-traversable": "*"
   }
 }

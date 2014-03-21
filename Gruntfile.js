@@ -10,11 +10,6 @@ module.exports = function(grunt) {
                 magicDo: true
             },
             lib: {
-                options: {
-                    module: ["Data.Map", "Data.Set"],
-                    codegen: ["Data.Map", "Data.Set"],
-                    externs: "externs/lib.externs"
-                },
                 files: {
                     "js/lib.js":
                         [ "src/**/*.purs.hs"
@@ -26,11 +21,11 @@ module.exports = function(grunt) {
             tests: {
                 options: {
                     module: ["Main"],
-                    runMain: true
+                    main: true
                 },
                 files: {
                     "js/tests.js": 
-                        [ "externs/lib.externs"
+                        [ "src/**/*.purs.hs"
                         , "tests/tests.purs.hs"
                         , "bower_components/purescript-*/src/**/*.purs"
                         , "bower_components/purescript-*/src/**/*.purs.hs"
