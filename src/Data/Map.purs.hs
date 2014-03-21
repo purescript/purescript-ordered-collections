@@ -5,6 +5,7 @@ module Data.Map
     insert,
     lookup,
     delete,
+    alter,
     toList,
     fromList,
     union,
@@ -45,8 +46,8 @@ lookup k (Branch { key = k1, value = v }) | k P.== k1 = Just v
 lookup k (Branch { key = k1, left = left }) | k P.< k1 = lookup k left
 lookup k (Branch { right = right }) = lookup k right
 
-findMinKey :: forall k v. (P.Ord k) => Map k v -> k
-findMinKey (Branch { key = k, left = Leaf }) = k
+findMinKey :: forall k v. (P.Ord k) => Map k v -> Tuple k v
+findMinKey (Branch { key = k, value = v, left = Leaf }) = Tuple k v
 findMinKey (Branch b) = findMinKey b.left
 
 delete :: forall k v. (P.Eq k, P.Ord k) => k -> Map k v -> Map k v
@@ -55,10 +56,24 @@ delete k (Branch b@{ key = k1, left = Leaf }) | k P.== k1 =
   case b of
     { left = Leaf } -> b.right
     { right = Leaf } -> b.left
-    _ -> let minKey = findMinKey b.right in
-         Branch (b { key = minKey, right = delete minKey b.right })
+    _ -> glue b.left b.right
 delete k (Branch b@{ key = k1 }) | k P.< k1 = Branch (b { left = delete k b.left })
 delete k (Branch b) = Branch (b { right = delete k b.right })
+
+alter :: forall k v. (P.Eq k, P.Ord k) => (Maybe v -> Maybe v) -> k -> Map k v -> Map k v
+alter f k Leaf = case f Nothing of
+  Nothing -> Leaf
+  Just v -> singleton k v
+alter f k (Branch b@{ key = k1, value = v }) | k P.== k1 = case f (Just v) of
+  Nothing -> glue b.left b.right
+  Just v' -> Branch (b { value = v' })
+alter f k (Branch b@{ key = k1 }) | k P.< k1 = Branch (b { left = alter f k b.left })
+alter f k (Branch b) = Branch (b { right = alter f k b.right })
+
+glue :: forall k v. (P.Eq k, P.Ord k) => Map k v -> Map k v -> Map k v
+glue left right = 
+  let Tuple minKey root = findMinKey right in
+  Branch { key: minKey, value: root, left: left, right: delete minKey right }
 
 toList :: forall k v. Map k v -> [Tuple k v]
 toList Leaf = []
