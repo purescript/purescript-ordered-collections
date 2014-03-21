@@ -113,3 +113,12 @@ main = do
   trace "testNoEdges"
   quickCheck $ \vs -> let g = Graph (vs :: [Number]) [] in
                       length (scc g) == length vs
+  
+  trace "testChain"
+  quickCheck $ \vs -> let g = Graph (vs :: [Number]) (reverse $ chain vs) in
+                      scc g == map singleton vs
+
+chain :: forall v. [v] -> [Edge v]
+chain [] = []
+chain [_] = []
+chain (v : tail@(w : _)) = Edge v w : chain tail
