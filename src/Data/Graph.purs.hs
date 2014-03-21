@@ -2,7 +2,8 @@ module Data.Graph (
   Edge(..),
   Graph(..),
 
-  scc
+  scc,
+  topSort
   ) where
 
 import Data.Maybe
@@ -79,4 +80,10 @@ popUntil v (w : ws) popped = popUntil v ws (w : popped)
 
 maybeMin :: Index -> Maybe Index -> Maybe Index
 maybeMin i Nothing = Just i
-maybeMin i (Just j) = Just $ Math.min i j 
+maybeMin i (Just j) = Just $ Math.min i j
+
+-- |
+-- Topological sort
+--
+topSort :: forall v. (Eq v, Ord v) => Graph v -> [v]
+topSort = reverse <<< concatMap id <<< scc
