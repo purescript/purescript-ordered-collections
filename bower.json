@@ -15,7 +15,8 @@
     "node_modules",
     "bower_components",
     "externs",
-    "js"
+    "js",
+    "tmp"
   ],
   "devDependencies": {
     "purescript-quickcheck": "*"
