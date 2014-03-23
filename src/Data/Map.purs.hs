@@ -72,8 +72,8 @@ alter f k (Branch b) = Branch (b { right = alter f k b.right })
 
 glue :: forall k v. (P.Eq k, P.Ord k) => Map k v -> Map k v -> Map k v
 glue left right = 
-  let Tuple minKey root = findMinKey right in
-  Branch { key: minKey, value: root, left: left, right: delete minKey right }
+  case findMinKey right of
+    Tuple minKey root -> Branch { key: minKey, value: root, left: left, right: delete minKey right }
 
 toList :: forall k v. Map k v -> [Tuple k v]
 toList Leaf = []
