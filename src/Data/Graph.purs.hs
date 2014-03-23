@@ -64,18 +64,12 @@ scc (Graph vs es) = runPure (runST (do
           Nothing -> do
             strongConnect w
             wLowlink <- lowlinkOf w
-            case wLowlink of
-              Just lowlink -> do
-                modifySTRef lowlinkMap $ M.alter (maybeMin lowlink) v
-                return {}
-              _ -> return {}
+            for_ wLowlink $ \lowlink ->
+              modifySTRef lowlinkMap $ M.alter (maybeMin lowlink) v
           _ -> when (w `elem` currentPath) $ do
                  wIndex <- indexOf w
-                 case wIndex of
-                   Just index -> do
-                     modifySTRef lowlinkMap $ M.alter (maybeMin index) v
-                     return {}
-                   _ -> return {}
+                 for_ wIndex $ \index ->
+                   modifySTRef lowlinkMap $ M.alter (maybeMin index) v
 
       vIndex <- indexOf v
       vLowlink <- lowlinkOf v        
