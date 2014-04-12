@@ -61,7 +61,7 @@ delete a (Branch b) = Branch (b { right = delete a b.right })
 
 toList :: forall a. Set a -> [a]
 toList Leaf = []
-toList (Branch b) = toList b.left `concat` [b.value] `concat` toList b.right
+toList (Branch b) = toList b.left P.++ [b.value] P.++ toList b.right
 
 fromList :: forall a. (P.Eq a, P.Ord a) => [a] -> Set a
 fromList = foldl (\s a -> insert a s) empty

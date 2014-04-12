@@ -77,7 +77,7 @@ glue left right =
 
 toList :: forall k v. Map k v -> [Tuple k v]
 toList Leaf = []
-toList (Branch b) = toList b.left `concat` [Tuple b.key b.value] `concat` toList b.right
+toList (Branch b) = toList b.left P.++ [Tuple b.key b.value] P.++ toList b.right
 
 fromList :: forall k v. (P.Eq k, P.Ord k) => [Tuple k v] -> Map k v
 fromList = foldl (\m (Tuple k v) -> insert k v m) empty

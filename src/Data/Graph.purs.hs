@@ -7,7 +7,7 @@ module Data.Graph (
   ) where
 
 import Data.Maybe
-import Data.Array
+import Data.Array (reverse, concatMap)
 import Data.Foldable
 import Data.Traversable
 
@@ -77,7 +77,7 @@ scc (Graph vs es) = runPure (runST (do
       when (vIndex == vLowlink) $ do
         currentPath <- readSTRef path
         let newPath = popUntil v currentPath []
-        modifySTRef components $ flip concat [newPath.component]
+        modifySTRef components $ flip (++) [newPath.component]
         writeSTRef path newPath.path
         return {}
     in go vs)))
