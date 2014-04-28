@@ -12,20 +12,23 @@
   "license": "MIT",
   "ignore": [
     "**/.*",
-    "node_modules",
     "bower_components",
-    "externs",
-    "js",
-    "tmp"
+    "node_modules",
+    "output",
+    "tests",
+    "tmp",
+    "bower.json",
+    "Gruntfile.js",
+    "package.json"
   ],
   "devDependencies": {
     "purescript-quickcheck": "*"
   },
   "dependencies": {
     "purescript-arrays": "*",
-    "purescript-maybe": "*",
-    "purescript-tuples": "*",
+    "purescript-foldable-traversable": "*",
     "purescript-math": "*",
-    "purescript-foldable-traversable": "*"
+    "purescript-maybe": "*",
+    "purescript-tuples": "*"
   }
 }
