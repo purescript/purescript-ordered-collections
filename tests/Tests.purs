@@ -3,10 +3,12 @@ module Tests where
 import Prelude
 import Data.Maybe
 import Data.Array
-import Test.QuickCheck
 import Debug.Trace
 import Control.Monad.Eff
 import Data.Tuple
+
+import Test.QuickCheck
+import Test.QuickCheck.Tuple
 
 import qualified Data.Map as M
 import qualified Data.Set as S
@@ -14,7 +16,7 @@ import qualified Data.Set as S
 import Data.Graph
 
 instance arbMap :: (Eq k, Ord k, Arbitrary k, Arbitrary v) => Arbitrary (M.Map k v) where
-  arbitrary = M.fromList <$> arbitrary
+  arbitrary = M.fromList <<< map runTestTuple <$> arbitrary
 
 instance arbSet :: (Eq a, Ord a, Arbitrary a) => Arbitrary (S.Set a) where
   arbitrary = S.fromList <$> arbitrary
@@ -42,8 +44,9 @@ main = do
   quickCheck $ \k v -> M.toList (M.singleton k v :: M.Map Number Number) == [Tuple k v]
 
   trace "testToListFromList: toList . fromList = id"
-  quickCheck $ \arr -> let f x = M.toList (M.fromList x) in
-                           f (f arr) == f (arr :: [Tuple Number Number])
+  quickCheck $ \arr -> let f x = M.toList (M.fromList x) 
+                           arr' = map runTestTuple arr
+                       in f (f arr') == f (arr' :: [Tuple Number Number])
 
   trace "testFromListToList: fromList . toList = id"
   quickCheck $ \m -> let f m = M.fromList (M.toList m) in

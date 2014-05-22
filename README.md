@@ -13,7 +13,11 @@
 
     scc :: forall v. (Eq v, Ord v) => Graph v -> [[v]]
 
+    scc' :: forall k v. (Eq k, Ord k) => (v -> k) -> Graph v -> [[v]]
+
     topSort :: forall v. (Eq v, Ord v) => Graph v -> [v]
+
+    topSort' :: forall k v. (Eq k, Ord k) => (v -> k) -> Graph v -> [v]
 
 
 ## Module Data.Map

@@ -22,7 +22,8 @@
     "package.json"
   ],
   "devDependencies": {
-    "purescript-quickcheck": "*"
+    "purescript-quickcheck": "*",
+    "purescript-arb-instances": "*"
   },
   "dependencies": {
     "purescript-arrays": "*",
