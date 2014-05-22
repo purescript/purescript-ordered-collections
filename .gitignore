@@ -1,6 +1,4 @@
-/output/
-/js/
-/externs/
-/node_modules/
 /bower_components/
+/node_modules/
+/output/
 /tmp/

@@ -1,4 +1,4 @@
-module Main where
+module Tests where
 
 import Prelude
 import Data.Maybe
@@ -13,11 +13,11 @@ import qualified Data.Set as S
 
 import Data.Graph
 
-instance arbMap :: (Eq k, Ord k, Arb k, Arb v) => Arb (M.Map k v) where
-  arb = M.fromList <$> arb
+instance arbMap :: (Eq k, Ord k, Arbitrary k, Arbitrary v) => Arbitrary (M.Map k v) where
+  arbitrary = M.fromList <$> arbitrary
 
-instance arbSet :: (Eq a, Ord a, Arb a) => Arb (S.Set a) where
-  arb = S.fromList <$> arb
+instance arbSet :: (Eq a, Ord a, Arbitrary a) => Arbitrary (S.Set a) where
+  arbitrary = S.fromList <$> arbitrary
 
 main = do
   -- Data.Map
