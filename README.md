@@ -4,20 +4,20 @@
 
 ### Types
 
-    data Edge v where
+    data Edge k where
 
-    data Graph v where
+    data Graph k v where
 
 
 ### Values
 
-    scc :: forall v. (Eq v, Ord v) => Graph v -> [[v]]
+    scc :: forall v. (Eq v, Ord v) => Graph v v -> [[v]]
 
-    scc' :: forall k v. (Eq k, Ord k) => (v -> k) -> Graph v -> [[v]]
+    scc' :: forall k v. (Eq k, Ord k) => (v -> k) -> (k -> v) -> Graph k v -> [[v]]
 
-    topSort :: forall v. (Eq v, Ord v) => Graph v -> [v]
+    topSort :: forall v. (Eq v, Ord v) => Graph v v -> [v]
 
-    topSort' :: forall k v. (Eq k, Ord k) => (v -> k) -> Graph v -> [v]
+    topSort' :: forall k v. (Eq k, Ord k) => (v -> k) -> (k -> v) -> Graph k v -> [v]
 
 
 ## Module Data.Map

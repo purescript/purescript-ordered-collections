@@ -21,17 +21,17 @@ import Control.Monad.ST
 import qualified Data.Map as M
 import qualified Data.Set as S
 
-data Edge v = Edge v v
+data Edge k = Edge k k
 
-data Graph v = Graph [v] [Edge v]
+data Graph k v = Graph [v] [Edge k]
 
 type Index = Number
 
-scc :: forall v. (Eq v, Ord v) => Graph v -> [[v]]
-scc = scc' id
+scc :: forall v. (Eq v, Ord v) => Graph v v -> [[v]]
+scc = scc' id id
 
-scc' :: forall k v. (Eq k, Ord k) => (v -> k) -> Graph v -> [[v]]
-scc' makeKey (Graph vs es) = runPure (runST (do
+scc' :: forall k v. (Eq k, Ord k) => (v -> k) -> (k -> v) -> Graph k v -> [[v]]
+scc' makeKey makeVert (Graph vs es) = runPure (runST (do
   index      <- newSTRef 0
   path       <- newSTRef []
   indexMap   <- newSTRef M.empty
@@ -39,46 +39,53 @@ scc' makeKey (Graph vs es) = runPure (runST (do
   components <- newSTRef []
 
   (let 
-    indexOf v = do
+    indexOf v = indexOfKey (makeKey v)
+      
+    indexOfKey k = do
       m <- readSTRef indexMap
-      return $ M.lookup (makeKey v) m
+      return $ M.lookup k m
     
-    lowlinkOf v = do
+    lowlinkOf v = lowlinkOfKey (makeKey v)
+      
+    lowlinkOfKey k = do
       m <- readSTRef lowlinkMap
-      return $ M.lookup (makeKey v) m
+      return $ M.lookup k m
 
     go [] = readSTRef components
     go (v : vs) = do
       currentIndex <- indexOf v
-      when (isNothing currentIndex) $ strongConnect v
+      when (isNothing currentIndex) $ strongConnect (makeKey v)
       go vs
 
-    strongConnect v = do
+    strongConnect k = do
+      let v = makeVert k
+      
       i <- readSTRef index
 
-      modifySTRef indexMap   $ M.insert (makeKey v) i
-      modifySTRef lowlinkMap $ M.insert (makeKey v) i
+      modifySTRef indexMap   $ M.insert k i
+      modifySTRef lowlinkMap $ M.insert k i
 
       writeSTRef index $ i + 1
       modifySTRef path $ (:) v
 
-      for es $ \(Edge v' w) -> when (makeKey v == makeKey v') $ do
-        wIndex <- indexOf w
+      for es $ \(Edge k' l) -> when (k == k') $ do
+        wIndex <- indexOfKey l
         currentPath <- readSTRef path
 
         case wIndex of
           Nothing -> do
-            strongConnect w
-            wLowlink <- lowlinkOf w
+            let w = makeVert l
+            strongConnect l
+            wLowlink <- lowlinkOfKey l
             for_ wLowlink $ \lowlink ->
-              modifySTRef lowlinkMap $ M.alter (maybeMin lowlink) (makeKey v)
-          _ -> when (makeKey w `elem` map makeKey currentPath) $ do
-                 wIndex <- indexOf w
+              modifySTRef lowlinkMap $ M.alter (maybeMin lowlink) k
+          _ -> when (l `elem` map makeKey currentPath) $ do
+                 wIndex <- indexOfKey l
                  for_ wIndex $ \index ->
-                   modifySTRef lowlinkMap $ M.alter (maybeMin index) (makeKey v)
+                   modifySTRef lowlinkMap $ M.alter (maybeMin index) k
 
-      vIndex <- indexOf v
-      vLowlink <- lowlinkOf v        
+      vIndex <- indexOfKey k
+      vLowlink <- lowlinkOfKey k        
 
       when (vIndex == vLowlink) $ do
         currentPath <- readSTRef path
@@ -100,8 +107,8 @@ maybeMin i (Just j) = Just $ Math.min i j
 -- |
 -- Topological sort
 --
-topSort :: forall v. (Eq v, Ord v) => Graph v -> [v]
-topSort = topSort' id
+topSort :: forall v. (Eq v, Ord v) => Graph v v -> [v]
+topSort = topSort' id id
 
-topSort' :: forall k v. (Eq k, Ord k) => (v -> k) -> Graph v -> [v]
-topSort' makeKey = reverse <<< concatMap id <<< scc' makeKey
+topSort' :: forall k v. (Eq k, Ord k) => (v -> k) -> (k -> v) -> Graph k v -> [v]
+topSort' makeKey makeVert = reverse <<< concatMap id <<< scc' makeKey makeVert
