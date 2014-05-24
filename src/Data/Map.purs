@@ -4,10 +4,14 @@ module Data.Map
     singleton,
     insert,
     lookup,
+    member,
     delete,
     alter,
+    update,
     toList,
     fromList,
+    keys,
+    values,
     union,
     map
   ) where
@@ -46,6 +50,9 @@ lookup k (Branch { key = k1, value = v }) | k P.== k1 = Just v
 lookup k (Branch { key = k1, left = left }) | k P.< k1 = lookup k left
 lookup k (Branch { right = right }) = lookup k right
 
+member :: forall k v. (P.Eq k, P.Ord k) => k -> Map k v -> Boolean
+member k m = isJust (k `lookup` m)
+
 findMinKey :: forall k v. (P.Ord k) => Map k v -> Tuple k v
 findMinKey (Branch { key = k, value = v, left = Leaf }) = Tuple k v
 findMinKey (Branch b) = findMinKey b.left
@@ -70,6 +77,9 @@ alter f k (Branch b@{ key = k1, value = v }) | k P.== k1 = case f (Just v) of
 alter f k (Branch b@{ key = k1 }) | k P.< k1 = Branch (b { left = alter f k b.left })
 alter f k (Branch b) = Branch (b { right = alter f k b.right })
 
+update :: forall k v. (P.Eq k, P.Ord k) => (v -> Maybe v) -> k -> Map k v -> Map k v
+update f k m = alter (maybe Nothing f) k m
+
 glue :: forall k v. (P.Eq k, P.Ord k) => Map k v -> Map k v -> Map k v
 glue left right = 
   case findMinKey right of
@@ -81,6 +91,14 @@ toList (Branch b) = toList b.left P.++ [Tuple b.key b.value] P.++ toList b.right
 
 fromList :: forall k v. (P.Eq k, P.Ord k) => [Tuple k v] -> Map k v
 fromList = foldl (\m (Tuple k v) -> insert k v m) empty
+
+keys :: forall k v. Map k v -> [k]
+keys Leaf = []
+keys (Branch b) = keys b.left P.++ [b.key] P.++ keys b.right
+
+values :: forall k v. Map k v -> [v]
+values Leaf = []
+values (Branch b) = values b.left P.++ [b.value] P.++ values b.right
 
 union :: forall k v. (P.Eq k, P.Ord k) => Map k v -> Map k v -> Map k v
 union m1 m2 = foldl (\m (Tuple k v) -> insert k v m) m2 (toList m1)
