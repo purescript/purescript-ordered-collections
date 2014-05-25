@@ -9,6 +9,7 @@ module Data.Map
     toList,
     fromList,
     union,
+    unions,
     map
   ) where
 
@@ -84,6 +85,9 @@ fromList = foldl (\m (Tuple k v) -> insert k v m) empty
 
 union :: forall k v. (P.Eq k, P.Ord k) => Map k v -> Map k v -> Map k v
 union m1 m2 = foldl (\m (Tuple k v) -> insert k v m) m2 (toList m1)
+
+unions :: forall k v. (P.Ord k) => [Map k v] -> Map k v
+unions = foldl union empty
 
 map :: forall k v1 v2. (P.Eq k, P.Ord k) => (v1 -> v2) -> Map k v1 -> Map k v2
 map _ Leaf = Leaf
