@@ -7,7 +7,8 @@ module Data.Set
     delete,
     toList,
     fromList,
-    union
+    union,
+    unions
   ) where
 
 import qualified Prelude as P
@@ -69,3 +70,5 @@ fromList = foldl (\s a -> insert a s) empty
 union :: forall a. (P.Eq a, P.Ord a) => Set a -> Set a -> Set a
 union s1 s2 = foldl (\s a -> insert a s) s2 (toList s1)
 
+unions :: forall a. (P.Ord a) => [Set a] -> Set a
+unions = foldl union empty
