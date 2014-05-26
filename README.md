@@ -36,25 +36,35 @@
 
 ### Values
 
-    alter :: forall k v. (P.Eq k, P.Ord k) => (Maybe v -> Maybe v) -> k -> Map k v -> Map k v
+    alter :: forall k v. (P.Ord k) => (Maybe v -> Maybe v) -> k -> Map k v -> Map k v
 
-    delete :: forall k v. (P.Eq k, P.Ord k) => k -> Map k v -> Map k v
+    delete :: forall k v. (P.Ord k) => k -> Map k v -> Map k v
 
     empty :: forall k v. Map k v
 
-    fromList :: forall k v. (P.Eq k, P.Ord k) => [Tuple k v] -> Map k v
+    fromList :: forall k v. (P.Ord k) => [Tuple k v] -> Map k v
 
-    insert :: forall k v. (P.Eq k, P.Ord k) => k -> v -> Map k v -> Map k v
+    insert :: forall k v. (P.Ord k) => k -> v -> Map k v -> Map k v
 
-    lookup :: forall k v. (P.Eq k, P.Ord k) => k -> Map k v -> Maybe v
+    keys :: forall k v. Map k v -> [k]
 
-    map :: forall k v1 v2. (P.Eq k, P.Ord k) => (v1 -> v2) -> Map k v1 -> Map k v2
+    lookup :: forall k v. (P.Ord k) => k -> Map k v -> Maybe v
+
+    map :: forall k v1 v2. (P.Ord k) => (v1 -> v2) -> Map k v1 -> Map k v2
+
+    member :: forall k v. (P.Ord k) => k -> Map k v -> Prim.Boolean
 
     singleton :: forall k v. k -> v -> Map k v
 
     toList :: forall k v. Map k v -> [Tuple k v]
 
-    union :: forall k v. (P.Eq k, P.Ord k) => Map k v -> Map k v -> Map k v
+    union :: forall k v. (P.Ord k) => Map k v -> Map k v -> Map k v
+
+    unions :: forall k v. (P.Ord k) => [Map k v] -> Map k v
+
+    update :: forall k v. (P.Ord k) => (v -> Maybe v) -> k -> Map k v -> Map k v
+
+    values :: forall k v. Map k v -> [v]
 
 
 ## Module Data.Set
@@ -88,3 +98,5 @@
     toList :: forall a. Set a -> [a]
 
     union :: forall a. (P.Eq a, P.Ord a) => Set a -> Set a -> Set a
+
+    unions :: forall a. (P.Ord a) => [Set a] -> Set a
