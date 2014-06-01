@@ -1,6 +1,9 @@
 module Data.Graph (
   Edge(..),
   Graph(..),
+  SCC(..),
+  
+  vertices,
 
   scc,
   scc',
@@ -27,10 +30,26 @@ data Graph k v = Graph [v] [Edge k]
 
 type Index = Number
 
-scc :: forall v. (Eq v, Ord v) => Graph v v -> [[v]]
+data SCC v = AcyclicSCC v | CyclicSCC [v]
+
+instance showSCC :: (Show v) => Show (SCC v) where
+  show (AcyclicSCC v) = "AcyclicSCC (" ++ show v ++ ")" 
+  show (CyclicSCC vs) = "CyclicSCC " ++ show vs
+
+instance eqSCC :: (Eq v) => Eq (SCC v) where
+  (==) (AcyclicSCC v1) (AcyclicSCC v2) = v1 == v2
+  (==) (CyclicSCC vs1) (CyclicSCC vs2) = vs1 == vs2
+  (==) _ _ = false
+  (/=) scc1 scc2 = not (scc1 == scc2)
+
+vertices :: forall v. SCC v -> [v]
+vertices (AcyclicSCC v) = [v]
+vertices (CyclicSCC vs) = vs
+
+scc :: forall v. (Eq v, Ord v) => Graph v v -> [SCC v]
 scc = scc' id id
 
-scc' :: forall k v. (Eq k, Ord k) => (v -> k) -> (k -> v) -> Graph k v -> [[v]]
+scc' :: forall k v. (Eq k, Ord k) => (v -> k) -> (k -> v) -> Graph k v -> [SCC v]
 scc' makeKey makeVert (Graph vs es) = runPure (runST (do
   index      <- newSTRef 0
   path       <- newSTRef []
@@ -90,10 +109,15 @@ scc' makeKey makeVert (Graph vs es) = runPure (runST (do
       when (vIndex == vLowlink) $ do
         currentPath <- readSTRef path
         let newPath = popUntil makeKey v currentPath []
-        modifySTRef components $ flip (++) [newPath.component]
+        modifySTRef components $ flip (++) [makeComponent newPath.component]
         writeSTRef path newPath.path
         return {}
-    in go vs)))
+        
+    makeComponent [v] | not (isCycle (makeKey v)) = AcyclicSCC v
+    makeComponent vs = CyclicSCC vs
+    
+    isCycle k = any (\(Edge k1 k2) -> k1 == k && k2 == k) es
+   in go vs)))
 
 popUntil :: forall k v. (Eq k) => (v -> k) -> v -> [v] -> [v] -> { path :: [v], component :: [v] }
 popUntil _       _ []         popped = { path: [], component: popped } 
@@ -111,4 +135,4 @@ topSort :: forall v. (Eq v, Ord v) => Graph v v -> [v]
 topSort = topSort' id id
 
 topSort' :: forall k v. (Eq k, Ord k) => (v -> k) -> (k -> v) -> Graph k v -> [v]
-topSort' makeKey makeVert = reverse <<< concatMap id <<< scc' makeKey makeVert
+topSort' makeKey makeVert = reverse <<< concatMap vertices <<< scc' makeKey makeVert

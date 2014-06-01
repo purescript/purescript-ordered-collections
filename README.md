@@ -8,16 +8,27 @@
 
     data Graph k v where
 
+    data SCC v where
+
+
+### Type Class Instances
+
+    instance eqSCC :: (Eq v) => Eq (SCC v)
+
+    instance showSCC :: (Show v) => Show (SCC v)
+
 
 ### Values
 
-    scc :: forall v. (Eq v, Ord v) => Graph v v -> [[v]]
+    scc :: forall v. (Eq v, Ord v) => Graph v v -> [SCC v]
 
-    scc' :: forall k v. (Eq k, Ord k) => (v -> k) -> (k -> v) -> Graph k v -> [[v]]
+    scc' :: forall k v. (Eq k, Ord k) => (v -> k) -> (k -> v) -> Graph k v -> [SCC v]
 
     topSort :: forall v. (Eq v, Ord v) => Graph v v -> [v]
 
     topSort' :: forall k v. (Eq k, Ord k) => (v -> k) -> (k -> v) -> Graph k v -> [v]
+
+    vertices :: forall v. SCC v -> [v]
 
 
 ## Module Data.Map

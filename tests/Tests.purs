@@ -97,17 +97,22 @@ main = do
   trace "testOneVertex"
   quickCheck $ \v -> let g = Graph ([v] :: [Number]) [] in
                      let comps = scc g in
-                     comps == [[v]]
+                     comps == [AcyclicSCC v]
+  
+  trace "testOneVertexCycle"
+  quickCheck $ \v -> let g = Graph ([v] :: [Number]) [Edge v v] in
+                     let comps = scc g in
+                     comps == [CyclicSCC [v]]
   
   trace "testOneComponent"
   quickCheck $ \v1 v2 -> let g = Graph ([v1, v2] :: [Number]) [Edge v1 v2, Edge v2 v1] in
                          let comps = scc g in
-                         comps == [[v1, v2]] || comps == [[v2, v1]]
+                         comps == [CyclicSCC [v1, v2]] || comps == [CyclicSCC [v2, v1]]
   
   trace "testTwoComponents"
   quickCheck $ \v1 v2 -> let g = Graph ([v1, v2] :: [Number]) [] in
                          let comps = scc g in
-                         comps == [[v1], [v2]] || comps == [[v2], [v1]]
+                         comps == [AcyclicSCC v1, AcyclicSCC v2] || comps == [AcyclicSCC v2, AcyclicSCC v1]
 
   trace "testManyEdges"
   quickCheck $ \vs -> let g = Graph (vs :: [Number]) (Edge <$> vs <*> vs) in
@@ -119,7 +124,7 @@ main = do
   
   trace "testChain"
   quickCheck $ \vs -> let g = Graph (vs :: [Number]) (reverse $ chain vs) in
-                      scc g == reverse (map singleton vs)
+                      scc g == reverse (map AcyclicSCC vs)
 
 chain :: forall v. [v] -> [Edge v]
 chain [] = []
