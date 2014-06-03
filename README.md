@@ -5,10 +5,14 @@
 ### Types
 
     data Edge k where
+      Edge :: k -> k -> Edge k
 
     data Graph k v where
+      Graph :: [v] -> [Edge k] -> Graph k v
 
     data SCC v where
+      AcyclicSCC :: v -> SCC v
+      CyclicSCC :: [v] -> SCC v
 
 
 ### Type Class Instances
@@ -35,7 +39,7 @@
 
 ### Types
 
-    data Map k v where
+    data Map k v
 
 
 ### Type Class Instances
@@ -63,7 +67,7 @@
 
     map :: forall k v1 v2. (P.Ord k) => (v1 -> v2) -> Map k v1 -> Map k v2
 
-    member :: forall k v. (P.Ord k) => k -> Map k v -> Prim.Boolean
+    member :: forall k v. (P.Ord k) => k -> Map k v -> Boolean
 
     singleton :: forall k v. k -> v -> Map k v
 
@@ -82,7 +86,7 @@
 
 ### Types
 
-    data Set a where
+    data Set a
 
 
 ### Type Class Instances
@@ -102,7 +106,7 @@
 
     insert :: forall a. (P.Eq a, P.Ord a) => a -> Set a -> Set a
 
-    member :: forall a. (P.Eq a, P.Ord a) => a -> Set a -> Prim.Boolean
+    member :: forall a. (P.Eq a, P.Ord a) => a -> Set a -> Boolean
 
     singleton :: forall a. a -> Set a
 
