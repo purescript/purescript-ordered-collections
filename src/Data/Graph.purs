@@ -111,7 +111,7 @@ scc' makeKey makeVert (Graph vs es) = runPure (runST (do
         let newPath = popUntil makeKey v currentPath []
         modifySTRef components $ flip (++) [makeComponent newPath.component]
         writeSTRef path newPath.path
-        return {}
+        return unit
         
     makeComponent [v] | not (isCycle (makeKey v)) = AcyclicSCC v
     makeComponent vs = CyclicSCC vs
