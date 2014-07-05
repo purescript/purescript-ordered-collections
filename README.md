@@ -46,12 +46,16 @@
 
     instance eqMap :: (P.Eq k, P.Eq v) => P.Eq (Map k v)
 
+    instance functorMap :: P.Functor (Map k)
+
     instance showMap :: (P.Show k, P.Show v) => P.Show (Map k v)
 
 
 ### Values
 
     alter :: forall k v. (P.Ord k) => (Maybe v -> Maybe v) -> k -> Map k v -> Map k v
+
+    checkValid :: forall k v. Map k v -> Boolean
 
     delete :: forall k v. (P.Ord k) => k -> Map k v -> Map k v
 
@@ -61,13 +65,17 @@
 
     insert :: forall k v. (P.Ord k) => k -> v -> Map k v -> Map k v
 
+    isEmpty :: forall k v. Map k v -> Boolean
+
     keys :: forall k v. Map k v -> [k]
 
     lookup :: forall k v. (P.Ord k) => k -> Map k v -> Maybe v
 
-    map :: forall k v1 v2. (P.Ord k) => (v1 -> v2) -> Map k v1 -> Map k v2
+    map :: forall k a b. (a -> b) -> Map k a -> Map k b
 
     member :: forall k v. (P.Ord k) => k -> Map k v -> Boolean
+
+    showTree :: forall k v. (P.Show k, P.Show v) => Map k v -> String
 
     singleton :: forall k v. k -> v -> Map k v
 
@@ -98,20 +106,24 @@
 
 ### Values
 
-    delete :: forall a. (P.Eq a, P.Ord a) => a -> Set a -> Set a
+    checkValid :: forall a. Set a -> Boolean
+
+    delete :: forall a. (P.Ord a) => a -> Set a -> Set a
 
     empty :: forall a. Set a
 
-    fromList :: forall a. (P.Eq a, P.Ord a) => [a] -> Set a
+    fromList :: forall a. (P.Ord a) => [a] -> Set a
 
-    insert :: forall a. (P.Eq a, P.Ord a) => a -> Set a -> Set a
+    insert :: forall a. (P.Ord a) => a -> Set a -> Set a
 
-    member :: forall a. (P.Eq a, P.Ord a) => a -> Set a -> Boolean
+    isEmpty :: forall a. Set a -> Boolean
+
+    member :: forall a. (P.Ord a) => a -> Set a -> Boolean
 
     singleton :: forall a. a -> Set a
 
     toList :: forall a. Set a -> [a]
 
-    union :: forall a. (P.Eq a, P.Ord a) => Set a -> Set a -> Set a
+    union :: forall a. (P.Ord a) => Set a -> Set a -> Set a
 
     unions :: forall a. (P.Ord a) => [Set a] -> Set a
