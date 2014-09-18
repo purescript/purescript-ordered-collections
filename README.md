@@ -127,3 +127,60 @@
     union :: forall a. (P.Ord a) => Set a -> Set a -> Set a
 
     unions :: forall a. (P.Ord a) => [Set a] -> Set a
+
+
+## Module Data.StrMap
+
+### Types
+
+    data StrMap :: * -> *
+
+
+### Type Class Instances
+
+    instance eqStrMap :: (P.Eq a) => P.Eq (StrMap a)
+
+    instance functorStrMap :: P.Functor StrMap
+
+    instance showStrMap :: (P.Show a) => P.Show (StrMap a)
+
+
+### Values
+
+    alter :: forall a. (Maybe a -> Maybe a) -> String -> StrMap a -> StrMap a
+
+    delete :: forall a. String -> StrMap a -> StrMap a
+
+    empty :: forall a. StrMap a
+
+    fold :: forall a z. (z -> String -> a -> z) -> z -> StrMap a -> z
+
+    foldMaybe :: forall a z. (z -> String -> a -> Maybe z) -> z -> StrMap a -> z
+
+    fromList :: forall a. [Tuple String a] -> StrMap a
+
+    insert :: forall a. String -> a -> StrMap a -> StrMap a
+
+    isEmpty :: forall a. StrMap a -> Boolean
+
+    isSubmap :: forall a. (P.Eq a) => StrMap a -> StrMap a -> Boolean
+
+    keys :: forall a. StrMap a -> [String]
+
+    lookup :: forall a. String -> StrMap a -> Maybe a
+
+    map :: forall a b. (a -> b) -> StrMap a -> StrMap b
+
+    member :: forall a. String -> StrMap a -> Boolean
+
+    singleton :: forall a. String -> a -> StrMap a
+
+    toList :: forall a. StrMap a -> [Tuple String a]
+
+    union :: forall a. StrMap a -> StrMap a -> StrMap a
+
+    unions :: forall a. [StrMap a] -> StrMap a
+
+    update :: forall a. (a -> Maybe a) -> String -> StrMap a -> StrMap a
+
+    values :: forall a. StrMap a -> [a]
