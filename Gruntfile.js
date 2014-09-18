@@ -29,7 +29,7 @@ module.exports = function(grunt) {
           module: "Tests",
           main: "Tests"
         },
-        src: ["tests/Tests.purs", "<%=libFiles%>"],
+        src: ["tests/**/*.purs", "<%=libFiles%>"],
         dest: "tmp/tests.js"
       }
     },

@@ -2,7 +2,8 @@
   "name": "purescript-maps",
   "homepage": "https://github.com/purescript/purescript-maps",
   "authors": [
-    "Phil Freeman <paf31@cantab.net>"
+    "Phil Freeman <paf31@cantab.net>",
+    "John A. De Goes <john@degoes.net>"
   ],
   "description": "Purely functional maps implemented in PureScript",
   "keywords": [
@@ -27,6 +28,7 @@
   "dependencies": {
     "purescript-arrays": "*",
     "purescript-foldable-traversable": "*",
+    "purescript-strings": "*",
     "purescript-math": "*",
     "purescript-maybe": "*",
     "purescript-tuples": "*"
