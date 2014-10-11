@@ -196,6 +196,39 @@
     values :: forall a. StrMap a -> [a]
 
 
+## Module Data.StrMap.ST
+
+### Types
+
+    data STStrMap :: * -> * -> *
+
+
+### Values
+
+    delete :: forall a h r. STStrMap h a -> String -> Eff (st :: ST h | r) (STStrMap h a)
+
+    freeze :: forall a h r. STStrMap h a -> Eff (st :: ST h | r) (SM.StrMap a)
+
+    isEmpty :: forall a h r. STStrMap h a -> Eff (st :: ST h | r) Boolean
+
+    new :: forall a h r. Eff (st :: ST h | r) (STStrMap h a)
+
+    peek :: forall a h r. STStrMap h a -> String -> Eff (st :: ST h | r) (Maybe a)
+
+    poke :: forall a h r. STStrMap h a -> String -> a -> Eff (st :: ST h | r) a
+
+    size :: forall a h r. STStrMap h a -> Eff (st :: ST h | r) Number
+
+    thaw :: forall a h r. SM.StrMap a -> Eff (st :: ST h | r) (STStrMap h a)
+
+
+## Module Data.StrMap.ST.Unsafe
+
+### Values
+
+    unsafePeek :: forall a h r. STStrMap h a -> String -> Eff (st :: ST h | r) a
+
+
 ## Module Data.StrMap.Unsafe
 
 ### Values
