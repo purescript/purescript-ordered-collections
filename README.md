@@ -142,10 +142,14 @@
 
     instance functorStrMap :: P.Functor StrMap
 
+    instance semigroupStrMap :: (P.Semigroup a) => P.Semigroup (StrMap a)
+
     instance showStrMap :: (P.Show a) => P.Show (StrMap a)
 
 
 ### Values
+
+    all :: forall a. (String -> a -> Boolean) -> StrMap a -> Boolean
 
     alter :: forall a. (Maybe a -> Maybe a) -> String -> StrMap a -> StrMap a
 
@@ -154,6 +158,10 @@
     empty :: forall a. StrMap a
 
     fold :: forall a z. (z -> String -> a -> z) -> z -> StrMap a -> z
+
+    foldM :: forall a m z. (P.Monad m) => (z -> String -> a -> m z) -> z -> StrMap a -> m z
+
+    foldMap :: forall a m. (Monoid m) => (String -> a -> m) -> StrMap a -> m
 
     foldMaybe :: forall a z. (z -> String -> a -> Maybe z) -> z -> StrMap a -> z
 
@@ -175,6 +183,8 @@
 
     singleton :: forall a. String -> a -> StrMap a
 
+    size :: forall a. StrMap a -> Number
+
     toList :: forall a. StrMap a -> [Tuple String a]
 
     union :: forall a. StrMap a -> StrMap a -> StrMap a
@@ -184,3 +194,10 @@
     update :: forall a. (a -> Maybe a) -> String -> StrMap a -> StrMap a
 
     values :: forall a. StrMap a -> [a]
+
+
+## Module Data.StrMap.Unsafe
+
+### Values
+
+    unsafeIndex :: forall a. StrMap a -> String -> a

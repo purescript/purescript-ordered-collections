@@ -8,6 +8,7 @@ module Data.StrMap
   ( StrMap(),
     empty,
     isEmpty,
+    size,
     singleton,
     insert,
     lookup,
@@ -24,7 +25,10 @@ module Data.StrMap
     map,
     isSubmap,
     fold,
-    foldMaybe
+    foldMap,
+    foldM,
+    foldMaybe,
+    all
   ) where
   
 import qualified Prelude as P
@@ -34,26 +38,16 @@ import Data.Maybe
 import Data.Function
 import Data.Tuple
 import Data.Foldable (foldl) 
+import Data.Monoid
+import Data.Monoid.All
 
 foreign import data StrMap :: * -> *
-
-foreign import _foldStrMap
-  "function _foldStrMap(m, z0, f) {\
-  \  var z = z0;\
-  \  for (var k in m) {\
-  \    if (m.hasOwnProperty(k)) z = f(z)(k)(m[k]);\
-  \  }\
-  \  return z;\
-  \}" :: forall v z. Fn3 (StrMap v) z (z -> String -> v -> z) z
-
-fold :: forall a z. (z -> String -> a -> z) -> z -> (StrMap a) -> z
-fold f z m = runFn3 _foldStrMap m z f
 
 foreign import _fmapStrMap
   "function _fmapStrMap(m0, f) {\
   \  var m = {};\
   \  for (var k in m0) {\
-  \    if (m0.hasOwnProperty(k)) m[k] = f(m0[k]);\
+  \    m[k] = f(m0[k]);\
   \  }\
   \  return m;\
   \}" :: forall a b. Fn2 (StrMap a) (a -> b) (StrMap b)
@@ -61,22 +55,59 @@ foreign import _fmapStrMap
 instance functorStrMap :: P.Functor StrMap where
   (<$>) f m = runFn2 _fmapStrMap m f
 
+-- It would be nice to have a Foldable instance, but we're essentially unordered
+
+foreign import _foldM
+  "function _foldM(bind) {\
+  \  return function(f) {\
+  \    return function (mz) {\
+  \      return function (m) {\
+  \        var k;\
+  \        function g(z) {\
+  \          return f(z)(k)(m[k]);\
+  \        }\
+  \        for (k in m)\
+  \          mz = bind(mz)(g);\
+  \        return mz;\
+  \      };\
+  \    };\
+  \  };\
+  \}" :: forall a m z. (m -> (z -> m) -> m) -> (z -> String -> a -> m) -> m -> StrMap a -> m
+
+fold :: forall a z. (z -> String -> a -> z) -> z -> StrMap a -> z
+fold = _foldM (P.(#))
+
+foldMap :: forall a m. (Monoid m) => (String -> a -> m) -> StrMap a -> m
+foldMap f = fold (\acc k v -> acc P.<> f k v) mempty
+
+foldM :: forall a m z. (P.Monad m) => (z -> String -> a -> m z) -> z -> StrMap a -> m z
+foldM f z = _foldM P.(>>=) f (P.pure z)
+
+-- Unfortunately the above are not short-circuitable (consider using purescript-machines)
+-- so we need special cases:
+
 foreign import _foldSCStrMap
-  "function _foldSCStrMap(m, z0, f, fromMaybe) { \
-  \   var z = z0;                           \
+  "function _foldSCStrMap(m, z, f, fromMaybe) { \
   \   for (var k in m) {                    \
-  \     if (m.hasOwnProperty(k)) {          \
-  \       var maybeR = f(z)(k)(m[k]);       \
-  \       var r = fromMaybe(null)(maybeR);  \
-  \       if (r === null) return z;         \
-  \       else z = r;                       \
-  \     }                                   \
+  \     var maybeR = f(z)(k)(m[k]);       \
+  \     var r = fromMaybe(null)(maybeR);  \
+  \     if (r === null) return z;         \
+  \     else z = r;                       \
   \   }                                     \
   \  return z;                              \
   \}" :: forall a z. Fn4 (StrMap a) z (z -> String -> a -> Maybe z) (forall a. a -> Maybe a -> a) z
 
-foldMaybe :: forall a z. (z -> String -> a -> Maybe z) -> z -> (StrMap a) -> z
+foldMaybe :: forall a z. (z -> String -> a -> Maybe z) -> z -> StrMap a -> z
 foldMaybe f z m = runFn4 _foldSCStrMap m z f fromMaybe
+
+foreign import all
+  "function all(f) {\
+  \  return function (m) {\
+  \    for (var k in m)\
+  \      if (!f(k)(m[k])) return false;\
+  \    return true;\
+  \  };\
+  \}" :: forall a. (String -> a -> Boolean) -> StrMap a -> Boolean
 
 instance eqStrMap :: (P.Eq a) => P.Eq (StrMap a) where
   (==) m1 m2 = (isSubmap m1 m2) P.&& (isSubmap m2 m1)
@@ -88,17 +119,16 @@ instance showStrMap :: (P.Show a) => P.Show (StrMap a) where
 foreign import empty "var empty = {};" :: forall a. StrMap a
 
 isSubmap :: forall a. (P.Eq a) => StrMap a -> StrMap a -> Boolean
-isSubmap m1 m2 = foldMaybe f true m1 where
-  f acc k v = if (P.not acc) then (Nothing :: Maybe Boolean) 
-              else Just P.$ acc P.&& (maybe false (\v0 -> v0 P.== v) (lookup k m2))
+isSubmap m1 m2 = all f m1 where
+  f k v = runFn4 _lookup false (P.(==) v) k m2
 
 isEmpty :: forall a. StrMap a -> Boolean
-isEmpty m = size m P.== 0
+isEmpty = all (\_ _ -> false)
 
 foreign import size "function size(m) {\
   \  var s = 0;\
   \  for (var k in m) {\
-  \    if (m.hasOwnProperty(k)) ++s;\
+  \    ++s;\
   \  }\
   \  return s;\
   \}" :: forall a. StrMap a -> Number
@@ -107,22 +137,21 @@ singleton :: forall a. String -> a -> StrMap a
 singleton k v = insert k v empty
 
 foreign import _lookup
-  "function _lookup(m, k, yes, no) {              \
-  \   if (m[k] !== undefined) return yes(m[k]);   \
-  \   else return no;                             \
-  \}" :: forall a z. Fn4 (StrMap a) String (a -> z) z z
+  "function _lookup(no, yes, k, m) {\
+  \  return k in m ? yes(m[k]) : no;\
+  \}" :: forall a z. Fn4 z (a -> z) String (StrMap a) z
 
 lookup :: forall a. String -> StrMap a -> Maybe a
-lookup k m = runFn4 _lookup m k Just Nothing
+lookup = runFn4 _lookup Nothing Just
 
 member :: forall a. String -> StrMap a -> Boolean
-member k m = isJust (k `lookup` m)
+member = runFn4 _lookup false (P.const true)
 
 foreign import _cloneStrMap
   "function _cloneStrMap(m0) { \
   \  var m = {}; \
   \  for (var k in m0) {\
-  \    if (m0.hasOwnProperty(k)) m[k] = m0[k];\
+  \    m[k] = m0[k];\
   \  }\
   \  return m;\
   \}" :: forall a. (StrMap a) -> (StrMap a)
@@ -133,8 +162,11 @@ foreign import _unsafeInsertStrMap
   \   return m;                             \
   \}" :: forall a. Fn3 (StrMap a) String a (StrMap a)
 
+_unsafeInsert :: forall a. StrMap a -> String -> a -> StrMap a
+_unsafeInsert = runFn3 _unsafeInsertStrMap
+
 insert :: forall a. String -> a -> StrMap a -> StrMap a
-insert k v m = runFn3 _unsafeInsertStrMap (_cloneStrMap m) k v
+insert k v m = _unsafeInsert (_cloneStrMap m) k v
 
 foreign import _unsafeDeleteStrMap
   "function _unsafeDeleteStrMap(m, k) { \
@@ -153,26 +185,40 @@ alter f k m = case f (k `lookup` m) of
 update :: forall a. (a -> Maybe a) -> String -> StrMap a -> StrMap a
 update f k m = alter (maybe Nothing f) k m  
 
+foreign import _collect
+  "function _collect(f) {\
+  \  return function (m) {\
+  \    var r = [];\
+  \    for (var k in m)\
+  \      r.push(f(k)(m[k]));\
+  \    return r;\
+  \  };\
+  \}" :: forall a b . (String -> a -> b) -> StrMap a -> [b]
+
 toList :: forall a. StrMap a -> [Tuple String a]
-toList m = fold f [] m where
-  f acc k v = acc P.++ [Tuple k v]
+toList = _collect Tuple
 
 fromList :: forall a. [Tuple String a] -> StrMap a
-fromList = foldl (\m (Tuple k v) -> insert k v m) empty
+fromList = foldl (\m (Tuple k v) -> _unsafeInsert m k v) (_cloneStrMap empty)
 
-keys :: forall a. StrMap a -> [String]
-keys m = fold f [] m where
-  f acc k v = acc P.++ [k]
+foreign import keys
+  "var keys = Object.keys || _collect(function (k) {\
+  \  return function () { return k; };\
+  \});" :: forall a. StrMap a -> [String]
 
 values :: forall a. StrMap a -> [a]
-values m = fold f [] m where
-  f acc k v = acc P.++ [v]
+values = _collect (\_ v -> v)
 
+-- left-biased
 union :: forall a. StrMap a -> StrMap a -> StrMap a
-union m1 m2 = foldl (\m (Tuple k v) -> insert k v m) m2 (toList m1)
+union m1 m2 = fold _unsafeInsert (_cloneStrMap m2) m1
 
 unions :: forall a. [StrMap a] -> StrMap a
 unions = foldl union empty
 
 map :: forall a b. (a -> b) -> StrMap a -> StrMap b
 map = P.(<$>)
+
+instance semigroupStrMap :: (P.Semigroup a) => P.Semigroup (StrMap a) where
+  (<>) m1 m2 = fold f (_cloneStrMap m1) m2 where
+    f m k v2 = _unsafeInsert m k (runFn4 _lookup v2 (\v1 -> v1 P.<> v2) k m)
