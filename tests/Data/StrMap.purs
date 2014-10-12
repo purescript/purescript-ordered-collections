@@ -10,12 +10,11 @@ import Data.Function (on)
 import Data.Foldable (foldl)
 
 import Test.QuickCheck
-import Test.QuickCheck.Tuple
 
 import qualified Data.StrMap as M
 
 instance arbStrMap :: (Arbitrary v) => Arbitrary (M.StrMap v) where
-  arbitrary = M.fromList <<< map runTestTuple <$> arbitrary
+  arbitrary = M.fromList <$> arbitrary
 
 data Instruction k v = Insert k v | Delete k
 
@@ -82,8 +81,7 @@ strMapTests = do
 
   trace "toList . fromList = id"
   quickCheck $ \arr -> let f x = M.toList (M.fromList x) 
-                           arr' = runTestTuple <$> arr
-                       in f (f arr') == f (arr' :: [Tuple String Number]) <?> show arr
+                       in f (f arr) == f (arr :: [Tuple String Number]) <?> show arr
 
   trace "fromList . toList = id"
   quickCheck $ \m -> let f m = M.fromList (M.toList m) in
