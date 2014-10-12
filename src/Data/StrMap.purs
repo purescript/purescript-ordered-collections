@@ -37,7 +37,7 @@ import qualified Data.Array as A
 import Data.Maybe 
 import Data.Function
 import Data.Tuple
-import Data.Foldable (foldl) 
+import Data.Foldable (Foldable, foldl, foldr)
 import Data.Monoid
 import Data.Monoid.All
 
@@ -54,8 +54,6 @@ foreign import _fmapStrMap
 
 instance functorStrMap :: P.Functor StrMap where
   (<$>) f m = runFn2 _fmapStrMap m f
-
--- It would be nice to have a Foldable instance, but we're essentially unordered
 
 foreign import _foldM
   "function _foldM(bind) {\
@@ -82,6 +80,11 @@ foldMap f = fold (\acc k v -> acc P.<> f k v) mempty
 
 foldM :: forall a m z. (P.Monad m) => (z -> String -> a -> m z) -> z -> StrMap a -> m z
 foldM f z = _foldM P.(>>=) f (P.pure z)
+
+instance foldableStrMap :: Foldable StrMap where
+  foldl f = fold (\z _ -> f z)
+  foldr f z m = foldr f z (values m)
+  foldMap f = foldMap (P.const f)
 
 -- Unfortunately the above are not short-circuitable (consider using purescript-machines)
 -- so we need special cases:

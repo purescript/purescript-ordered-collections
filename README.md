@@ -140,6 +140,8 @@
 
     instance eqStrMap :: (P.Eq a) => P.Eq (StrMap a)
 
+    instance foldableStrMap :: Foldable StrMap
+
     instance functorStrMap :: P.Functor StrMap
 
     instance semigroupStrMap :: (P.Semigroup a) => P.Semigroup (StrMap a)
