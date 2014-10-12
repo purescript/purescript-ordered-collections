@@ -28,20 +28,62 @@ module Data.StrMap
     foldMap,
     foldM,
     foldMaybe,
-    all
+    all,
+
+    thawST,
+    freezeST,
+    runST
   ) where
   
 import qualified Prelude as P
 
+import Control.Monad.Eff (Eff(), runPure)
+import qualified Control.Monad.ST as ST
 import qualified Data.Array as A
 import Data.Maybe 
 import Data.Function
 import Data.Tuple
-import Data.Foldable (Foldable, foldl, foldr)
+import Data.Foldable (Foldable, foldl, foldr, for_)
 import Data.Monoid
 import Data.Monoid.All
+import qualified Data.StrMap.ST as SM
 
 foreign import data StrMap :: * -> *
+
+foreign import _copy """
+  function _copy(m) {
+    var r = {};
+    for (var k in m)
+      r[k] = m[k]
+    return r;
+  }""" :: forall a. StrMap a -> StrMap a
+
+foreign import _copyEff """
+  function _copyEff(m) {
+    return function () {
+      return _copy(m);
+    };
+  }""" :: forall a b h r. a -> Eff (st :: ST.ST h | r) b
+
+thawST :: forall a h r. StrMap a -> Eff (st :: ST.ST h | r) (SM.STStrMap h a)
+thawST = _copyEff
+
+freezeST :: forall a h r. SM.STStrMap h a -> Eff (st :: ST.ST h | r) (StrMap a)
+freezeST = _copyEff
+
+foreign import runST """
+  function runST(f) {
+    return f;
+  }""" :: forall a r. (forall h. Eff (st :: ST.ST h | r) (SM.STStrMap h a)) -> Eff r (StrMap a)
+
+pureST :: forall a b. (forall h e. Eff (st :: ST.ST h | e) (SM.STStrMap h a)) -> StrMap a
+pureST f = runPure (runST f)
+
+mutate :: forall a b. (forall h e. SM.STStrMap h a -> Eff (st :: ST.ST h | e) b) -> StrMap a -> StrMap a
+mutate f m = pureST (do
+  s <- thawST m
+  f s
+  P.return s)
 
 foreign import _fmapStrMap
   "function _fmapStrMap(m0, f) {\
@@ -137,7 +179,10 @@ foreign import size "function size(m) {\
   \}" :: forall a. StrMap a -> Number
 
 singleton :: forall a. String -> a -> StrMap a
-singleton k v = insert k v empty
+singleton k v = pureST (do
+  s <- SM.new
+  SM.poke s k v
+  P.return s)
 
 foreign import _lookup
   "function _lookup(no, yes, k, m) {\
@@ -150,26 +195,8 @@ lookup = runFn4 _lookup Nothing Just
 member :: forall a. String -> StrMap a -> Boolean
 member = runFn4 _lookup false (P.const true)
 
-foreign import _cloneStrMap
-  "function _cloneStrMap(m0) { \
-  \  var m = {}; \
-  \  for (var k in m0) {\
-  \    m[k] = m0[k];\
-  \  }\
-  \  return m;\
-  \}" :: forall a. (StrMap a) -> (StrMap a)
-
-foreign import _unsafeInsertStrMap
-  "function _unsafeInsertStrMap(m, k, v) {  \
-  \   m[k] = v;                             \
-  \   return m;                             \
-  \}" :: forall a. Fn3 (StrMap a) String a (StrMap a)
-
-_unsafeInsert :: forall a. StrMap a -> String -> a -> StrMap a
-_unsafeInsert = runFn3 _unsafeInsertStrMap
-
 insert :: forall a. String -> a -> StrMap a -> StrMap a
-insert k v m = _unsafeInsert (_cloneStrMap m) k v
+insert k v = mutate (\s -> SM.poke s k v)
 
 foreign import _unsafeDeleteStrMap
   "function _unsafeDeleteStrMap(m, k) { \
@@ -178,7 +205,7 @@ foreign import _unsafeDeleteStrMap
   \}" :: forall a. Fn2 (StrMap a) String (StrMap a)
 
 delete :: forall a. String -> StrMap a -> StrMap a
-delete k m = runFn2 _unsafeDeleteStrMap (_cloneStrMap m) k
+delete k = mutate (\s -> SM.delete s k)
 
 alter :: forall a. (Maybe a -> Maybe a) -> String -> StrMap a -> StrMap a
 alter f k m = case f (k `lookup` m) of
@@ -187,6 +214,12 @@ alter f k m = case f (k `lookup` m) of
 
 update :: forall a. (a -> Maybe a) -> String -> StrMap a -> StrMap a
 update f k m = alter (maybe Nothing f) k m  
+
+fromList :: forall a. [Tuple String a] -> StrMap a
+fromList l = pureST (do 
+  s <- SM.new
+  for_ l (\(Tuple k v) -> SM.poke s k v)
+  P.return s)
 
 foreign import _collect
   "function _collect(f) {\
@@ -201,9 +234,6 @@ foreign import _collect
 toList :: forall a. StrMap a -> [Tuple String a]
 toList = _collect Tuple
 
-fromList :: forall a. [Tuple String a] -> StrMap a
-fromList = foldl (\m (Tuple k v) -> _unsafeInsert m k v) (_cloneStrMap empty)
-
 foreign import keys
   "var keys = Object.keys || _collect(function (k) {\
   \  return function () { return k; };\
@@ -214,7 +244,7 @@ values = _collect (\_ v -> v)
 
 -- left-biased
 union :: forall a. StrMap a -> StrMap a -> StrMap a
-union m1 m2 = fold _unsafeInsert (_cloneStrMap m2) m1
+union m = mutate (\s -> foldM SM.poke s m)
 
 unions :: forall a. [StrMap a] -> StrMap a
 unions = foldl union empty
@@ -223,5 +253,4 @@ map :: forall a b. (a -> b) -> StrMap a -> StrMap b
 map = P.(<$>)
 
 instance semigroupStrMap :: (P.Semigroup a) => P.Semigroup (StrMap a) where
-  (<>) m1 m2 = fold f (_cloneStrMap m1) m2 where
-    f m k v2 = _unsafeInsert m k (runFn4 _lookup v2 (\v1 -> v1 P.<> v2) k m)
+  (<>) m1 m2 = mutate (\s -> foldM (\s k v2 -> SM.poke s k (runFn4 _lookup v2 (\v1 -> v1 P.<> v2) k m2)) s m1) m2

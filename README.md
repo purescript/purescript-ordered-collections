@@ -167,6 +167,8 @@
 
     foldMaybe :: forall a z. (z -> String -> a -> Maybe z) -> z -> StrMap a -> z
 
+    freezeST :: forall a h r. SM.STStrMap h a -> Eff (st :: ST.ST h | r) (StrMap a)
+
     fromList :: forall a. [Tuple String a] -> StrMap a
 
     insert :: forall a. String -> a -> StrMap a -> StrMap a
@@ -183,9 +185,13 @@
 
     member :: forall a. String -> StrMap a -> Boolean
 
+    runST :: forall a r. (forall h. Eff (st :: ST.ST h | r) (SM.STStrMap h a)) -> Eff r (StrMap a)
+
     singleton :: forall a. String -> a -> StrMap a
 
     size :: forall a. StrMap a -> Number
+
+    thawST :: forall a h r. StrMap a -> Eff (st :: ST.ST h | r) (SM.STStrMap h a)
 
     toList :: forall a. StrMap a -> [Tuple String a]
 
@@ -209,26 +215,18 @@
 
     delete :: forall a h r. STStrMap h a -> String -> Eff (st :: ST h | r) (STStrMap h a)
 
-    freeze :: forall a h r. STStrMap h a -> Eff (st :: ST h | r) (SM.StrMap a)
-
-    isEmpty :: forall a h r. STStrMap h a -> Eff (st :: ST h | r) Boolean
-
     new :: forall a h r. Eff (st :: ST h | r) (STStrMap h a)
 
-    peek :: forall a h r. STStrMap h a -> String -> Eff (st :: ST h | r) (Maybe a)
+    peek :: forall a h r. STStrMap h a -> String -> Eff (st :: ST h | r) a
 
-    poke :: forall a h r. STStrMap h a -> String -> a -> Eff (st :: ST h | r) a
-
-    size :: forall a h r. STStrMap h a -> Eff (st :: ST h | r) Number
-
-    thaw :: forall a h r. SM.StrMap a -> Eff (st :: ST h | r) (STStrMap h a)
+    poke :: forall a h r. STStrMap h a -> String -> a -> Eff (st :: ST h | r) (STStrMap h a)
 
 
 ## Module Data.StrMap.ST.Unsafe
 
 ### Values
 
-    unsafePeek :: forall a h r. STStrMap h a -> String -> Eff (st :: ST h | r) a
+    unsafeGet :: forall a h r. STStrMap h a -> Eff (st :: ST h | r) (StrMap a)
 
 
 ## Module Data.StrMap.Unsafe

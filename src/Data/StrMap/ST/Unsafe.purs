@@ -1,17 +1,15 @@
 module Data.StrMap.ST.Unsafe
-  ( unsafePeek
+  ( unsafeGet
   ) where
 
-import Control.Monad.Eff
-import Control.Monad.ST
-import Data.StrMap.Unsafe
-import Data.StrMap.ST
+import Control.Monad.Eff (Eff())
+import Control.Monad.ST (ST())
+import Data.StrMap (StrMap())
+import Data.StrMap.ST (STStrMap())
 
-foreign import unsafePeek """
-  function unsafePeek(m) {
-    return function (k) {
-      return function () {
-        return m[k];
-      }
+foreign import unsafeGet """
+  function unsafeGet(m) {
+    return function () {
+      return m;
     }
-  }""" :: forall a h r. STStrMap h a -> String -> Eff (st :: ST h | r) a
+  }""" :: forall a h r. STStrMap h a -> Eff (st :: ST h | r) (StrMap a)
