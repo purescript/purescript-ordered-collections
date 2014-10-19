@@ -9,13 +9,12 @@ import Data.Function (on)
 import Data.Foldable (foldl)
 
 import Test.QuickCheck
-import Test.QuickCheck.Tuple
 
 import qualified Data.Map as M
 import qualified Data.Set as S
 
 instance arbMap :: (Eq k, Ord k, Arbitrary k, Arbitrary v) => Arbitrary (M.Map k v) where
-  arbitrary = M.fromList <<< map runTestTuple <$> arbitrary
+  arbitrary = M.fromList <$> arbitrary
 
 instance arbSet :: (Eq a, Ord a, Arbitrary a) => Arbitrary (S.Set a) where
   arbitrary = S.fromList <$> arbitrary
@@ -157,8 +156,7 @@ mapTests = do
 
   trace "toList . fromList = id"
   quickCheck $ \arr -> let f x = M.toList (M.fromList x) 
-                           arr' = runTestTuple <$> arr
-                       in f (f arr') == f (arr' :: [Tuple SmallKey Number]) <?> show arr
+                       in f (f arr) == f (arr :: [Tuple SmallKey Number]) <?> show arr
 
   trace "fromList . toList = id"
   quickCheck $ \m -> let f m = M.fromList (M.toList m) in
