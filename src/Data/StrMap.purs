@@ -34,18 +34,19 @@ module Data.StrMap
     freezeST,
     runST
   ) where
-  
+
 import qualified Prelude as P
 
 import Control.Monad.Eff (Eff(), runPure)
-import qualified Control.Monad.ST as ST
-import qualified Data.Array as A
-import Data.Maybe 
-import Data.Function
-import Data.Tuple
 import Data.Foldable (Foldable, foldl, foldr, for_)
+import Data.Function
+import Data.Maybe
 import Data.Monoid
 import Data.Monoid.All
+import Data.Tuple
+import Data.Traversable (Traversable, traverse)
+import qualified Control.Monad.ST as ST
+import qualified Data.Array as A
 import qualified Data.StrMap.ST as SM
 
 foreign import data StrMap :: * -> *
@@ -127,6 +128,10 @@ instance foldableStrMap :: Foldable StrMap where
   foldl f = fold (\z _ -> f z)
   foldr f z m = foldr f z (values m)
   foldMap f = foldMap (P.const f)
+
+instance traversableStrMap :: Traversable StrMap where
+  traverse f ms = foldr (\x acc -> union P.<$> x P.<*> acc) (P.pure empty) ((P.(<$>) (uncurry singleton)) P.<$> (traverse f P.<$> toList ms))
+  sequence = traverse P.id
 
 -- Unfortunately the above are not short-circuitable (consider using purescript-machines)
 -- so we need special cases:
@@ -213,10 +218,10 @@ alter f k m = case f (k `lookup` m) of
   Just v -> insert k v m
 
 update :: forall a. (a -> Maybe a) -> String -> StrMap a -> StrMap a
-update f k m = alter (maybe Nothing f) k m  
+update f k m = alter (maybe Nothing f) k m
 
 fromList :: forall a. [Tuple String a] -> StrMap a
-fromList l = pureST (do 
+fromList l = pureST (do
   s <- SM.new
   for_ l (\(Tuple k v) -> SM.poke s k v)
   P.return s)
