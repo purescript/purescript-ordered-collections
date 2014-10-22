@@ -5,14 +5,14 @@
 ### Types
 
     data Edge k where
-      Edge :: k -> k -> Edge k
+      Edge :: k -> k -> Edge
 
     data Graph k v where
-      Graph :: [v] -> [Edge k] -> Graph k v
+      Graph :: [v] -> [Edge k] -> Graph
 
     data SCC v where
-      AcyclicSCC :: v -> SCC v
-      CyclicSCC :: [v] -> SCC v
+      AcyclicSCC :: v -> SCC
+      CyclicSCC :: [v] -> SCC
 
 
 ### Type Class Instances
@@ -46,9 +46,13 @@
 
     instance eqMap :: (P.Eq k, P.Eq v) => P.Eq (Map k v)
 
+    instance foldableMap :: Foldable (Map k)
+
     instance functorMap :: P.Functor (Map k)
 
     instance showMap :: (P.Show k, P.Show v) => P.Show (Map k v)
+
+    instance traversableMap :: (P.Ord k) => Traversable (Map k)
 
 
 ### Values
@@ -147,6 +151,8 @@
     instance semigroupStrMap :: (P.Semigroup a) => P.Semigroup (StrMap a)
 
     instance showStrMap :: (P.Show a) => P.Show (StrMap a)
+
+    instance traversableStrMap :: Traversable StrMap
 
 
 ### Values
