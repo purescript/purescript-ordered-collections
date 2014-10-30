@@ -11,13 +11,9 @@ import Data.Foldable (foldl)
 import Test.QuickCheck
 
 import qualified Data.Map as M
-import qualified Data.Set as S
 
 instance arbMap :: (Eq k, Ord k, Arbitrary k, Arbitrary v) => Arbitrary (M.Map k v) where
   arbitrary = M.fromList <$> arbitrary
-
-instance arbSet :: (Eq a, Ord a, Arbitrary a) => Arbitrary (S.Set a) where
-  arbitrary = S.fromList <$> arbitrary
 
 data SmallKey = A | B | C | D | E | F | G | H | I | J
 
@@ -169,35 +165,3 @@ mapTests = do
  
   trace "Union is idempotent"
   quickCheck $ \m1 m2 -> (m1 `M.union` m2) == ((m1 `M.union` m2) `M.union` (m2 :: M.Map SmallKey Number))
-  
-  -- Data.Set
-
-  trace "testMemberEmpty: member _ empty == false"
-  quickCheck $ \a -> S.member a (S.empty :: S.Set SmallKey) == false
-
-  trace "testMemberSingleton: member a (singleton a) == true"
-  quickCheck $ \a -> S.member (a :: SmallKey) (S.singleton a) == true
-
-  trace "testInsertDelete: member a (delete a (insert a empty) == false)"
-  quickCheck $ \a -> (S.member (a :: SmallKey) $ 
-                          S.delete a $ 
-                          S.insert a S.empty) == false
-
-  trace "testSingletonToList: toList (singleton a) == [a]"
-  quickCheck $ \a -> S.toList (S.singleton a :: S.Set SmallKey) == [a]
-
-  trace "testToListFromList: toList . fromList = id"
-  quickCheck $ \arr -> let f x = S.toList (S.fromList x) in
-                           f (f arr) == f (arr :: [SmallKey])
-
-  trace "testFromListToList: fromList . toList = id"
-  quickCheck $ \s -> let f s = S.fromList (S.toList s) in
-                     S.toList (f s) == S.toList (s :: S.Set SmallKey)
-
-  trace "testUnionSymmetric: union s1 s2 == union s2 s1"
-  quickCheck $ \s1 s2 -> let s3 = s1 `S.union` (s2 :: S.Set SmallKey) in
-                         let s4 = s2 `S.union` s1 in
-                         S.toList s3 == S.toList s4
-
-  trace "testUnionIdempotent"
-  quickCheck $ \s1 s2 -> (s1 `S.union` s2) == ((s1 `S.union` s2) `S.union` (s2 :: S.Set SmallKey))
