@@ -51,20 +51,25 @@ import qualified Data.StrMap.ST as SM
 
 foreign import data StrMap :: * -> *
 
-foreign import _copy """
+foreign import _copy
+  """
   function _copy(m) {
     var r = {};
-    for (var k in m)
-      r[k] = m[k]
+    for (var k in m) {
+      r[k] = m[k];
+    }
     return r;
-  }""" :: forall a. StrMap a -> StrMap a
+  }
+  """ :: forall a. StrMap a -> StrMap a
 
-foreign import _copyEff """
+foreign import _copyEff
+  """
   function _copyEff(m) {
-    return function () {
+    return function() {
       return _copy(m);
     };
-  }""" :: forall a b h r. a -> Eff (st :: ST.ST h | r) b
+  }
+  """ :: forall a b h r. a -> Eff (st :: ST.ST h | r) b
 
 thawST :: forall a h r. StrMap a -> Eff (st :: ST.ST h | r) (SM.STStrMap h a)
 thawST = _copyEff
@@ -72,10 +77,12 @@ thawST = _copyEff
 freezeST :: forall a h r. SM.STStrMap h a -> Eff (st :: ST.ST h | r) (StrMap a)
 freezeST = _copyEff
 
-foreign import runST """
+foreign import runST
+  """
   function runST(f) {
     return f;
-  }""" :: forall a r. (forall h. Eff (st :: ST.ST h | r) (SM.STStrMap h a)) -> Eff r (StrMap a)
+  }
+  """ :: forall a r. (forall h. Eff (st :: ST.ST h | r) (SM.STStrMap h a)) -> Eff r (StrMap a)
 
 pureST :: forall a b. (forall h e. Eff (st :: ST.ST h | e) (SM.STStrMap h a)) -> StrMap a
 pureST f = runPure (runST f)
@@ -87,33 +94,38 @@ mutate f m = pureST (do
   P.return s)
 
 foreign import _fmapStrMap
-  "function _fmapStrMap(m0, f) {\
-  \  var m = {};\
-  \  for (var k in m0) {\
-  \    m[k] = f(m0[k]);\
-  \  }\
-  \  return m;\
-  \}" :: forall a b. Fn2 (StrMap a) (a -> b) (StrMap b)
+  """
+  function _fmapStrMap(m0, f) {
+    var m = {};
+    for (var k in m0) {
+      m[k] = f(m0[k]);
+    }
+    return m;
+  }
+  """ :: forall a b. Fn2 (StrMap a) (a -> b) (StrMap b)
 
 instance functorStrMap :: P.Functor StrMap where
   (<$>) f m = runFn2 _fmapStrMap m f
 
 foreign import _foldM
-  "function _foldM(bind) {\
-  \  return function(f) {\
-  \    return function (mz) {\
-  \      return function (m) {\
-  \        var k;\
-  \        function g(z) {\
-  \          return f(z)(k)(m[k]);\
-  \        }\
-  \        for (k in m)\
-  \          mz = bind(mz)(g);\
-  \        return mz;\
-  \      };\
-  \    };\
-  \  };\
-  \}" :: forall a m z. (m -> (z -> m) -> m) -> (z -> String -> a -> m) -> m -> StrMap a -> m
+  """
+  function _foldM(bind) {
+    return function(f) {
+      return function(mz) {
+        return function(m) {
+          var k;
+          function g(z) {
+            return f(z)(k)(m[k]);
+          }
+          for (k in m) {
+            mz = bind(mz)(g);
+          }
+          return mz;
+        };
+      };
+    };
+  }
+  """ :: forall a m z. (m -> (z -> m) -> m) -> (z -> String -> a -> m) -> m -> StrMap a -> m
 
 fold :: forall a z. (z -> String -> a -> z) -> z -> StrMap a -> z
 fold = _foldM (P.(#))
@@ -137,27 +149,32 @@ instance traversableStrMap :: Traversable StrMap where
 -- so we need special cases:
 
 foreign import _foldSCStrMap
-  "function _foldSCStrMap(m, z, f, fromMaybe) { \
-  \   for (var k in m) {                    \
-  \     var maybeR = f(z)(k)(m[k]);       \
-  \     var r = fromMaybe(null)(maybeR);  \
-  \     if (r === null) return z;         \
-  \     else z = r;                       \
-  \   }                                     \
-  \  return z;                              \
-  \}" :: forall a z. Fn4 (StrMap a) z (z -> String -> a -> Maybe z) (forall a. a -> Maybe a -> a) z
+  """
+  function _foldSCStrMap(m, z, f, fromMaybe) {
+    for (var k in m) {
+      var maybeR = f(z)(k)(m[k]);
+      var r = fromMaybe(null)(maybeR);
+      if (r === null) return z;
+      else z = r;
+    }
+    return z;
+  }
+  """ :: forall a z. Fn4 (StrMap a) z (z -> String -> a -> Maybe z) (forall a. a -> Maybe a -> a) z
 
 foldMaybe :: forall a z. (z -> String -> a -> Maybe z) -> z -> StrMap a -> z
 foldMaybe f z m = runFn4 _foldSCStrMap m z f fromMaybe
 
 foreign import all
-  "function all(f) {\
-  \  return function (m) {\
-  \    for (var k in m)\
-  \      if (!f(k)(m[k])) return false;\
-  \    return true;\
-  \  };\
-  \}" :: forall a. (String -> a -> Boolean) -> StrMap a -> Boolean
+  """
+  function all(f) {
+    return function(m) {
+      for (var k in m) {
+        if (!f(k)(m[k])) return false;
+      }
+      return true;
+    };
+  }
+  """ :: forall a. (String -> a -> Boolean) -> StrMap a -> Boolean
 
 instance eqStrMap :: (P.Eq a) => P.Eq (StrMap a) where
   (==) m1 m2 = (isSubmap m1 m2) P.&& (isSubmap m2 m1)
@@ -175,13 +192,16 @@ isSubmap m1 m2 = all f m1 where
 isEmpty :: forall a. StrMap a -> Boolean
 isEmpty = all (\_ _ -> false)
 
-foreign import size "function size(m) {\
-  \  var s = 0;\
-  \  for (var k in m) {\
-  \    ++s;\
-  \  }\
-  \  return s;\
-  \}" :: forall a. StrMap a -> Number
+foreign import size
+  """
+  function size(m) {
+    var s = 0;
+    for (var k in m) {
+      ++s;
+    }
+    return s;
+  }
+  """ :: forall a. StrMap a -> Number
 
 singleton :: forall a. String -> a -> StrMap a
 singleton k v = pureST (do
@@ -190,9 +210,11 @@ singleton k v = pureST (do
   P.return s)
 
 foreign import _lookup
-  "function _lookup(no, yes, k, m) {\
-  \  return k in m ? yes(m[k]) : no;\
-  \}" :: forall a z. Fn4 z (a -> z) String (StrMap a) z
+  """
+  function _lookup(no, yes, k, m) {
+    return k in m ? yes(m[k]) : no;
+  }
+  """ :: forall a z. Fn4 z (a -> z) String (StrMap a) z
 
 lookup :: forall a. String -> StrMap a -> Maybe a
 lookup = runFn4 _lookup Nothing Just
@@ -204,10 +226,12 @@ insert :: forall a. String -> a -> StrMap a -> StrMap a
 insert k v = mutate (\s -> SM.poke s k v)
 
 foreign import _unsafeDeleteStrMap
-  "function _unsafeDeleteStrMap(m, k) { \
-  \   delete m[k];                      \
-  \   return m;                         \
-  \}" :: forall a. Fn2 (StrMap a) String (StrMap a)
+  """
+  function _unsafeDeleteStrMap(m, k) {
+     delete m[k];
+     return m;
+  }
+  """ :: forall a. Fn2 (StrMap a) String (StrMap a)
 
 delete :: forall a. String -> StrMap a -> StrMap a
 delete k = mutate (\s -> SM.delete s k)
@@ -227,22 +251,27 @@ fromList l = pureST (do
   P.return s)
 
 foreign import _collect
-  "function _collect(f) {\
-  \  return function (m) {\
-  \    var r = [];\
-  \    for (var k in m)\
-  \      r.push(f(k)(m[k]));\
-  \    return r;\
-  \  };\
-  \}" :: forall a b . (String -> a -> b) -> StrMap a -> [b]
+  """
+  function _collect(f) {
+    return function(m) {
+      var r = [];
+      for (var k in m) {
+        r.push(f(k)(m[k]));
+      }
+      return r;
+    };
+  }
+  """ :: forall a b . (String -> a -> b) -> StrMap a -> [b]
 
 toList :: forall a. StrMap a -> [Tuple String a]
 toList = _collect Tuple
 
 foreign import keys
-  "var keys = Object.keys || _collect(function (k) {\
-  \  return function () { return k; };\
-  \});" :: forall a. StrMap a -> [String]
+  """
+  var keys = Object.keys || _collect(function(k) {
+    return function() { return k; };
+  });
+  """ :: forall a. StrMap a -> [String]
 
 values :: forall a. StrMap a -> [a]
 values = _collect (\_ v -> v)
