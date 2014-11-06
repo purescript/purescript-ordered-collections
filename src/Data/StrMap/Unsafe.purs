@@ -6,8 +6,10 @@ import Data.StrMap
 
 -- also known as (!)
 foreign import unsafeIndex
-  "function unsafeIndex(m) {              \
-  \  return function (k) {\
-  \    return m[k];\
-  \  };\
-  \}" :: forall a . StrMap a -> String -> a
+  """
+  function unsafeIndex(m) {
+    return function(k) {
+      return m[k];
+    };
+  }
+  """ :: forall a . StrMap a -> String -> a
