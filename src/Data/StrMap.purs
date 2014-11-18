@@ -66,7 +66,11 @@ foreign import _copyEff
   """
   function _copyEff(m) {
     return function() {
-      return _copy(m);
+      var r = {};
+      for (var k in m) {
+        r[k] = m[k];
+      }
+      return r;
     };
   }
   """ :: forall a b h r. a -> Eff (st :: ST.ST h | r) b
