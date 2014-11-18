@@ -159,9 +159,8 @@ delete = down []
                     in removeMaxNode (TwoLeft max.key max.value right P.: ctx) left
     | k P.< k1    = down (TwoLeft k1 v1 right P.: ctx) k left
     | P.otherwise = down (TwoRight left k1 v1 P.: ctx) k right
-  down ctx k (Three Leaf k1 _ Leaf k2 v2 Leaf) 
+  down ctx k (Three Leaf k1 v1 Leaf k2 v2 Leaf) 
     | k P.== k1 = fromZipper ctx (Two Leaf k2 v2 Leaf)
-  down ctx k (Three Leaf k1 v1 Leaf k2 _ Leaf) 
     | k P.== k2 = fromZipper ctx (Two Leaf k1 v1 Leaf)
   down ctx k (Three left k1 v1 mid k2 v2 right) 
     | k P.== k1 = let max = maxNode left
