@@ -152,23 +152,24 @@ delete = down []
   where
   down :: forall k v. (P.Ord k) => [TreeContext k v] -> k -> Map k v -> Map k v
   down ctx _ Leaf = fromZipper ctx Leaf
-  down ctx k (Two Leaf k1 _ Leaf) | k P.== k1 = up ctx Leaf
-  down ctx k (Two left k1 _ right) | k P.== k1 =
-    let max = maxNode left
-    in removeMaxNode (TwoLeft max.key max.value right P.: ctx) left
-  down ctx k (Two left k1 v1 right) | k P.< k1 = down (TwoLeft k1 v1 right P.: ctx) k left
-  down ctx k (Two left k1 v1 right) = down (TwoRight left k1 v1 P.: ctx) k right
-  down ctx k (Three Leaf k1 _ Leaf k2 v2 Leaf) | k P.== k1 = fromZipper ctx (Two Leaf k2 v2 Leaf)
-  down ctx k (Three Leaf k1 v1 Leaf k2 _ Leaf) | k P.== k2 = fromZipper ctx (Two Leaf k1 v1 Leaf)
-  down ctx k (Three left k1 _ mid k2 v2 right) | k P.== k1 =
-    let max = maxNode left
-    in removeMaxNode (ThreeLeft max.key max.value mid k2 v2 right P.: ctx) left
-  down ctx k (Three left k1 v1 mid k2 _ right) | k P.== k2 =
-    let max = maxNode mid
-    in removeMaxNode (ThreeMiddle left k1 v1 max.key max.value right P.: ctx) mid
-  down ctx k (Three left k1 v1 mid k2 v2 right) | k P.< k1 = down (ThreeLeft k1 v1 mid k2 v2 right P.: ctx) k left
-  down ctx k (Three left k1 v1 mid k2 v2 right) | k1 P.< k P.&& k P.< k2  = down (ThreeMiddle left k1 v1 k2 v2 right P.: ctx) k mid
-  down ctx k (Three left k1 v1 mid k2 v2 right) = down (ThreeRight left k1 v1 mid k2 v2 P.: ctx) k right
+  down ctx k (Two Leaf k1 _ Leaf) 
+    | k P.== k1 = up ctx Leaf
+  down ctx k (Two left k1 v1 right) 
+    | k P.== k1   = let max = maxNode left
+                    in removeMaxNode (TwoLeft max.key max.value right P.: ctx) left
+    | k P.< k1    = down (TwoLeft k1 v1 right P.: ctx) k left
+    | P.otherwise = down (TwoRight left k1 v1 P.: ctx) k right
+  down ctx k (Three Leaf k1 v1 Leaf k2 v2 Leaf) 
+    | k P.== k1 = fromZipper ctx (Two Leaf k2 v2 Leaf)
+    | k P.== k2 = fromZipper ctx (Two Leaf k1 v1 Leaf)
+  down ctx k (Three left k1 v1 mid k2 v2 right) 
+    | k P.== k1 = let max = maxNode left
+                  in removeMaxNode (ThreeLeft max.key max.value mid k2 v2 right P.: ctx) left
+    | k P.== k2 = let max = maxNode mid
+                  in removeMaxNode (ThreeMiddle left k1 v1 max.key max.value right P.: ctx) mid
+    | k P.< k1               = down (ThreeLeft k1 v1 mid k2 v2 right P.: ctx) k left
+    | k1 P.< k P.&& k P.< k2 = down (ThreeMiddle left k1 v1 k2 v2 right P.: ctx) k mid
+    | P.otherwise            = down (ThreeRight left k1 v1 mid k2 v2 P.: ctx) k right
 
   up :: forall k v. (P.Ord k) => [TreeContext k v] -> Map k v -> Map k v
   up [] tree = tree
