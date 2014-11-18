@@ -117,12 +117,13 @@ foreign import _foldM
     return function(f) {
       return function(mz) {
         return function(m) {
-          var k;
-          function g(z) {
-            return f(z)(k)(m[k]);
+          function g(k) {
+            return function (z) {
+              return f(z)(k)(m[k]);
+            };
           }
-          for (k in m) {
-            mz = bind(mz)(g);
+          for (var k in m) {
+            mz = bind(mz)(g(k));
           }
           return mz;
         };
