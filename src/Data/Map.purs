@@ -237,3 +237,6 @@ unions = foldl union empty
 
 map :: forall k a b. (a -> b) -> Map k a -> Map k b
 map = P.(<$>)
+
+size :: forall k v. Map k v -> Number
+size = A.length P.<<< values
