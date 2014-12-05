@@ -48,6 +48,8 @@
 
     singleton :: forall k v. k -> v -> Map k v
 
+    size :: forall k v. Map k v -> Number
+
     toList :: forall k v. Map k v -> [Tuple k v]
 
     union :: forall k v. (P.Ord k) => Map k v -> Map k v -> Map k v

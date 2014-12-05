@@ -23,7 +23,8 @@ module Data.Map
     values,
     union,
     unions,
-    map
+    map,
+    size
   ) where
 
 import qualified Prelude as P
@@ -237,3 +238,6 @@ unions = foldl union empty
 
 map :: forall k a b. (a -> b) -> Map k a -> Map k b
 map = P.(<$>)
+
+size :: forall k v. Map k v -> Number
+size = A.length P.<<< values
