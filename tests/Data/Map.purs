@@ -4,7 +4,7 @@ import Debug.Trace
 
 import Data.Maybe
 import Data.Tuple
-import Data.Array (map)
+import Data.Array (map, length, nubBy)
 import Data.Function (on)
 import Data.Foldable (foldl)
 
@@ -165,3 +165,8 @@ mapTests = do
  
   trace "Union is idempotent"
   quickCheck $ \m1 m2 -> (m1 `M.union` m2) == ((m1 `M.union` m2) `M.union` (m2 :: M.Map SmallKey Number))
+
+  trace "size"
+  quickCheck $ \xs ->
+    let xs' = nubBy ((==) `on` fst) xs
+    in  M.size (M.fromList xs') == length (xs' :: [Tuple SmallKey Number])

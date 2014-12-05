@@ -23,7 +23,8 @@ module Data.Map
     values,
     union,
     unions,
-    map
+    map,
+    size
   ) where
 
 import qualified Prelude as P
