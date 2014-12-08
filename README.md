@@ -15,6 +15,8 @@
 
     instance functorMap :: P.Functor (Map k)
 
+    instance monoidMap :: (P.Ord k) => Monoid (Map k v)
+
     instance semigroupMap :: (P.Ord k) => P.Semigroup (Map k v)
 
     instance showMap :: (P.Show k, P.Show v) => P.Show (Map k v)

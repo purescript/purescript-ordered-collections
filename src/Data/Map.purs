@@ -32,6 +32,7 @@ import qualified Prelude as P
 import qualified Data.Array as A
 import Data.Maybe
 import Data.Tuple
+import Data.Monoid (Monoid)
 import Data.Foldable (foldl, foldMap, foldr, Foldable)
 import Data.Traversable (traverse, Traversable)
 
@@ -49,6 +50,9 @@ instance showMap :: (P.Show k, P.Show v) => P.Show (Map k v) where
 
 instance semigroupMap :: (P.Ord k) => P.Semigroup (Map k v) where
   (<>) = union
+
+instance monoidMap :: (P.Ord k) => Monoid (Map k v) where
+  mempty = empty
 
 instance functorMap :: P.Functor (Map k) where
   (<$>) _ Leaf = Leaf
