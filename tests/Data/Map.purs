@@ -6,7 +6,7 @@ import Data.Maybe
 import Data.Tuple
 import Data.Array (map, length, nubBy)
 import Data.Function (on)
-import Data.Foldable (foldl)
+import Data.Foldable (foldl, for_)
 
 import Test.QuickCheck
 
@@ -165,6 +165,14 @@ mapTests = do
  
   trace "Union is idempotent"
   quickCheck $ \m1 m2 -> (m1 `M.union` m2) == ((m1 `M.union` m2) `M.union` (m2 :: M.Map SmallKey Number))
+
+  trace "unionWith"
+  for_ [Tuple (+) 0, Tuple (*) 1] $ \(Tuple op ident) ->
+    quickCheck $ \m1 m2 k ->
+      let u = M.unionWith op m1 m2 :: M.Map SmallKey Number
+      in case M.lookup k u of
+           Nothing -> not (M.member k m1 || M.member k m2)
+           Just v -> v == op (fromMaybe ident (M.lookup k m1)) (fromMaybe ident (M.lookup k m2))
 
   trace "size"
   quickCheck $ \xs ->

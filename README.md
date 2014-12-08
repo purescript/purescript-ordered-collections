@@ -54,6 +54,8 @@
 
     union :: forall k v. (P.Ord k) => Map k v -> Map k v -> Map k v
 
+    unionWith :: forall k v. (P.Ord k) => (v -> v -> v) -> Map k v -> Map k v -> Map k v
+
     unions :: forall k v. (P.Ord k) => [Map k v] -> Map k v
 
     update :: forall k v. (P.Ord k) => (v -> Maybe v) -> k -> Map k v -> Map k v
