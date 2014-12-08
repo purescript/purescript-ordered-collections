@@ -15,6 +15,8 @@
 
     instance functorMap :: P.Functor (Map k)
 
+    instance semigroupMap :: (P.Ord k) => P.Semigroup (Map k v)
+
     instance showMap :: (P.Show k, P.Show v) => P.Show (Map k v)
 
     instance traversableMap :: (P.Ord k) => Traversable (Map k)
