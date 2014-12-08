@@ -22,6 +22,7 @@ module Data.Map
     keys,
     values,
     union,
+    unionWith,
     unions,
     map,
     size
@@ -237,8 +238,15 @@ values Leaf = []
 values (Two left _ v right) = values left P.++ [v] P.++ values right
 values (Three left _ v1 mid _ v2 right) = values left P.++ [v1] P.++ values mid P.++ [v2] P.++ values right
 
+-- Computes the union of two maps, except that when a key exists in both maps, its value in the result
+-- is computed by combining them with the supplied function.
+unionWith :: forall k v. (P.Ord k) => (v -> v -> v) -> Map k v -> Map k v -> Map k v
+unionWith f m1 m2 = foldl go m2 (toList m1)
+  where
+  go m (Tuple k v) = alter (Just P.<<< maybe v (f v)) k m
+
 union :: forall k v. (P.Ord k) => Map k v -> Map k v -> Map k v
-union m1 m2 = foldl (\m (Tuple k v) -> insert k v m) m2 (toList m1)
+union = unionWith P.const
 
 unions :: forall k v. (P.Ord k) => [Map k v] -> Map k v
 unions = foldl union empty

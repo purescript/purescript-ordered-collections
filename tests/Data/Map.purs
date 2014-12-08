@@ -2,11 +2,12 @@ module Tests.Data.Map where
 
 import Debug.Trace
 
+import Control.Alt ((<|>))
 import Data.Maybe
 import Data.Tuple
 import Data.Array (map, length, nubBy)
 import Data.Function (on)
-import Data.Foldable (foldl)
+import Data.Foldable (foldl, for_)
 
 import Test.QuickCheck
 
@@ -165,6 +166,30 @@ mapTests = do
  
   trace "Union is idempotent"
   quickCheck $ \m1 m2 -> (m1 `M.union` m2) == ((m1 `M.union` m2) `M.union` (m2 :: M.Map SmallKey Number))
+
+  trace "Union prefers left"
+  quickCheck $ \m1 m2 k -> M.lookup k (M.union m1 (m2 :: M.Map SmallKey Number)) == (M.lookup k m1 <|> M.lookup k m2)
+
+  trace "unionWith"
+  for_ [Tuple (+) 0, Tuple (*) 1] $ \(Tuple op ident) ->
+    quickCheck $ \m1 m2 k ->
+      let u = M.unionWith op m1 m2 :: M.Map SmallKey Number
+      in case M.lookup k u of
+           Nothing -> not (M.member k m1 || M.member k m2)
+           Just v -> v == op (fromMaybe ident (M.lookup k m1)) (fromMaybe ident (M.lookup k m2))
+
+  trace "unionWith argument order"
+  quickCheck $ \m1 m2 k ->
+    let u   = M.unionWith (-) m1 m2 :: M.Map SmallKey Number
+        in1 = M.member k m1
+        v1  = M.lookup k m1
+        in2 = M.member k m2
+        v2  = M.lookup k m2
+    in case M.lookup k u of
+          Just v | in1 && in2 -> Just v == ((-) <$> v1 <*> v2)
+          Just v | in1        -> Just v == v1
+          Just v              -> Just v == v2
+          Nothing             -> not (in1 || in2)
 
   trace "size"
   quickCheck $ \xs ->
