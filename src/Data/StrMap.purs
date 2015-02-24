@@ -293,3 +293,6 @@ map = P.(<$>)
 
 instance semigroupStrMap :: (P.Semigroup a) => P.Semigroup (StrMap a) where
   (<>) m1 m2 = mutate (\s -> foldM (\s k v2 -> SM.poke s k (runFn4 _lookup v2 (\v1 -> v1 P.<> v2) k m2)) s m1) m2
+
+instance monoidStrMap :: (P.Semigroup a) => Monoid (StrMap a) where
+  mempty = empty
