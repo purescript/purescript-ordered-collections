@@ -430,6 +430,13 @@ instance semigroupStrMap :: (P.Semigroup a) => P.Semigroup (StrMap a)
 ```
 
 
+#### `monoidStrMap`
+
+``` purescript
+instance monoidStrMap :: (P.Semigroup a) => Monoid (StrMap a)
+```
+
+
 
 ## Module Data.StrMap.ST
 
