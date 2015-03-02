@@ -15,6 +15,7 @@ module Data.Map
     lookup,
     toList,
     fromList,
+    fromListWith,
     delete,
     member,
     alter,
@@ -227,6 +228,11 @@ toList (Three left k1 v1 mid k2 v2 right) = toList left P.++ [Tuple k1 v1] P.++ 
 
 fromList :: forall k v. (P.Ord k) => [Tuple k v] -> Map k v
 fromList = foldl (\m (Tuple k v) -> insert k v m) empty
+
+fromListWith :: forall k v. (P.Ord k) => (v -> v -> v) -> [Tuple k v] -> Map k v
+fromListWith f = foldl (\m (Tuple k v) -> alter (combine v) k m) empty where
+  combine v (Just v') = Just P.$ f v v'
+  combine v Nothing = Just v
 
 keys :: forall k v. Map k v -> [k]
 keys Leaf = []

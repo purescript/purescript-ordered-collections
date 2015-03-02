@@ -14,6 +14,7 @@ module Data.StrMap
     lookup,
     toList,
     fromList,
+    fromListWith,
     delete,
     member,
     alter,
@@ -253,6 +254,21 @@ fromList :: forall a. [Tuple String a] -> StrMap a
 fromList l = pureST (do
   s <- SM.new
   for_ l (\(Tuple k v) -> SM.poke s k v)
+  P.return s)
+
+foreign import _lookupST
+  """
+  function _lookupST(no, yes, k, m) {
+    return function() {
+      return k in m ? yes(m[k]) : no;
+    }
+  }
+  """ :: forall a h r z. Fn4 z (a -> z) String (SM.STStrMap h a) (Eff (st :: ST.ST h | r) z)
+
+fromListWith :: forall a. (a -> a -> a) -> [Tuple String a] -> StrMap a
+fromListWith f l = pureST (do
+  s <- SM.new
+  for_ l (\(Tuple k v) -> runFn4 _lookupST v (f v) k s P.>>= SM.poke s k)
   P.return s)
 
 foreign import _collect
