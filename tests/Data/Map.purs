@@ -5,7 +5,7 @@ import Debug.Trace
 import Control.Alt ((<|>))
 import Data.Maybe
 import Data.Tuple
-import Data.Array (map, length, nubBy)
+import Data.Array (groupBy, map, length, nubBy, sortBy)
 import Data.Function (on)
 import Data.Foldable (foldl, for_)
 
@@ -158,7 +158,19 @@ mapTests = do
   trace "fromList . toList = id"
   quickCheck $ \m -> let f m = M.fromList (M.toList m) in
                      M.toList (f m) == M.toList (m :: M.Map SmallKey Number) <?> show m
-  
+
+  trace "fromListWith const = fromList"
+  quickCheck $ \arr -> M.fromListWith const arr ==
+                       M.fromList (arr :: [Tuple SmallKey Number]) <?> show arr
+
+  trace "fromListWith (<>) = fromList . collapse with (<>) . group on fst"
+  quickCheck $ \arr ->
+    let combine (Tuple s a) (Tuple t b) = (Tuple s $ b <> a)
+        foldl1 g (x : xs) = foldl g x xs
+        f = M.fromList <<< (<$>) (foldl1 combine) <<<
+            groupBy ((==) `on` fst) <<< sortBy (compare `on` fst) in
+    M.fromListWith (<>) arr == f (arr :: [Tuple String String]) <?> show arr
+
   trace "Lookup from union"
   quickCheck $ \m1 m2 k -> M.lookup (smallKey k) (M.union m1 m2) == (case M.lookup k m1 of 
     Nothing -> M.lookup k m2
