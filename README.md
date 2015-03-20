@@ -2,45 +2,50 @@
 
 ## Module Data.Map
 
+
+This module defines a type of maps as balanced 2-3 trees, based on
+<http://www.cs.princeton.edu/~dpw/courses/cos326-12/ass/2-3-trees.pdf>
+
 #### `Map`
 
 ``` purescript
 data Map k v
 ```
 
+`Map k v` represents maps from keys of type `k` to values of type `v`.
 
 #### `eqMap`
 
 ``` purescript
-instance eqMap :: (P.Eq k, P.Eq v) => P.Eq (Map k v)
+instance eqMap :: (Eq k, Eq v) => Eq (Map k v)
 ```
 
 
 #### `showMap`
 
 ``` purescript
-instance showMap :: (P.Show k, P.Show v) => P.Show (Map k v)
+instance showMap :: (Show k, Show v) => Show (Map k v)
 ```
 
 
 #### `semigroupMap`
 
 ``` purescript
-instance semigroupMap :: (P.Ord k) => P.Semigroup (Map k v)
+instance semigroupMap :: (Ord k) => Semigroup (Map k v)
 ```
 
 
 #### `monoidMap`
 
 ``` purescript
-instance monoidMap :: (P.Ord k) => Monoid (Map k v)
+instance monoidMap :: (Ord k) => Monoid (Map k v)
 ```
 
 
 #### `functorMap`
 
 ``` purescript
-instance functorMap :: P.Functor (Map k)
+instance functorMap :: Functor (Map k)
 ```
 
 
@@ -54,16 +59,17 @@ instance foldableMap :: Foldable (Map k)
 #### `traversableMap`
 
 ``` purescript
-instance traversableMap :: (P.Ord k) => Traversable (Map k)
+instance traversableMap :: (Ord k) => Traversable (Map k)
 ```
 
 
 #### `showTree`
 
 ``` purescript
-showTree :: forall k v. (P.Show k, P.Show v) => Map k v -> String
+showTree :: forall k v. (Show k, Show v) => Map k v -> String
 ```
 
+Render a `Map` as a `String`
 
 #### `empty`
 
@@ -71,6 +77,7 @@ showTree :: forall k v. (P.Show k, P.Show v) => Map k v -> String
 empty :: forall k v. Map k v
 ```
 
+An empty map
 
 #### `isEmpty`
 
@@ -78,6 +85,7 @@ empty :: forall k v. Map k v
 isEmpty :: forall k v. Map k v -> Boolean
 ```
 
+Test if a map is empty
 
 #### `singleton`
 
@@ -85,6 +93,7 @@ isEmpty :: forall k v. Map k v -> Boolean
 singleton :: forall k v. k -> v -> Map k v
 ```
 
+Create a map with one key/value pair
 
 #### `checkValid`
 
@@ -92,48 +101,57 @@ singleton :: forall k v. k -> v -> Map k v
 checkValid :: forall k v. Map k v -> Boolean
 ```
 
+Check whether the underlying tree satisfies the 2-3 invariant
+
+This function is provided for internal use.
 
 #### `lookup`
 
 ``` purescript
-lookup :: forall k v. (P.Ord k) => k -> Map k v -> Maybe v
+lookup :: forall k v. (Ord k) => k -> Map k v -> Maybe v
 ```
 
+Lookup a value for the specified key
 
 #### `member`
 
 ``` purescript
-member :: forall k v. (P.Ord k) => k -> Map k v -> Boolean
+member :: forall k v. (Ord k) => k -> Map k v -> Boolean
 ```
 
+Test if a key is a member of a map
 
 #### `insert`
 
 ``` purescript
-insert :: forall k v. (P.Ord k) => k -> v -> Map k v -> Map k v
+insert :: forall k v. (Ord k) => k -> v -> Map k v -> Map k v
 ```
 
+Insert a key/value pair into a map
 
 #### `delete`
 
 ``` purescript
-delete :: forall k v. (P.Ord k) => k -> Map k v -> Map k v
+delete :: forall k v. (Ord k) => k -> Map k v -> Map k v
 ```
 
+Delete a key and its corresponding value from a map
 
 #### `alter`
 
 ``` purescript
-alter :: forall k v. (P.Ord k) => (Maybe v -> Maybe v) -> k -> Map k v -> Map k v
+alter :: forall k v. (Ord k) => (Maybe v -> Maybe v) -> k -> Map k v -> Map k v
 ```
 
+Insert the value, delete a value, or update a value for a key in a map
 
 #### `update`
 
 ``` purescript
-update :: forall k v. (P.Ord k) => (v -> Maybe v) -> k -> Map k v -> Map k v
+update :: forall k v. (Ord k) => (v -> Maybe v) -> k -> Map k v -> Map k v
 ```
 
+Update or delete the value for a key in a map
 
 #### `toList`
 
@@ -141,13 +159,24 @@ update :: forall k v. (P.Ord k) => (v -> Maybe v) -> k -> Map k v -> Map k v
 toList :: forall k v. Map k v -> [Tuple k v]
 ```
 
+Convert a map to an array of key/value pairs
 
 #### `fromList`
 
 ``` purescript
-fromList :: forall k v. (P.Ord k) => [Tuple k v] -> Map k v
+fromList :: forall k v. (Ord k) => [Tuple k v] -> Map k v
 ```
 
+Create a map from an array of key/value pairs
+
+#### `fromListWith`
+
+``` purescript
+fromListWith :: forall k v. (Ord k) => (v -> v -> v) -> [Tuple k v] -> Map k v
+```
+
+Create a map from an array of key/value pairs, using the specified function
+to combine values for duplicate keys.
 
 #### `keys`
 
@@ -155,6 +184,7 @@ fromList :: forall k v. (P.Ord k) => [Tuple k v] -> Map k v
 keys :: forall k v. Map k v -> [k]
 ```
 
+Get an array of the keys contained in a map
 
 #### `values`
 
@@ -162,26 +192,33 @@ keys :: forall k v. Map k v -> [k]
 values :: forall k v. Map k v -> [v]
 ```
 
+Get an array of the values contained in a map
 
 #### `unionWith`
 
 ``` purescript
-unionWith :: forall k v. (P.Ord k) => (v -> v -> v) -> Map k v -> Map k v -> Map k v
+unionWith :: forall k v. (Ord k) => (v -> v -> v) -> Map k v -> Map k v -> Map k v
 ```
+
+Compute the union of two maps, using the specified function
+to combine values for duplicate keys.
 
 #### `union`
 
 ``` purescript
-union :: forall k v. (P.Ord k) => Map k v -> Map k v -> Map k v
+union :: forall k v. (Ord k) => Map k v -> Map k v -> Map k v
 ```
 
+Compute the union of two maps, preferring values from the first map in the case
+of duplicate keys
 
 #### `unions`
 
 ``` purescript
-unions :: forall k v. (P.Ord k) => [Map k v] -> Map k v
+unions :: forall k v. (Ord k) => [Map k v] -> Map k v
 ```
 
+Compute the union of a collection of maps
 
 #### `map`
 
@@ -189,6 +226,7 @@ unions :: forall k v. (P.Ord k) => [Map k v] -> Map k v
 map :: forall k a b. (a -> b) -> Map k a -> Map k b
 ```
 
+Apply a function to the values in a map
 
 #### `size`
 
@@ -196,9 +234,17 @@ map :: forall k a b. (a -> b) -> Map k a -> Map k b
 size :: forall k v. Map k v -> Number
 ```
 
+Calculate the number of key/value pairs in a map
 
 
 ## Module Data.StrMap
+
+
+This module defines a type of native Javascript maps which 
+require the keys to be strings.
+
+To maximize performance, Javascript objects are not wrapped,
+and some native code is used even when it's not necessary.
 
 #### `StrMap`
 
@@ -206,6 +252,7 @@ size :: forall k v. Map k v -> Number
 data StrMap :: * -> *
 ```
 
+`StrMap a` represents a map from `String`s to values of type `a`.
 
 #### `thawST`
 
@@ -213,6 +260,7 @@ data StrMap :: * -> *
 thawST :: forall a h r. StrMap a -> Eff (st :: ST.ST h | r) (SM.STStrMap h a)
 ```
 
+Convert an immutable map into a mutable map
 
 #### `freezeST`
 
@@ -220,6 +268,7 @@ thawST :: forall a h r. StrMap a -> Eff (st :: ST.ST h | r) (SM.STStrMap h a)
 freezeST :: forall a h r. SM.STStrMap h a -> Eff (st :: ST.ST h | r) (StrMap a)
 ```
 
+Convert a mutable map into an immutable map
 
 #### `runST`
 
@@ -227,11 +276,15 @@ freezeST :: forall a h r. SM.STStrMap h a -> Eff (st :: ST.ST h | r) (StrMap a)
 runST :: forall a r. (forall h. Eff (st :: ST.ST h | r) (SM.STStrMap h a)) -> Eff r (StrMap a)
 ```
 
+Freeze a mutable map, creating an immutable map. Use this function as you would use 
+`Prelude.runST` to freeze a mutable reference.
+
+The rank-2 type prevents the map from escaping the scope of `runST`.
 
 #### `functorStrMap`
 
 ``` purescript
-instance functorStrMap :: P.Functor StrMap
+instance functorStrMap :: Functor StrMap
 ```
 
 
@@ -241,6 +294,7 @@ instance functorStrMap :: P.Functor StrMap
 fold :: forall a z. (z -> String -> a -> z) -> z -> StrMap a -> z
 ```
 
+Fold the keys and values of a map
 
 #### `foldMap`
 
@@ -248,13 +302,17 @@ fold :: forall a z. (z -> String -> a -> z) -> z -> StrMap a -> z
 foldMap :: forall a m. (Monoid m) => (String -> a -> m) -> StrMap a -> m
 ```
 
+Fold the keys and values of a map, accumulating values using
+some `Monoid`.
 
 #### `foldM`
 
 ``` purescript
-foldM :: forall a m z. (P.Monad m) => (z -> String -> a -> m z) -> z -> StrMap a -> m z
+foldM :: forall a m z. (Monad m) => (z -> String -> a -> m z) -> z -> StrMap a -> m z
 ```
 
+Fold the keys and values of a map, accumulating values and effects in
+some `Monad`.
 
 #### `foldableStrMap`
 
@@ -276,6 +334,10 @@ instance traversableStrMap :: Traversable StrMap
 foldMaybe :: forall a z. (z -> String -> a -> Maybe z) -> z -> StrMap a -> z
 ```
 
+Fold the keys and values of a map.
+
+This function allows the folding function to terminate the fold early,
+using `Maybe`.
 
 #### `all`
 
@@ -283,18 +345,19 @@ foldMaybe :: forall a z. (z -> String -> a -> Maybe z) -> z -> StrMap a -> z
 all :: forall a. (String -> a -> Boolean) -> StrMap a -> Boolean
 ```
 
+Test whether all key/value pairs in a `StrMap` satisfy a predicate.
 
 #### `eqStrMap`
 
 ``` purescript
-instance eqStrMap :: (P.Eq a) => P.Eq (StrMap a)
+instance eqStrMap :: (Eq a) => Eq (StrMap a)
 ```
 
 
 #### `showStrMap`
 
 ``` purescript
-instance showStrMap :: (P.Show a) => P.Show (StrMap a)
+instance showStrMap :: (Show a) => Show (StrMap a)
 ```
 
 
@@ -304,13 +367,15 @@ instance showStrMap :: (P.Show a) => P.Show (StrMap a)
 empty :: forall a. StrMap a
 ```
 
+An empty map
 
 #### `isSubmap`
 
 ``` purescript
-isSubmap :: forall a. (P.Eq a) => StrMap a -> StrMap a -> Boolean
+isSubmap :: forall a. (Eq a) => StrMap a -> StrMap a -> Boolean
 ```
 
+Test whether one map contains all of the keys and values contained in another map
 
 #### `isEmpty`
 
@@ -318,6 +383,7 @@ isSubmap :: forall a. (P.Eq a) => StrMap a -> StrMap a -> Boolean
 isEmpty :: forall a. StrMap a -> Boolean
 ```
 
+Test whether a map is empty
 
 #### `size`
 
@@ -325,6 +391,7 @@ isEmpty :: forall a. StrMap a -> Boolean
 size :: forall a. StrMap a -> Number
 ```
 
+Calculate the number of key/value pairs in a map
 
 #### `singleton`
 
@@ -332,6 +399,7 @@ size :: forall a. StrMap a -> Number
 singleton :: forall a. String -> a -> StrMap a
 ```
 
+Create a map with one key/value pair
 
 #### `lookup`
 
@@ -339,6 +407,7 @@ singleton :: forall a. String -> a -> StrMap a
 lookup :: forall a. String -> StrMap a -> Maybe a
 ```
 
+Lookup the value for a key in a map
 
 #### `member`
 
@@ -346,6 +415,7 @@ lookup :: forall a. String -> StrMap a -> Maybe a
 member :: forall a. String -> StrMap a -> Boolean
 ```
 
+Test whether a `String` appears as a key in a map
 
 #### `insert`
 
@@ -353,6 +423,7 @@ member :: forall a. String -> StrMap a -> Boolean
 insert :: forall a. String -> a -> StrMap a -> StrMap a
 ```
 
+Insert a key and value into a map
 
 #### `delete`
 
@@ -360,6 +431,7 @@ insert :: forall a. String -> a -> StrMap a -> StrMap a
 delete :: forall a. String -> StrMap a -> StrMap a
 ```
 
+Delete a key and value from a map
 
 #### `alter`
 
@@ -367,6 +439,7 @@ delete :: forall a. String -> StrMap a -> StrMap a
 alter :: forall a. (Maybe a -> Maybe a) -> String -> StrMap a -> StrMap a
 ```
 
+Insert, remove or update a value for a key in a map
 
 #### `update`
 
@@ -374,6 +447,7 @@ alter :: forall a. (Maybe a -> Maybe a) -> String -> StrMap a -> StrMap a
 update :: forall a. (a -> Maybe a) -> String -> StrMap a -> StrMap a
 ```
 
+Remove or update a value for a key in a map
 
 #### `fromList`
 
@@ -381,6 +455,16 @@ update :: forall a. (a -> Maybe a) -> String -> StrMap a -> StrMap a
 fromList :: forall a. [Tuple String a] -> StrMap a
 ```
 
+Create a map from an array of key/value pairs
+
+#### `fromListWith`
+
+``` purescript
+fromListWith :: forall a. (a -> a -> a) -> [Tuple String a] -> StrMap a
+```
+
+Create a map from an array of key/value pairs, using the specified function
+to combine values for duplicate keys.
 
 #### `toList`
 
@@ -388,6 +472,7 @@ fromList :: forall a. [Tuple String a] -> StrMap a
 toList :: forall a. StrMap a -> [Tuple String a]
 ```
 
+Convert a map into an array of key/value pairs
 
 #### `keys`
 
@@ -395,6 +480,7 @@ toList :: forall a. StrMap a -> [Tuple String a]
 keys :: forall a. StrMap a -> [String]
 ```
 
+Get an array of the keys in a map
 
 #### `values`
 
@@ -402,6 +488,7 @@ keys :: forall a. StrMap a -> [String]
 values :: forall a. StrMap a -> [a]
 ```
 
+Get an array of the values in a map
 
 #### `union`
 
@@ -409,12 +496,16 @@ values :: forall a. StrMap a -> [a]
 union :: forall a. StrMap a -> StrMap a -> StrMap a
 ```
 
+Compute the union of two maps, preferring the first map in the case of 
+duplicate keys.
+
 #### `unions`
 
 ``` purescript
 unions :: forall a. [StrMap a] -> StrMap a
 ```
 
+Compute the union of a collection of maps
 
 #### `map`
 
@@ -422,23 +513,29 @@ unions :: forall a. [StrMap a] -> StrMap a
 map :: forall a b. (a -> b) -> StrMap a -> StrMap b
 ```
 
+Map a function over the values in a map
 
 #### `semigroupStrMap`
 
 ``` purescript
-instance semigroupStrMap :: (P.Semigroup a) => P.Semigroup (StrMap a)
+instance semigroupStrMap :: (Semigroup a) => Semigroup (StrMap a)
 ```
 
 
 #### `monoidStrMap`
 
 ``` purescript
-instance monoidStrMap :: (P.Semigroup a) => Monoid (StrMap a)
+instance monoidStrMap :: (Semigroup a) => Monoid (StrMap a)
 ```
 
 
 
 ## Module Data.StrMap.ST
+
+
+Helper functions for working with mutable maps using the `ST` effect.
+
+This module can be used when performance is important and mutation is a local effect.
 
 #### `STStrMap`
 
@@ -446,6 +543,11 @@ instance monoidStrMap :: (P.Semigroup a) => Monoid (StrMap a)
 data STStrMap :: * -> * -> *
 ```
 
+A reference to a mutable map
+
+The first type parameter represents the memory region which the map belongs to. The second type parameter defines the type of elements of the mutable array.
+
+The runtime representation of a value of type `STStrMap h a` is the same as that of `StrMap a`, except that mutation is allowed.
 
 #### `new`
 
@@ -453,6 +555,7 @@ data STStrMap :: * -> * -> *
 new :: forall a h r. Eff (st :: ST h | r) (STStrMap h a)
 ```
 
+Create a new, empty mutable map
 
 #### `peek`
 
@@ -460,6 +563,7 @@ new :: forall a h r. Eff (st :: ST h | r) (STStrMap h a)
 peek :: forall a h r. STStrMap h a -> String -> Eff (st :: ST h | r) a
 ```
 
+Get the value for a key in a mutable map
 
 #### `poke`
 
@@ -467,6 +571,7 @@ peek :: forall a h r. STStrMap h a -> String -> Eff (st :: ST h | r) a
 poke :: forall a h r. STStrMap h a -> String -> a -> Eff (st :: ST h | r) (STStrMap h a)
 ```
 
+Update the value for a key in a mutable map
 
 #### `delete`
 
@@ -474,6 +579,7 @@ poke :: forall a h r. STStrMap h a -> String -> a -> Eff (st :: ST h | r) (STStr
 delete :: forall a h r. STStrMap h a -> String -> Eff (st :: ST h | r) (STStrMap h a)
 ```
 
+Remove a key and the corresponding value from a mutable map
 
 
 ## Module Data.StrMap.ST.Unsafe
@@ -484,6 +590,9 @@ delete :: forall a h r. STStrMap h a -> String -> Eff (st :: ST h | r) (STStrMap
 unsafeGet :: forall a h r. STStrMap h a -> Eff (st :: ST h | r) (StrMap a)
 ```
 
+Unsafely get the value for a key in a map.
+
+This function does not check whether the key exists in the map.
 
 
 ## Module Data.StrMap.Unsafe
@@ -493,3 +602,7 @@ unsafeGet :: forall a h r. STStrMap h a -> Eff (st :: ST h | r) (StrMap a)
 ``` purescript
 unsafeIndex :: forall a. StrMap a -> String -> a
 ```
+
+Unsafely get the value for a key in a map.
+
+This function does not check whether the key exists in the map.

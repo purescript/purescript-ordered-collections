@@ -4,7 +4,9 @@ module Data.StrMap.Unsafe
 
 import Data.StrMap
 
--- also known as (!)
+-- | Unsafely get the value for a key in a map.
+-- |
+-- | This function does not check whether the key exists in the map.
 foreign import unsafeIndex
   """
   function unsafeIndex(m) {
