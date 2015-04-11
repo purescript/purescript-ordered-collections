@@ -1,49 +1,47 @@
--- | This module defines a type of native Javascript maps which 
+-- | This module defines a type of native Javascript maps which
 -- | require the keys to be strings.
--- | 
+-- |
 -- | To maximize performance, Javascript objects are not wrapped,
 -- | and some native code is used even when it's not necessary.
 
 module Data.StrMap
-  ( StrMap(),
-    empty,
-    isEmpty,
-    size,
-    singleton,
-    insert,
-    lookup,
-    toList,
-    fromList,
-    fromListWith,
-    delete,
-    member,
-    alter,
-    update,
-    keys,
-    values,
-    union,
-    unions,
-    map,
-    isSubmap,
-    fold,
-    foldMap,
-    foldM,
-    foldMaybe,
-    all,
-
-    thawST,
-    freezeST,
-    runST
+  ( StrMap()
+  , empty
+  , isEmpty
+  , size
+  , singleton
+  , insert
+  , lookup
+  , toList
+  , fromList
+  , fromListWith
+  , delete
+  , member
+  , alter
+  , update
+  , keys
+  , values
+  , union
+  , unions
+  , map
+  , isSubmap
+  , fold
+  , foldMap
+  , foldM
+  , foldMaybe
+  , all
+  , thawST
+  , freezeST
+  , runST
   ) where
 
 import Control.Monad.Eff (Eff(), runPure)
 import Data.Foldable (Foldable, foldl, foldr, for_)
-import Data.Function
-import Data.Maybe
-import Data.Monoid
-import Data.Monoid.All
-import Data.Tuple
+import Data.Function (Fn2(), runFn2, Fn4(), runFn4)
+import Data.Maybe (Maybe(..), maybe, fromMaybe)
+import Data.Monoid (Monoid, mempty)
 import Data.Traversable (Traversable, traverse)
+import Data.Tuple (Tuple(..), uncurry)
 import qualified Control.Monad.ST as ST
 import qualified Data.Array as A
 import qualified Data.StrMap.ST as SM
@@ -83,9 +81,9 @@ thawST = _copyEff
 freezeST :: forall a h r. SM.STStrMap h a -> Eff (st :: ST.ST h | r) (StrMap a)
 freezeST = _copyEff
 
--- | Freeze a mutable map, creating an immutable map. Use this function as you would use 
+-- | Freeze a mutable map, creating an immutable map. Use this function as you would use
 -- | `Prelude.runST` to freeze a mutable reference.
--- | 
+-- |
 -- | The rank-2 type prevents the map from escaping the scope of `runST`.
 foreign import runST
   """
@@ -329,7 +327,7 @@ foreign import keys
 values :: forall a. StrMap a -> [a]
 values = _collect (\_ v -> v)
 
--- | Compute the union of two maps, preferring the first map in the case of 
+-- | Compute the union of two maps, preferring the first map in the case of
 -- | duplicate keys.
 union :: forall a. StrMap a -> StrMap a -> StrMap a
 union m = mutate (\s -> foldM SM.poke s m)
