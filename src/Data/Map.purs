@@ -46,6 +46,9 @@ instance eqMap :: (Eq k, Eq v) => Eq (Map k v) where
 instance showMap :: (Show k, Show v) => Show (Map k v) where
   show m = "fromList " ++ show (toList m)
 
+instance ordMap :: (Ord k, Ord v) => Ord (Map k v) where
+  compare m1 m2 = compare (toList m1) (toList m2)
+
 instance semigroupMap :: (Ord k) => Semigroup (Map k v) where
   (<>) = union
 
