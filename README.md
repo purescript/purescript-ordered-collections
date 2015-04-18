@@ -28,6 +28,13 @@ instance showMap :: (Show k, Show v) => Show (Map k v)
 ```
 
 
+#### `ordMap`
+
+``` purescript
+instance ordMap :: (Ord k, Ord v) => Ord (Map k v)
+```
+
+
 #### `semigroupMap`
 
 ``` purescript
