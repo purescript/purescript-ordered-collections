@@ -1,16 +1,15 @@
 module Tests.Data.Map where
 
-import Debug.Trace
-
 import Control.Alt ((<|>))
-import Data.Maybe
-import Data.Tuple
 import Data.Array (groupBy, map, length, nubBy, sortBy)
-import Data.Function (on)
 import Data.Foldable (foldl, for_)
-
-import Test.QuickCheck
-
+import Data.Function (on)
+import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Int (fromNumber)
+import Data.Tuple (Tuple(..), fst)
+import Debug.Trace
+import Test.QuickCheck ((<?>), quickCheck, quickCheck')
+import Test.QuickCheck.Arbitrary (Arbitrary, arbitrary)
 import qualified Data.Map as M
 
 instance arbMap :: (Eq k, Ord k, Arbitrary k, Arbitrary v) => Arbitrary (M.Map k v) where
@@ -129,7 +128,7 @@ mapTests = do
     <?> ("k1: " ++ show k1 ++ ", v1: " ++ show v1 ++ ", k2: " ++ show k2 ++ ", v2: " ++ show v2)
 
   trace "Check balance property"
-  quickCheck' 5000 $ \instrs ->
+  quickCheck' (fromNumber 5000) $ \instrs ->
     let
       tree :: M.Map SmallKey Number
       tree = runInstructions instrs M.empty
@@ -142,7 +141,7 @@ mapTests = do
   quickCheck $ \k v -> M.lookup (k :: SmallKey) (M.singleton k (v :: Number)) == Just v
 
   trace "Random lookup"
-  quickCheck' 5000 $ \instrs k v ->
+  quickCheck' (fromNumber 5000) $ \instrs k v ->
     let
       tree :: M.Map SmallKey Number
       tree = M.insert k v (runInstructions instrs M.empty)

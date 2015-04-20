@@ -238,7 +238,7 @@ Apply a function to the values in a map
 #### `size`
 
 ``` purescript
-size :: forall k v. Map k v -> Number
+size :: forall k v. Map k v -> Int
 ```
 
 Calculate the number of key/value pairs in a map
@@ -247,7 +247,7 @@ Calculate the number of key/value pairs in a map
 ## Module Data.StrMap
 
 
-This module defines a type of native Javascript maps which 
+This module defines a type of native Javascript maps which
 require the keys to be strings.
 
 To maximize performance, Javascript objects are not wrapped,
@@ -283,7 +283,7 @@ Convert a mutable map into an immutable map
 runST :: forall a r. (forall h. Eff (st :: ST.ST h | r) (SM.STStrMap h a)) -> Eff r (StrMap a)
 ```
 
-Freeze a mutable map, creating an immutable map. Use this function as you would use 
+Freeze a mutable map, creating an immutable map. Use this function as you would use
 `Prelude.runST` to freeze a mutable reference.
 
 The rank-2 type prevents the map from escaping the scope of `runST`.
@@ -503,7 +503,7 @@ Get an array of the values in a map
 union :: forall a. StrMap a -> StrMap a -> StrMap a
 ```
 
-Compute the union of two maps, preferring the first map in the case of 
+Compute the union of two maps, preferring the first map in the case of
 duplicate keys.
 
 #### `unions`

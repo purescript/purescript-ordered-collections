@@ -1,16 +1,15 @@
 module Tests.Data.StrMap where
 
-import Debug.Trace
-
-import Data.Maybe
-import Data.Tuple
-import qualified Data.String as S
 import Data.Array (groupBy, map, sortBy)
-import Data.Function (on)
 import Data.Foldable (foldl)
-
-import Test.QuickCheck
-
+import Data.Function (on)
+import Data.Maybe (Maybe(..))
+import Data.Int (fromNumber)
+import Data.Tuple (Tuple(..), fst, zip)
+import Debug.Trace
+import Test.QuickCheck ((<?>), quickCheck, quickCheck')
+import Test.QuickCheck.Arbitrary (Arbitrary, arbitrary)
+import qualified Data.String as S
 import qualified Data.StrMap as M
 
 instance arbStrMap :: (Arbitrary v) => Arbitrary (M.StrMap v) where
@@ -70,7 +69,7 @@ strMapTests = do
   quickCheck $ \k v -> M.lookup k (M.singleton k (v :: Number)) == Just v
 
   trace "Random lookup"
-  quickCheck' 5000 $ \instrs k v ->
+  quickCheck' (fromNumber 5000) $ \instrs k v ->
     let
       tree :: M.StrMap Number
       tree = M.insert k v (runInstructions instrs M.empty)

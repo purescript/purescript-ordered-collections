@@ -2,36 +2,37 @@
 -- | <http://www.cs.princeton.edu/~dpw/courses/cos326-12/ass/2-3-trees.pdf>
 
 module Data.Map
-  ( Map(),
-    showTree,
-    empty,
-    isEmpty,
-    singleton,
-    checkValid,
-    insert,
-    lookup,
-    toList,
-    fromList,
-    fromListWith,
-    delete,
-    member,
-    alter,
-    update,
-    keys,
-    values,
-    union,
-    unionWith,
-    unions,
-    map,
-    size
+  ( Map()
+  , showTree
+  , empty
+  , isEmpty
+  , singleton
+  , checkValid
+  , insert
+  , lookup
+  , toList
+  , fromList
+  , fromListWith
+  , delete
+  , member
+  , alter
+  , update
+  , keys
+  , values
+  , union
+  , unionWith
+  , unions
+  , map
+  , size
   ) where
 
-import qualified Data.Array as A
-import Data.Maybe
-import Data.Tuple
-import Data.Monoid (Monoid)
 import Data.Foldable (foldl, foldMap, foldr, Foldable)
+import Data.Int (Int())
+import Data.Maybe (Maybe(..), maybe, isJust)
+import Data.Monoid (Monoid)
 import Data.Traversable (traverse, Traversable)
+import Data.Tuple (Tuple(..), uncurry)
+import qualified Data.Array as A
 
 -- | `Map k v` represents maps from keys of type `k` to values of type `v`.
 data Map k v
@@ -103,12 +104,12 @@ singleton k v = Two Leaf k v Leaf
 -- |
 -- | This function is provided for internal use.
 checkValid :: forall k v. Map k v -> Boolean
-checkValid tree = A.length (A.nub (allHeights tree)) == 1
+checkValid tree = A.length (A.nub (allHeights tree)) == one
   where
-  allHeights :: forall k v. Map k v -> [Number]
-  allHeights Leaf = [0]
-  allHeights (Two left _ _ right) = A.map (\n -> n + 1) (allHeights left ++ allHeights right)
-  allHeights (Three left _ _ mid _ _ right) = A.map (\n -> n + 1) (allHeights left ++ allHeights mid ++ allHeights right)
+  allHeights :: forall k v. Map k v -> [Int]
+  allHeights Leaf = [zero]
+  allHeights (Two left _ _ right) = A.map (\n -> n + one) (allHeights left ++ allHeights right)
+  allHeights (Three left _ _ mid _ _ right) = A.map (\n -> n + one) (allHeights left ++ allHeights mid ++ allHeights right)
 
 -- | Lookup a value for the specified key
 lookup :: forall k v. (Ord k) => k -> Map k v -> Maybe v
@@ -172,17 +173,17 @@ delete = down []
   where
   down :: forall k v. (Ord k) => [TreeContext k v] -> k -> Map k v -> Map k v
   down ctx _ Leaf = fromZipper ctx Leaf
-  down ctx k (Two Leaf k1 _ Leaf) 
+  down ctx k (Two Leaf k1 _ Leaf)
     | k == k1 = up ctx Leaf
-  down ctx k (Two left k1 v1 right) 
+  down ctx k (Two left k1 v1 right)
     | k == k1   = let max = maxNode left
                     in removeMaxNode (TwoLeft max.key max.value right : ctx) left
     | k < k1    = down (TwoLeft k1 v1 right : ctx) k left
     | otherwise = down (TwoRight left k1 v1 : ctx) k right
-  down ctx k (Three Leaf k1 v1 Leaf k2 v2 Leaf) 
+  down ctx k (Three Leaf k1 v1 Leaf k2 v2 Leaf)
     | k == k1 = fromZipper ctx (Two Leaf k2 v2 Leaf)
     | k == k2 = fromZipper ctx (Two Leaf k1 v1 Leaf)
-  down ctx k (Three left k1 v1 mid k2 v2 right) 
+  down ctx k (Three left k1 v1 mid k2 v2 right)
     | k == k1 = let max = maxNode left
                   in removeMaxNode (ThreeLeft max.key max.value mid k2 v2 right : ctx) left
     | k == k2 = let max = maxNode mid
@@ -283,5 +284,5 @@ map :: forall k a b. (a -> b) -> Map k a -> Map k b
 map = (<$>)
 
 -- | Calculate the number of key/value pairs in a map
-size :: forall k v. Map k v -> Number
+size :: forall k v. Map k v -> Int
 size = A.length <<< values
