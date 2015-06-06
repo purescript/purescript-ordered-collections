@@ -1,5 +1,7 @@
 module Tests.Data.StrMap where
 
+import Prelude
+
 import Data.Array (groupBy, map, sortBy)
 import Data.Foldable (foldl)
 import Data.Function (on)
@@ -107,4 +109,4 @@ strMapTests = do
   quickCheck $ \m1 m2 -> (m1 `M.union` m2) == ((m1 `M.union` m2) `M.union` (m2 :: M.StrMap Number)) <?> (show (M.size (m1 `M.union` m2)) ++ " != " ++ show (M.size ((m1 `M.union` m2) `M.union` m2)))
 
   trace "toList = zip keys values"
-  quickCheck $ \m -> M.toList m == zip (M.keys m) (M.values m :: [Number])
+  quickCheck $ \m -> M.toList m == zip (M.keys m) (M.values m :: Array Number)

@@ -1,5 +1,7 @@
 module Tests where
 
+import Prelude
+
 import Debug.Trace
 import Test.QuickCheck
 

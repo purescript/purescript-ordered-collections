@@ -1,5 +1,7 @@
 module Tests.Data.Map where
 
+import Prelude
+
 import Control.Alt ((<|>))
 import Data.Array (groupBy, map, length, nubBy, sortBy)
 import Data.Foldable (foldl, for_)
