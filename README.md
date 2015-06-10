@@ -1,6 +1,6 @@
 # purescript-maps
 
-A purely-functional map data structure
+Purely-functional map data structures
 
 ## Installation
 
