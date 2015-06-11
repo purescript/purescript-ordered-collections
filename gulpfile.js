@@ -4,6 +4,7 @@
 var gulp = require("gulp");
 var plumber = require("gulp-plumber");
 var purescript = require("gulp-purescript");
+var run = require("gulp-run");
 var rimraf = require("rimraf");
 
 var sources = [
@@ -52,4 +53,11 @@ gulp.task("dotpsci", function () {
     .pipe(purescript.dotPsci());
 });
 
-gulp.task("default", ["make", "docs", "dotpsci"]);
+gulp.task("test", ["make"], function() {
+  return gulp.src(sources.concat(["tests/**/*.purs", "bower_components/purescript-lists/test-src/Data/List.purs"]))
+    .pipe(plumber())
+    .pipe(purescript.psc({ main: "Tests", ffi: foreigns }))
+    .pipe(run("node"));
+});
+
+gulp.task("default", ["make", "docs", "dotpsci", "test"]);
