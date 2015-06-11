@@ -3,7 +3,7 @@
 
 // module Data.StrMap
 
-exports._copy = (m) {
+exports._copy = function(m) {
   var r = {};
   for (var k in m) {
     r[k] = m[k];
