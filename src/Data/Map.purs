@@ -28,13 +28,11 @@ module Data.Map
 import Prelude
 
 import Data.Foldable (foldl, foldMap, foldr, Foldable)
-import Data.Int ()
+import Data.List (List(..), length, nub)
 import Data.Maybe (Maybe(..), maybe, isJust)
 import Data.Monoid (Monoid)
 import Data.Traversable (traverse, Traversable)
 import Data.Tuple (Tuple(..), uncurry)
-
-import Data.List (List(..), length, nub)
 
 -- | `Map k v` represents maps from keys of type `k` to values of type `v`.
 data Map k v

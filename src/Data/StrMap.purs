@@ -43,6 +43,7 @@ import Data.Maybe (Maybe(..), maybe, fromMaybe)
 import Data.Monoid (Monoid, mempty)
 import Data.Traversable (Traversable, traverse)
 import Data.Tuple (Tuple(..), uncurry)
+
 import qualified Data.List as L
 import qualified Control.Monad.ST as ST
 import qualified Data.StrMap.ST as SM

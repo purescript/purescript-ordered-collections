@@ -1,4 +1,4 @@
-module Tests.Data.StrMap where
+module Test.Data.StrMap where
 
 import Prelude
 
@@ -8,7 +8,6 @@ import Data.Function (on)
 import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..), fst)
 import Control.Monad.Eff.Console (log)
-import Test.Data.List
 import Test.QuickCheck ((<?>), quickCheck, quickCheck')
 import Test.QuickCheck.Arbitrary (Arbitrary, arbitrary)
 import Test.QuickCheck.Gen (Gen(..))
@@ -17,6 +16,9 @@ import qualified Data.StrMap as M
 
 instance arbStrMap :: (Arbitrary v) => Arbitrary (M.StrMap v) where
   arbitrary = M.fromList <$> arbitrary
+
+instance arbitraryList :: (Arbitrary a) => Arbitrary (List a) where
+  arbitrary = toList <$> (arbitrary :: Gen (Array a))
 
 data Instruction k v = Insert k v | Delete k
 

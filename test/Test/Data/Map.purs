@@ -1,22 +1,25 @@
-module Tests.Data.Map where
+module Test.Data.Map where
 
 import Prelude
 
 import Control.Alt ((<|>))
-import Data.List (List(..), groupBy, length, nubBy, sortBy, singleton, toList)
+import Control.Monad.Eff.Console (log)
 import Data.Foldable (foldl, for_)
 import Data.Function (on)
+import Data.List (List(..), groupBy, length, nubBy, sortBy, singleton, toList)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Tuple (Tuple(..), fst)
-import Control.Monad.Eff.Console (log)
-import Test.Data.List
 import Test.QuickCheck ((<?>), quickCheck, quickCheck')
 import Test.QuickCheck.Arbitrary (Arbitrary, arbitrary)
 import Test.QuickCheck.Gen (Gen(..))
+
 import qualified Data.Map as M
 
 instance arbMap :: (Eq k, Ord k, Arbitrary k, Arbitrary v) => Arbitrary (M.Map k v) where
   arbitrary = M.fromList <$> arbitrary
+
+instance arbitraryList :: (Arbitrary a) => Arbitrary (List a) where
+  arbitrary = toList <$> (arbitrary :: Gen (Array a))
 
 data SmallKey = A | B | C | D | E | F | G | H | I | J
 

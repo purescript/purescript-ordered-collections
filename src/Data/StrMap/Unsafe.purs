@@ -4,7 +4,7 @@ module Data.StrMap.Unsafe
 
 import Prelude
 
-import Data.StrMap
+import Data.StrMap (StrMap())
 
 -- | Unsafely get the value for a key in a map.
 -- |
