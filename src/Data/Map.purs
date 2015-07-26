@@ -275,7 +275,7 @@ union :: forall k v. (Ord k) => Map k v -> Map k v -> Map k v
 union = unionWith const
 
 -- | Compute the union of a collection of maps
-unions :: forall k v. (Ord k) => List (Map k v) -> Map k v
+unions :: forall k v f. (Ord k, Foldable f) => f (Map k v) -> Map k v
 unions = foldl union empty
 
 -- | Calculate the number of key/value pairs in a map
