@@ -35,7 +35,7 @@ exports.runST = function (f) {
 exports._fmapStrMap = function (m0, f) {
   var m = {};
   for (var k in m0) {
-    if (m.hasOwnProperty(k)) {
+    if (m0.hasOwnProperty(k)) {
       m[k] = f(m0[k]);
     }
   }
