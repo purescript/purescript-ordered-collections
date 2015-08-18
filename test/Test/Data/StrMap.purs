@@ -14,11 +14,10 @@ import Test.QuickCheck.Gen (Gen(..))
 import qualified Data.String as S
 import qualified Data.StrMap as M
 
-instance arbStrMap :: (Arbitrary v) => Arbitrary (M.StrMap v) where
-  arbitrary = M.fromList <$> arbitrary
+newtype TestStrMap v = TestStrMap (M.StrMap v)
 
-instance arbitraryList :: (Arbitrary a) => Arbitrary (List a) where
-  arbitrary = toList <$> (arbitrary :: Gen (Array a))
+instance arbTestStrMap :: (Arbitrary v) => Arbitrary (TestStrMap v) where
+  arbitrary = TestStrMap <<< M.fromList <$> arbitrary
 
 data Instruction k v = Insert k v | Delete k
 
@@ -88,8 +87,9 @@ strMapTests = do
                        in f (f arr) == f (arr :: List (Tuple String Int)) <?> show arr
 
   log "fromList . toList = id"
-  quickCheck $ \m -> let f m = M.fromList (M.toList m) in
-                     M.toList (f m) == M.toList (m :: M.StrMap Int) <?> show m
+  quickCheck $ \(TestStrMap m) ->
+    let f m = M.fromList (M.toList m) in
+    M.toList (f m) == M.toList (m :: M.StrMap Int) <?> show m
 
   log "fromListWith const = fromList"
   quickCheck $ \arr -> M.fromListWith const arr ==
@@ -104,12 +104,14 @@ strMapTests = do
     M.fromListWith (<>) arr == f (arr :: List (Tuple String String)) <?> show arr
 
   log "Lookup from union"
-  quickCheck $ \m1 m2 k -> M.lookup k (M.union m1 m2) == (case M.lookup k m1 of
-    Nothing -> M.lookup k m2
-    Just v -> Just (number v)) <?> ("m1: " ++ show m1 ++ ", m2: " ++ show m2 ++ ", k: " ++ show k ++ ", v1: " ++ show (M.lookup k m1) ++ ", v2: " ++ show (M.lookup k m2) ++ ", union: " ++ show (M.union m1 m2))
+  quickCheck $ \(TestStrMap m1) (TestStrMap m2) k ->
+    M.lookup k (M.union m1 m2) == (case M.lookup k m1 of
+      Nothing -> M.lookup k m2
+      Just v -> Just (number v)) <?> ("m1: " ++ show m1 ++ ", m2: " ++ show m2 ++ ", k: " ++ show k ++ ", v1: " ++ show (M.lookup k m1) ++ ", v2: " ++ show (M.lookup k m2) ++ ", union: " ++ show (M.union m1 m2))
 
   log "Union is idempotent"
-  quickCheck $ \m1 m2 -> (m1 `M.union` m2) == ((m1 `M.union` m2) `M.union` (m2 :: M.StrMap Int)) <?> (show (M.size (m1 `M.union` m2)) ++ " != " ++ show (M.size ((m1 `M.union` m2) `M.union` m2)))
+  quickCheck $ \(TestStrMap m1) (TestStrMap m2) ->
+    (m1 `M.union` m2) == ((m1 `M.union` m2) `M.union` (m2 :: M.StrMap Int)) <?> (show (M.size (m1 `M.union` m2)) ++ " != " ++ show (M.size ((m1 `M.union` m2) `M.union` m2)))
 
   log "toList = zip keys values"
-  quickCheck $ \m -> M.toList m == zipWith Tuple (toList $ M.keys m) (M.values m :: List Int)
+  quickCheck $ \(TestStrMap m) -> M.toList m == zipWith Tuple (toList $ M.keys m) (M.values m :: List Int)
