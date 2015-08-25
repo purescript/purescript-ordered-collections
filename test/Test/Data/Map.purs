@@ -132,7 +132,7 @@ mapTests = do
     <?> ("k1: " ++ show k1 ++ ", v1: " ++ show v1 ++ ", k2: " ++ show k2 ++ ", v2: " ++ show v2)
 
   log "Check balance property"
-  quickCheck' 5000 $ \instrs ->
+  quickCheck' 1000 $ \instrs ->
     let
       tree :: M.Map SmallKey Int
       tree = runInstructions instrs M.empty
@@ -145,7 +145,7 @@ mapTests = do
   quickCheck $ \k v -> M.lookup (k :: SmallKey) (M.singleton k (v :: Int)) == Just v
 
   log "Random lookup"
-  quickCheck' 5000 $ \instrs k v ->
+  quickCheck' 1000 $ \instrs k v ->
     let
       tree :: M.Map SmallKey Int
       tree = M.insert k v (runInstructions instrs M.empty)

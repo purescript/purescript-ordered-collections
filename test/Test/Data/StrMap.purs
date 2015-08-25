@@ -73,7 +73,7 @@ strMapTests = do
   quickCheck $ \k v -> M.lookup k (M.singleton k (v :: Int)) == Just v
 
   log "Random lookup"
-  quickCheck' 5000 $ \instrs k v ->
+  quickCheck' 1000 $ \instrs k v ->
     let
       tree :: M.StrMap Int
       tree = M.insert k v (runInstructions instrs M.empty)
