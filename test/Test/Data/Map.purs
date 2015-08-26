@@ -15,11 +15,10 @@ import Test.QuickCheck.Gen (Gen(..))
 
 import qualified Data.Map as M
 
-instance arbMap :: (Eq k, Ord k, Arbitrary k, Arbitrary v) => Arbitrary (M.Map k v) where
-  arbitrary = M.fromList <$> arbitrary
+newtype TestMap k v = TestMap (M.Map k v)
 
-instance arbitraryList :: (Arbitrary a) => Arbitrary (List a) where
-  arbitrary = toList <$> (arbitrary :: Gen (Array a))
+instance arbTestMap :: (Eq k, Ord k, Arbitrary k, Arbitrary v) => Arbitrary (TestMap k v) where
+  arbitrary = TestMap <<< M.fromList <$> arbitrary
 
 data SmallKey = A | B | C | D | E | F | G | H | I | J
 
@@ -133,7 +132,7 @@ mapTests = do
     <?> ("k1: " ++ show k1 ++ ", v1: " ++ show v1 ++ ", k2: " ++ show k2 ++ ", v2: " ++ show v2)
 
   log "Check balance property"
-  quickCheck' 5000 $ \instrs ->
+  quickCheck' 1000 $ \instrs ->
     let
       tree :: M.Map SmallKey Int
       tree = runInstructions instrs M.empty
@@ -146,7 +145,7 @@ mapTests = do
   quickCheck $ \k v -> M.lookup (k :: SmallKey) (M.singleton k (v :: Int)) == Just v
 
   log "Random lookup"
-  quickCheck' 5000 $ \instrs k v ->
+  quickCheck' 1000 $ \instrs k v ->
     let
       tree :: M.Map SmallKey Int
       tree = M.insert k v (runInstructions instrs M.empty)
@@ -160,7 +159,7 @@ mapTests = do
                        in f (f arr) == f (arr :: List (Tuple SmallKey Int)) <?> show arr
 
   log "fromList . toList = id"
-  quickCheck $ \m -> let f m = M.fromList (M.toList m) in
+  quickCheck $ \(TestMap m) -> let f m = M.fromList (M.toList m) in
                      M.toList (f m) == M.toList (m :: M.Map SmallKey Int) <?> show m
 
   log "fromListWith const = fromList"
@@ -176,26 +175,27 @@ mapTests = do
     M.fromListWith (<>) arr == f (arr :: List (Tuple String String)) <?> show arr
 
   log "Lookup from union"
-  quickCheck $ \m1 m2 k -> M.lookup (smallKey k) (M.union m1 m2) == (case M.lookup k m1 of
-    Nothing -> M.lookup k m2
-    Just v -> Just (number v)) <?> ("m1: " ++ show m1 ++ ", m2: " ++ show m2 ++ ", k: " ++ show k ++ ", v1: " ++ show (M.lookup k m1) ++ ", v2: " ++ show (M.lookup k m2) ++ ", union: " ++ show (M.union m1 m2))
+  quickCheck $ \(TestMap m1) (TestMap m2) k ->
+    M.lookup (smallKey k) (M.union m1 m2) == (case M.lookup k m1 of
+      Nothing -> M.lookup k m2
+      Just v -> Just (number v)) <?> ("m1: " ++ show m1 ++ ", m2: " ++ show m2 ++ ", k: " ++ show k ++ ", v1: " ++ show (M.lookup k m1) ++ ", v2: " ++ show (M.lookup k m2) ++ ", union: " ++ show (M.union m1 m2))
 
   log "Union is idempotent"
-  quickCheck $ \m1 m2 -> (m1 `M.union` m2) == ((m1 `M.union` m2) `M.union` (m2 :: M.Map SmallKey Int))
+  quickCheck $ \(TestMap m1) (TestMap m2) -> (m1 `M.union` m2) == ((m1 `M.union` m2) `M.union` (m2 :: M.Map SmallKey Int))
 
   log "Union prefers left"
-  quickCheck $ \m1 m2 k -> M.lookup k (M.union m1 (m2 :: M.Map SmallKey Int)) == (M.lookup k m1 <|> M.lookup k m2)
+  quickCheck $ \(TestMap m1) (TestMap m2) k -> M.lookup k (M.union m1 (m2 :: M.Map SmallKey Int)) == (M.lookup k m1 <|> M.lookup k m2)
 
   log "unionWith"
   for_ [Tuple (+) 0, Tuple (*) 1] $ \(Tuple op ident) ->
-    quickCheck $ \m1 m2 k ->
+    quickCheck $ \(TestMap m1) (TestMap m2) k ->
       let u = M.unionWith op m1 m2 :: M.Map SmallKey Int
       in case M.lookup k u of
            Nothing -> not (M.member k m1 || M.member k m2)
            Just v -> v == op (fromMaybe ident (M.lookup k m1)) (fromMaybe ident (M.lookup k m2))
 
   log "unionWith argument order"
-  quickCheck $ \m1 m2 k ->
+  quickCheck $ \(TestMap m1) (TestMap m2) k ->
     let u   = M.unionWith (-) m1 m2 :: M.Map SmallKey Int
         in1 = M.member k m1
         v1  = M.lookup k m1
