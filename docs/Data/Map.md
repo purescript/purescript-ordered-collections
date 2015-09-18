@@ -175,7 +175,7 @@ of duplicate keys
 #### `unions`
 
 ``` purescript
-unions :: forall k v. (Ord k) => List (Map k v) -> Map k v
+unions :: forall k v f. (Ord k, Foldable f) => f (Map k v) -> Map k v
 ```
 
 Compute the union of a collection of maps

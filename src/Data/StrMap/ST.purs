@@ -14,6 +14,7 @@ import Prelude
 
 import Control.Monad.Eff (Eff())
 import Control.Monad.ST (ST())
+import Data.Maybe (Maybe(..))
 
 -- | A reference to a mutable map
 -- |
@@ -26,7 +27,10 @@ foreign import data STStrMap :: * -> * -> *
 foreign import new :: forall a h r. Eff (st :: ST h | r) (STStrMap h a)
 
 -- | Get the value for a key in a mutable map
-foreign import peek :: forall a h r. STStrMap h a -> String -> Eff (st :: ST h | r) a
+peek :: forall a h r. STStrMap h a -> String -> Eff (st :: ST h | r) (Maybe a)
+peek = peekImpl Just Nothing
+
+foreign import peekImpl :: forall a b h r. (a -> b) -> b -> STStrMap h a -> String -> Eff (st :: ST h | r) b
 
 -- | Update the value for a key in a mutable map
 foreign import poke :: forall a h r. STStrMap h a -> String -> a -> Eff (st :: ST h | r) (STStrMap h a)
