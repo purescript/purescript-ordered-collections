@@ -12,7 +12,7 @@ exports.peekImpl = function (just) {
     return function (m) {
       return function (k) {
         return function () {
-          return m.hasOwnProperty(k) ? just(m[k]) : nothing;
+          return {}.hasOwnProperty.call(m, k) ? just(m[k]) : nothing;
         };
       };
     };
