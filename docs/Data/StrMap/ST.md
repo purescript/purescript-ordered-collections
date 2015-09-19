@@ -27,7 +27,7 @@ Create a new, empty mutable map
 #### `peek`
 
 ``` purescript
-peek :: forall a h r. STStrMap h a -> String -> Eff (st :: ST h | r) a
+peek :: forall a h r. STStrMap h a -> String -> Eff (st :: ST h | r) (Maybe a)
 ```
 
 Get the value for a key in a mutable map

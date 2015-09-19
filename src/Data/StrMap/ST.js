@@ -7,10 +7,14 @@ exports["new"] = function () {
   return {};
 };
 
-exports.peek = function (m) {
-  return function (k) {
-    return function () {
-      return m[k];
+exports.peekImpl = function (just) {
+  return function (nothing) {
+    return function (m) {
+      return function (k) {
+        return function () {
+          return {}.hasOwnProperty.call(m, k) ? just(m[k]) : nothing;
+        };
+      };
     };
   };
 };
