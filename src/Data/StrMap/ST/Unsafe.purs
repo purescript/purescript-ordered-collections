@@ -9,7 +9,7 @@ import Control.Monad.ST (ST())
 import Data.StrMap (StrMap())
 import Data.StrMap.ST (STStrMap())
 
--- | Unsafely get the value for a key in a map.
+-- | Unsafely get the map out of ST without copying it
 -- |
--- | This function does not check whether the key exists in the map.
+-- | If you later change the ST version of the map the pure value will also change.
 foreign import unsafeGet :: forall a h r. STStrMap h a -> Eff (st :: ST h | r) (StrMap a)
