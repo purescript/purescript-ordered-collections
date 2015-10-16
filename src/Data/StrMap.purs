@@ -69,7 +69,7 @@ freezeST = _copyEff
 -- | The rank-2 type prevents the map from escaping the scope of `runST`.
 foreign import runST :: forall a r. (forall h. Eff (st :: ST.ST h | r) (SM.STStrMap h a)) -> Eff r (StrMap a)
 
-pureST :: forall a b. (forall h e. Eff (st :: ST.ST h | e) (SM.STStrMap h a)) -> StrMap a
+pureST :: forall a. (forall h e. Eff (st :: ST.ST h | e) (SM.STStrMap h a)) -> StrMap a
 pureST f = runPure (runST f)
 
 mutate :: forall a b. (forall h e. SM.STStrMap h a -> Eff (st :: ST.ST h | e) b) -> StrMap a -> StrMap a

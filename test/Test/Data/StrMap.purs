@@ -10,7 +10,6 @@ import Data.Tuple (Tuple(..), fst)
 import Control.Monad.Eff.Console (log)
 import Test.QuickCheck ((<?>), quickCheck, quickCheck')
 import Test.QuickCheck.Arbitrary (Arbitrary, arbitrary)
-import Test.QuickCheck.Gen (Gen(..))
 import qualified Data.String as S
 import qualified Data.StrMap as M
 
