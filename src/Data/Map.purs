@@ -30,6 +30,7 @@ import Prelude
 import Data.Foldable (foldl, foldMap, foldr, Foldable)
 import Data.List (List(..), length, nub)
 import Data.Maybe (Maybe(..), maybe, isJust)
+import Data.Maybe.Unsafe (unsafeThrow)
 import Data.Monoid (Monoid)
 import Data.Traversable (traverse, Traversable)
 import Data.Tuple (Tuple(..), uncurry)
@@ -210,18 +211,23 @@ delete = down Nil
   up (Cons (ThreeMiddle (Three a k1 v1 b k2 v2 c) k3 v3 k4 v4 e) ctx) d = fromZipper ctx (Three (Two a k1 v1 b) k2 v2 (Two c k3 v3 d) k4 v4 e)
   up (Cons (ThreeMiddle a k1 v1 k2 v2 (Three c k3 v3 d k4 v4 e)) ctx) b = fromZipper ctx (Three a k1 v1 (Two b k2 v2 c) k3 v3 (Two d k4 v4 e))
   up (Cons (ThreeRight a k1 v1 (Three b k2 v2 c k3 v3 d) k4 v4) ctx) e = fromZipper ctx (Three a k1 v1 (Two b k2 v2 c) k3 v3 (Two d k4 v4 e))
+  up _ _ = unsafeThrow "Impossible case in 'up'"
 
   maxNode :: forall k v. (Ord k) => Map k v -> { key :: k, value :: v }
   maxNode (Two _ k v Leaf) = { key: k, value: v }
   maxNode (Two _ _ _ right) = maxNode right
   maxNode (Three _ _ _ _ k v Leaf) = { key: k, value: v }
   maxNode (Three _ _ _ _ _ _ right) = maxNode right
+  maxNode Leaf = unsafeThrow "Impossible case in 'maxNode'"
+
 
   removeMaxNode :: forall k v. (Ord k) => List (TreeContext k v) -> Map k v -> Map k v
   removeMaxNode ctx (Two Leaf _ _ Leaf) = up ctx Leaf
   removeMaxNode ctx (Two left k v right) = removeMaxNode (Cons (TwoRight left k v) ctx) right
   removeMaxNode ctx (Three Leaf k1 v1 Leaf _ _ Leaf) = up (Cons (TwoRight Leaf k1 v1) ctx) Leaf
   removeMaxNode ctx (Three left k1 v1 mid k2 v2 right) = removeMaxNode (Cons (ThreeRight left k1 v1 mid k2 v2) ctx) right
+  removeMaxNode _ Leaf = unsafeThrow "Impossible case in 'removeMaxNode'"
+
 
 -- | Insert the value, delete a value, or update a value for a key in a map
 alter :: forall k v. (Ord k) => (Maybe v -> Maybe v) -> k -> Map k v -> Map k v

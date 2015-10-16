@@ -6,11 +6,11 @@ import Data.List (List(..), groupBy, sortBy, singleton, toList, zipWith)
 import Data.Foldable (foldl)
 import Data.Function (on)
 import Data.Maybe (Maybe(..))
+import Data.Maybe.Unsafe (unsafeThrow)
 import Data.Tuple (Tuple(..), fst)
 import Control.Monad.Eff.Console (log)
 import Test.QuickCheck ((<?>), quickCheck, quickCheck')
 import Test.QuickCheck.Arbitrary (Arbitrary, arbitrary)
-import Test.QuickCheck.Gen (Gen(..))
 import qualified Data.String as S
 import qualified Data.StrMap as M
 
@@ -99,6 +99,7 @@ strMapTests = do
   quickCheck $ \arr ->
     let combine (Tuple s a) (Tuple t b) = (Tuple s $ b <> a)
         foldl1 g (Cons x xs) = foldl g x xs
+        foldl1 _ Nil         = unsafeThrow "Impossible case in 'foldl1'"
         f = M.fromList <<< (<$>) (foldl1 combine) <<<
             groupBy ((==) `on` fst) <<< sortBy (compare `on` fst) in
     M.fromListWith (<>) arr == f (arr :: List (Tuple String String)) <?> show arr
