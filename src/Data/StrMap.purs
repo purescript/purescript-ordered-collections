@@ -111,7 +111,7 @@ instance traversableStrMap :: Traversable StrMap where
 -- Unfortunately the above are not short-circuitable (consider using purescript-machines)
 -- so we need special cases:
 
-foreign import _foldSCStrMap :: forall a z. Fn4 (StrMap a) z (z -> String -> a -> Maybe z) (forall a. a -> Maybe a -> a) z
+foreign import _foldSCStrMap :: forall a z. Fn4 (StrMap a) z (z -> String -> a -> Maybe z) (forall b. b -> Maybe b -> b) z
 
 -- | Fold the keys and values of a map.
 -- |
