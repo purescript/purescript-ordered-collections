@@ -106,7 +106,7 @@ singleton k v = Two Leaf k v Leaf
 checkValid :: forall k v. Map k v -> Boolean
 checkValid tree = length (nub (allHeights tree)) == one
   where
-  allHeights :: forall k v. Map k v -> List Int
+  allHeights :: Map k v -> List Int
   allHeights Leaf = pure zero
   allHeights (Two left _ _ right) = map (\n -> n + one) (allHeights left ++ allHeights right)
   allHeights (Three left _ _ mid _ _ right) = map (\n -> n + one) (allHeights left ++ allHeights mid ++ allHeights right)
@@ -148,7 +148,7 @@ data KickUp k v = KickUp (Map k v) k v (Map k v)
 insert :: forall k v. (Ord k) => k -> v -> Map k v -> Map k v
 insert = down Nil
   where
-  down :: forall k v. (Ord k) => List (TreeContext k v) -> k -> v -> Map k v -> Map k v
+  down :: List (TreeContext k v) -> k -> v -> Map k v -> Map k v
   down ctx k v Leaf = up ctx (KickUp Leaf k v Leaf)
   down ctx k v (Two left k1 _ right) | k == k1 = fromZipper ctx (Two left k v right)
   down ctx k v (Two left k1 v1 right) | k < k1 = down (Cons (TwoLeft k1 v1 right) ctx) k v left
@@ -159,7 +159,7 @@ insert = down Nil
   down ctx k v (Three left k1 v1 mid k2 v2 right) | k1 < k && k <= k2 = down (Cons (ThreeMiddle left k1 v1 k2 v2 right) ctx) k v mid
   down ctx k v (Three left k1 v1 mid k2 v2 right) = down (Cons (ThreeRight left k1 v1 mid k2 v2) ctx) k v right
 
-  up :: forall k v. (Ord k) => List (TreeContext k v) -> KickUp k v -> Map k v
+  up :: List (TreeContext k v) -> KickUp k v -> Map k v
   up Nil (KickUp left k v right) = Two left k v right
   up (Cons (TwoLeft k1 v1 right) ctx) (KickUp left k v mid) = fromZipper ctx (Three left k v mid k1 v1 right)
   up (Cons (TwoRight left k1 v1) ctx) (KickUp mid k v right) = fromZipper ctx (Three left k1 v1 mid k v right)
@@ -171,7 +171,7 @@ insert = down Nil
 delete :: forall k v. (Ord k) => k -> Map k v -> Map k v
 delete = down Nil
   where
-  down :: forall k v. (Ord k) => List (TreeContext k v) -> k -> Map k v -> Map k v
+  down :: List (TreeContext k v) -> k -> Map k v -> Map k v
   down ctx _ Leaf = fromZipper ctx Leaf
   down ctx k (Two Leaf k1 _ Leaf)
     | k == k1 = up ctx Leaf
@@ -192,7 +192,7 @@ delete = down Nil
     | k1 < k && k < k2 = down (Cons (ThreeMiddle left k1 v1 k2 v2 right) ctx) k mid
     | otherwise            = down (Cons (ThreeRight left k1 v1 mid k2 v2) ctx) k right
 
-  up :: forall k v. (Ord k) => List (TreeContext k v) -> Map k v -> Map k v
+  up :: List (TreeContext k v) -> Map k v -> Map k v
   up Nil tree = tree
   up (Cons (TwoLeft k1 v1 Leaf) ctx) Leaf = fromZipper ctx (Two Leaf k1 v1 Leaf)
   up (Cons (TwoRight Leaf k1 v1) ctx) Leaf = fromZipper ctx (Two Leaf k1 v1 Leaf)
@@ -213,7 +213,7 @@ delete = down Nil
   up (Cons (ThreeRight a k1 v1 (Three b k2 v2 c k3 v3 d) k4 v4) ctx) e = fromZipper ctx (Three a k1 v1 (Two b k2 v2 c) k3 v3 (Two d k4 v4 e))
   up _ _ = unsafeThrow "Impossible case in 'up'"
 
-  maxNode :: forall k v. (Ord k) => Map k v -> { key :: k, value :: v }
+  maxNode :: Map k v -> { key :: k, value :: v }
   maxNode (Two _ k v Leaf) = { key: k, value: v }
   maxNode (Two _ _ _ right) = maxNode right
   maxNode (Three _ _ _ _ k v Leaf) = { key: k, value: v }
@@ -221,7 +221,7 @@ delete = down Nil
   maxNode Leaf = unsafeThrow "Impossible case in 'maxNode'"
 
 
-  removeMaxNode :: forall k v. (Ord k) => List (TreeContext k v) -> Map k v -> Map k v
+  removeMaxNode :: List (TreeContext k v) -> Map k v -> Map k v
   removeMaxNode ctx (Two Leaf _ _ Leaf) = up ctx Leaf
   removeMaxNode ctx (Two left k v right) = removeMaxNode (Cons (TwoRight left k v) ctx) right
   removeMaxNode ctx (Three Leaf k1 v1 Leaf _ _ Leaf) = up (Cons (TwoRight Leaf k1 v1) ctx) Leaf
