@@ -13,14 +13,14 @@ data Map k v
 
 ##### Instances
 ``` purescript
-instance eqMap :: (Eq k, Eq v) => Eq (Map k v)
-instance showMap :: (Show k, Show v) => Show (Map k v)
-instance ordMap :: (Ord k, Ord v) => Ord (Map k v)
-instance semigroupMap :: (Ord k) => Semigroup (Map k v)
-instance monoidMap :: (Ord k) => Monoid (Map k v)
-instance functorMap :: Functor (Map k)
-instance foldableMap :: Foldable (Map k)
-instance traversableMap :: (Ord k) => Traversable (Map k)
+(Eq k, Eq v) => Eq (Map k v)
+(Show k, Show v) => Show (Map k v)
+(Ord k, Ord v) => Ord (Map k v)
+(Ord k) => Semigroup (Map k v)
+(Ord k) => Monoid (Map k v)
+Functor (Map k)
+Foldable (Map k)
+(Ord k) => Traversable (Map k)
 ```
 
 #### `showTree`
@@ -113,13 +113,31 @@ update :: forall k v. (Ord k) => (v -> Maybe v) -> k -> Map k v -> Map k v
 
 Update or delete the value for a key in a map
 
+#### `fromFoldable`
+
+``` purescript
+fromFoldable :: forall f k v. (Ord k, Foldable f) => f (Tuple k v) -> Map k v
+```
+
+Convert any foldable collection of key/value pairs to a map.
+On key collision, later values take precedence over earlier ones.
+
+#### `fromFoldableWith`
+
+``` purescript
+fromFoldableWith :: forall f k v. (Ord k, Foldable f) => (v -> v -> v) -> f (Tuple k v) -> Map k v
+```
+
+Convert any foldable collection of key/value pairs to a map.
+On key collision, the values are configurably combined.
+
 #### `toList`
 
 ``` purescript
 toList :: forall k v. Map k v -> List (Tuple k v)
 ```
 
-Convert a map to an array of key/value pairs
+Convert a map to a list of key/value pairs
 
 #### `fromList`
 
@@ -127,7 +145,7 @@ Convert a map to an array of key/value pairs
 fromList :: forall k v. (Ord k) => List (Tuple k v) -> Map k v
 ```
 
-Create a map from an array of key/value pairs
+Create a map from a list of key/value pairs
 
 #### `fromListWith`
 
@@ -135,7 +153,7 @@ Create a map from an array of key/value pairs
 fromListWith :: forall k v. (Ord k) => (v -> v -> v) -> List (Tuple k v) -> Map k v
 ```
 
-Create a map from an array of key/value pairs, using the specified function
+Create a map from a list of key/value pairs, using the specified function
 to combine values for duplicate keys.
 
 #### `keys`
@@ -144,7 +162,7 @@ to combine values for duplicate keys.
 keys :: forall k v. Map k v -> List k
 ```
 
-Get an array of the keys contained in a map
+Get a list of the keys contained in a map
 
 #### `values`
 
@@ -152,7 +170,7 @@ Get an array of the keys contained in a map
 values :: forall k v. Map k v -> List v
 ```
 
-Get an array of the values contained in a map
+Get a list of the values contained in a map
 
 #### `unionWith`
 

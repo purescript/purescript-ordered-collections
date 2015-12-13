@@ -16,13 +16,13 @@ data StrMap :: * -> *
 
 ##### Instances
 ``` purescript
-instance functorStrMap :: Functor StrMap
-instance foldableStrMap :: Foldable StrMap
-instance traversableStrMap :: Traversable StrMap
-instance eqStrMap :: (Eq a) => Eq (StrMap a)
-instance showStrMap :: (Show a) => Show (StrMap a)
-instance semigroupStrMap :: (Semigroup a) => Semigroup (StrMap a)
-instance monoidStrMap :: (Semigroup a) => Monoid (StrMap a)
+Functor StrMap
+Foldable StrMap
+Traversable StrMap
+(Eq a) => Eq (StrMap a)
+(Show a) => Show (StrMap a)
+(Semigroup a) => Semigroup (StrMap a)
+(Semigroup a) => Monoid (StrMap a)
 ```
 
 #### `thawST`
@@ -185,13 +185,30 @@ update :: forall a. (a -> Maybe a) -> String -> StrMap a -> StrMap a
 
 Remove or update a value for a key in a map
 
+#### `fromFoldable`
+
+``` purescript
+fromFoldable :: forall f a. (Foldable f) => f (Tuple String a) -> StrMap a
+```
+
+Create a map from a foldable collection of key/value pairs
+
+#### `fromFoldableWith`
+
+``` purescript
+fromFoldableWith :: forall f a. (Foldable f) => (a -> a -> a) -> f (Tuple String a) -> StrMap a
+```
+
+Create a map from a foldable collection of key/value pairs, using the
+specified function to combine values for duplicate keys.
+
 #### `fromList`
 
 ``` purescript
 fromList :: forall a. List (Tuple String a) -> StrMap a
 ```
 
-Create a map from an array of key/value pairs
+Create a map from a list of key/value pairs
 
 #### `fromListWith`
 
@@ -199,7 +216,7 @@ Create a map from an array of key/value pairs
 fromListWith :: forall a. (a -> a -> a) -> List (Tuple String a) -> StrMap a
 ```
 
-Create a map from an array of key/value pairs, using the specified function
+Create a map from a list of key/value pairs, using the specified function
 to combine values for duplicate keys.
 
 #### `toList`
@@ -208,7 +225,7 @@ to combine values for duplicate keys.
 toList :: forall a. StrMap a -> List (Tuple String a)
 ```
 
-Convert a map into an array of key/value pairs
+Convert a map into a list of key/value pairs
 
 #### `keys`
 
@@ -224,7 +241,7 @@ Get an array of the keys in a map
 values :: forall a. StrMap a -> List a
 ```
 
-Get an array of the values in a map
+Get a list of the values in a map
 
 #### `union`
 
