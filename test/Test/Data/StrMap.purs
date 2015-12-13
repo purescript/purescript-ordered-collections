@@ -82,6 +82,28 @@ strMapTests = do
   log "Singleton to list"
   quickCheck $ \k v -> M.toList (M.singleton k v :: M.StrMap Int) == singleton (Tuple k v)
 
+  log "fromFoldable [] = empty"
+  quickCheck (M.fromFoldable [] == (M.empty :: M.StrMap Unit)
+    <?> "was not empty")
+
+  log "fromFoldable & key collision"
+  do
+    let nums = M.fromFoldable [Tuple "0" "zero", Tuple "1" "what", Tuple "1" "one"]
+    quickCheck (M.lookup "0" nums == Just "zero" <?> "invalid lookup - 0")
+    quickCheck (M.lookup "1" nums == Just "one"  <?> "invalid lookup - 1")
+    quickCheck (M.lookup "2" nums == Nothing     <?> "invalid lookup - 2")
+
+  log "fromFoldableWith const [] = empty"
+  quickCheck (M.fromFoldableWith const [] == (M.empty :: M.StrMap Unit)
+    <?> "was not empty")
+
+  log "fromFoldableWith (+) & key collision"
+  do
+    let nums = M.fromFoldableWith (+) [Tuple "0" 1, Tuple "1" 1, Tuple "1" 1]
+    quickCheck (M.lookup "0" nums == Just 1  <?> "invalid lookup - 0")
+    quickCheck (M.lookup "1" nums == Just 2  <?> "invalid lookup - 1")
+    quickCheck (M.lookup "2" nums == Nothing <?> "invalid lookup - 2")
+
   log "toList . fromList = id"
   quickCheck $ \arr -> let f x = M.toList (M.fromList x)
                        in f (f arr) == f (arr :: List (Tuple String Int)) <?> show arr

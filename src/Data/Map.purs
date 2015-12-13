@@ -10,6 +10,8 @@ module Data.Map
   , checkValid
   , insert
   , lookup
+  , fromFoldable
+  , fromFoldableWith
   , toList
   , fromList
   , fromListWith
@@ -239,30 +241,40 @@ alter f k m = case f (k `lookup` m) of
 update :: forall k v. (Ord k) => (v -> Maybe v) -> k -> Map k v -> Map k v
 update f k m = alter (maybe Nothing f) k m
 
--- | Convert a map to an array of key/value pairs
+-- | Convert any foldable collection of key/value pairs to a map.
+-- | On key collision, later values take precedence over earlier ones.
+fromFoldable :: forall f k v. (Ord k, Foldable f) => f (Tuple k v) -> Map k v
+fromFoldable = foldl (\m (Tuple k v) -> insert k v m) empty
+
+-- | Convert any foldable collection of key/value pairs to a map.
+-- | On key collision, the values are configurably combined.
+fromFoldableWith :: forall f k v. (Ord k, Foldable f) => (v -> v -> v) -> f (Tuple k v) -> Map k v
+fromFoldableWith f = foldl (\m (Tuple k v) -> alter (combine v) k m) empty where
+  combine v (Just v') = Just $ f v v'
+  combine v Nothing = Just v
+
+-- | Convert a map to a list of key/value pairs
 toList :: forall k v. Map k v -> List (Tuple k v)
 toList Leaf = Nil
 toList (Two left k v right) = toList left ++ pure (Tuple k v) ++ toList right
 toList (Three left k1 v1 mid k2 v2 right) = toList left ++ pure (Tuple k1 v1) ++ toList mid ++ pure (Tuple k2 v2) ++ toList right
 
--- | Create a map from an array of key/value pairs
+-- | Create a map from a list of key/value pairs
 fromList :: forall k v. (Ord k) => List (Tuple k v) -> Map k v
-fromList = foldl (\m (Tuple k v) -> insert k v m) empty
+fromList = fromFoldable
 
--- | Create a map from an array of key/value pairs, using the specified function
+-- | Create a map from a list of key/value pairs, using the specified function
 -- | to combine values for duplicate keys.
 fromListWith :: forall k v. (Ord k) => (v -> v -> v) -> List (Tuple k v) -> Map k v
-fromListWith f = foldl (\m (Tuple k v) -> alter (combine v) k m) empty where
-  combine v (Just v') = Just $ f v v'
-  combine v Nothing = Just v
+fromListWith = fromFoldableWith
 
--- | Get an array of the keys contained in a map
+-- | Get a list of the keys contained in a map
 keys :: forall k v. Map k v -> List k
 keys Leaf = Nil
 keys (Two left k _ right) = keys left ++ pure k ++ keys right
 keys (Three left k1 _ mid k2 _ right) = keys left ++ pure k1 ++ keys mid ++ pure k2 ++ keys right
 
--- | Get an array of the values contained in a map
+-- | Get a list of the values contained in a map
 values :: forall k v. Map k v -> List v
 values Leaf = Nil
 values (Two left _ v right) = values left ++ pure v ++ values right
