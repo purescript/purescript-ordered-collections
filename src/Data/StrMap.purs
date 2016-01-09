@@ -34,6 +34,7 @@ module Data.StrMap
   , thawST
   , freezeST
   , runST
+  , pureST
   ) where
 
 import Prelude

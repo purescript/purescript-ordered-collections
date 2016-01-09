@@ -52,6 +52,12 @@ Freeze a mutable map, creating an immutable map. Use this function as you would 
 
 The rank-2 type prevents the map from escaping the scope of `runST`.
 
+#### `pureST`
+
+``` purescript
+pureST :: forall a. (forall h e. Eff (st :: ST h | e) (STStrMap h a)) -> StrMap a
+```
+
 #### `fold`
 
 ``` purescript
