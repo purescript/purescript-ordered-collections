@@ -27,14 +27,14 @@ module Data.Map
   , size
   ) where
 
-import Prelude
+import Prelude (class Ord, class Show, class Functor, class Semigroup, class Eq, (<<<), const, pure, (++), ($), otherwise, (<), (&&), (==), (<=), one, (+), map, zero, show, id, (<$>), (<*>), compare)
 
-import Data.Foldable (foldl, foldMap, foldr, Foldable)
+import Data.Foldable (foldl, foldMap, foldr, class Foldable)
 import Data.List (List(..), length, nub)
 import Data.Maybe (Maybe(..), maybe, isJust)
 import Data.Maybe.Unsafe (unsafeThrow)
-import Data.Monoid (Monoid)
-import Data.Traversable (traverse, Traversable)
+import Data.Monoid (class Monoid)
+import Data.Traversable (traverse, class Traversable)
 import Data.Tuple (Tuple(..), uncurry)
 
 -- | `Map k v` represents maps from keys of type `k` to values of type `v`.

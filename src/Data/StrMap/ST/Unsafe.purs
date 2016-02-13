@@ -2,8 +2,6 @@ module Data.StrMap.ST.Unsafe
   ( unsafeGet
   ) where
 
-import Prelude
-
 import Control.Monad.Eff (Eff())
 import Control.Monad.ST (ST())
 import Data.StrMap (StrMap())
