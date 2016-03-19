@@ -115,15 +115,29 @@ checkValid tree = length (nub (allHeights tree)) == one
 
 -- | Lookup a value for the specified key
 lookup :: forall k v. (Ord k) => k -> Map k v -> Maybe v
-lookup _ Leaf = Nothing
-lookup k (Two _ k1 v _) | k == k1 = Just v
-lookup k (Two left k1 _ _) | k < k1 = lookup k left
-lookup k (Two _ _ _ right) = lookup k right
-lookup k (Three _ k1 v1 _ _ _ _) | k == k1 = Just v1
-lookup k (Three _ _ _ _ k2 v2 _) | k == k2 = Just v2
-lookup k (Three left k1 _ _ _ _ _) | k < k1 = lookup k left
-lookup k (Three _ k1 _ mid k2 _ _) | k1 < k && k <= k2 = lookup k mid
-lookup k (Three _ _ _ _ _ _ right) = lookup k right
+lookup k tree =
+  let comp :: k -> k -> Ordering
+      comp = compare
+  in case tree of
+    Leaf -> Nothing
+    Two left k1 v right ->
+      case comp k k1 of
+        EQ -> Just v
+        LT -> lookup k left
+        _  -> lookup k right
+    Three left k1 v1 mid k2 v2 right ->
+      case comp k k1 of
+        EQ -> Just v1
+        c1 ->
+          case comp k k2 of
+            EQ -> Just v2
+            c2 ->
+              case c1 of
+                LT -> lookup k left
+                _  ->
+                  case c2 of
+                    GT -> lookup k right
+                    _  -> lookup k mid
 
 -- | Test if a key is a member of a map
 member :: forall k v. (Ord k) => k -> Map k v -> Boolean
@@ -138,11 +152,13 @@ data TreeContext k v
 
 fromZipper :: forall k v. (Ord k) => List (TreeContext k v) -> Map k v -> Map k v
 fromZipper Nil tree = tree
-fromZipper (Cons (TwoLeft k1 v1 right) ctx) left = fromZipper ctx (Two left k1 v1 right)
-fromZipper (Cons (TwoRight left k1 v1) ctx) right = fromZipper ctx (Two left k1 v1 right)
-fromZipper (Cons (ThreeLeft k1 v1 mid k2 v2 right) ctx) left = fromZipper ctx (Three left k1 v1 mid k2 v2 right)
-fromZipper (Cons (ThreeMiddle left k1 v1 k2 v2 right) ctx) mid = fromZipper ctx (Three left k1 v1 mid k2 v2 right)
-fromZipper (Cons (ThreeRight left k1 v1 mid k2 v2) ctx) right = fromZipper ctx (Three left k1 v1 mid k2 v2 right)
+fromZipper (Cons x ctx) tree =
+  case x of
+    TwoLeft k1 v1 right -> fromZipper ctx (Two tree k1 v1 right)
+    TwoRight left k1 v1 -> fromZipper ctx (Two left k1 v1 tree)
+    ThreeLeft k1 v1 mid k2 v2 right -> fromZipper ctx (Three tree k1 v1 mid k2 v2 right)
+    ThreeMiddle left k1 v1 k2 v2 right -> fromZipper ctx (Three left k1 v1 tree k2 v2 right)
+    ThreeRight left k1 v1 mid k2 v2 -> fromZipper ctx (Three left k1 v1 mid k2 v2 tree)
 
 data KickUp k v = KickUp (Map k v) k v (Map k v)
 
@@ -150,24 +166,40 @@ data KickUp k v = KickUp (Map k v) k v (Map k v)
 insert :: forall k v. (Ord k) => k -> v -> Map k v -> Map k v
 insert = down Nil
   where
+  comp :: k -> k -> Ordering
+  comp = compare
+
   down :: List (TreeContext k v) -> k -> v -> Map k v -> Map k v
   down ctx k v Leaf = up ctx (KickUp Leaf k v Leaf)
-  down ctx k v (Two left k1 _ right) | k == k1 = fromZipper ctx (Two left k v right)
-  down ctx k v (Two left k1 v1 right) | k < k1 = down (Cons (TwoLeft k1 v1 right) ctx) k v left
-  down ctx k v (Two left k1 v1 right) = down (Cons (TwoRight left k1 v1) ctx) k v right
-  down ctx k v (Three left k1 _ mid k2 v2 right) | k == k1 = fromZipper ctx (Three left k v mid k2 v2 right)
-  down ctx k v (Three left k1 v1 mid k2 _ right) | k == k2 = fromZipper ctx (Three left k1 v1 mid k v right)
-  down ctx k v (Three left k1 v1 mid k2 v2 right) | k < k1 = down (Cons (ThreeLeft k1 v1 mid k2 v2 right) ctx) k v left
-  down ctx k v (Three left k1 v1 mid k2 v2 right) | k1 < k && k <= k2 = down (Cons (ThreeMiddle left k1 v1 k2 v2 right) ctx) k v mid
-  down ctx k v (Three left k1 v1 mid k2 v2 right) = down (Cons (ThreeRight left k1 v1 mid k2 v2) ctx) k v right
+  down ctx k v (Two left k1 v1 right) =
+    case comp k k1 of
+      EQ -> fromZipper ctx (Two left k v right)
+      LT -> down (Cons (TwoLeft k1 v1 right) ctx) k v left
+      _  -> down (Cons (TwoRight left k1 v1) ctx) k v right
+  down ctx k v (Three left k1 v1 mid k2 v2 right) =
+    case comp k k1 of
+      EQ -> fromZipper ctx (Three left k v mid k2 v2 right)
+      c1 ->
+        case comp k k2 of
+          EQ -> fromZipper ctx (Three left k1 v1 mid k v right)
+          c2 ->
+            case c1 of
+              LT -> down (Cons (ThreeLeft k1 v1 mid k2 v2 right) ctx) k v left
+              GT ->
+                case c2 of
+                  LT -> down (Cons (ThreeMiddle left k1 v1 k2 v2 right) ctx) k v mid
+                  _  -> down (Cons (ThreeRight left k1 v1 mid k2 v2) ctx) k v right
+              _  -> down (Cons (ThreeRight left k1 v1 mid k2 v2) ctx) k v right
 
   up :: List (TreeContext k v) -> KickUp k v -> Map k v
   up Nil (KickUp left k v right) = Two left k v right
-  up (Cons (TwoLeft k1 v1 right) ctx) (KickUp left k v mid) = fromZipper ctx (Three left k v mid k1 v1 right)
-  up (Cons (TwoRight left k1 v1) ctx) (KickUp mid k v right) = fromZipper ctx (Three left k1 v1 mid k v right)
-  up (Cons (ThreeLeft k1 v1 c k2 v2 d) ctx) (KickUp a k v b) = up ctx (KickUp (Two a k v b) k1 v1 (Two c k2 v2 d))
-  up (Cons (ThreeMiddle a k1 v1 k2 v2 d) ctx) (KickUp b k v c) = up ctx (KickUp (Two a k1 v1 b) k v (Two c k2 v2 d))
-  up (Cons (ThreeRight a k1 v1 b k2 v2) ctx) (KickUp c k v d) = up ctx (KickUp (Two a k1 v1 b) k2 v2 (Two c k v d))
+  up (Cons x ctx) (KickUp m1 k v m2) =
+    case x of
+      TwoLeft k1 v1 right -> fromZipper ctx (Three m1 k v m2 k1 v1 right)
+      TwoRight left k1 v1 -> fromZipper ctx (Three left k1 v1 m1 k v m2)
+      ThreeLeft k1 v1 c k2 v2 d -> up ctx (KickUp (Two m1 k v m2) k1 v1 (Two c k2 v2 d))
+      ThreeMiddle a k1 v1 k2 v2 d -> up ctx (KickUp (Two a k1 v1 m1) k v (Two m2 k2 v2 d))
+      ThreeRight a k1 v1 b k2 v2 -> up ctx (KickUp (Two a k1 v1 b) k2 v2 (Two m1 k v m2))
 
 -- | Delete a key and its corresponding value from a map
 delete :: forall k v. (Ord k) => k -> Map k v -> Map k v
