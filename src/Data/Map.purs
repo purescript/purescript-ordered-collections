@@ -27,7 +27,7 @@ module Data.Map
   , size
   ) where
 
-import Prelude (class Ord, class Show, class Functor, class Semigroup, class Eq, (<<<), const, pure, (++), ($), otherwise, (<), (&&), (==), (<=), one, (+), map, zero, show, id, (<$>), (<*>), compare)
+import Prelude (class Ord, class Show, class Functor, class Semigroup, class Eq, (<<<), const, pure, ($), otherwise, (<), (&&), (==), one, (+), map, zero, show, id, (<$>), (<*>), compare, Ordering(..), append)
 
 import Data.Foldable (foldl, foldMap, foldr, class Foldable)
 import Data.List (List(..), length, nub)
@@ -47,7 +47,7 @@ instance eqMap :: (Eq k, Eq v) => Eq (Map k v) where
   eq m1 m2 = toList m1 == toList m2
 
 instance showMap :: (Show k, Show v) => Show (Map k v) where
-  show m = "fromList " ++ show (toList m)
+  show m = "fromList " `append` show (toList m)
 
 instance ordMap :: (Ord k, Ord v) => Ord (Map k v) where
   compare m1 m2 = compare (toList m1) (toList m2)
@@ -76,18 +76,18 @@ instance traversableMap :: (Ord k) => Traversable (Map k) where
 showTree :: forall k v. (Show k, Show v) => Map k v -> String
 showTree Leaf = "Leaf"
 showTree (Two left k v right) =
-  "Two (" ++ showTree left ++
-  ") (" ++ show k ++
-  ") (" ++ show v ++
-  ") (" ++ showTree right ++ ")"
+  "Two (" `append` showTree left `append`
+  ") (" `append` show k `append`
+  ") (" `append` show v `append`
+  ") (" `append` showTree right `append` ")"
 showTree (Three left k1 v1 mid k2 v2 right) =
-  "Three (" ++ showTree left ++
-  ") (" ++ show k1 ++
-  ") (" ++ show v1 ++
-  ") (" ++ showTree mid ++
-  ") (" ++ show k2 ++
-  ") (" ++ show v2 ++
-  ") (" ++ showTree right ++ ")"
+  "Three (" `append` showTree left `append`
+  ") (" `append` show k1 `append`
+  ") (" `append` show v1 `append`
+  ") (" `append` showTree mid `append`
+  ") (" `append` show k2 `append`
+  ") (" `append` show v2 `append`
+  ") (" `append` showTree right `append` ")"
 
 -- | An empty map
 empty :: forall k v. Map k v
@@ -110,8 +110,8 @@ checkValid tree = length (nub (allHeights tree)) == one
   where
   allHeights :: Map k v -> List Int
   allHeights Leaf = pure zero
-  allHeights (Two left _ _ right) = map (\n -> n + one) (allHeights left ++ allHeights right)
-  allHeights (Three left _ _ mid _ _ right) = map (\n -> n + one) (allHeights left ++ allHeights mid ++ allHeights right)
+  allHeights (Two left _ _ right) = map (\n -> n + one) (allHeights left `append` allHeights right)
+  allHeights (Three left _ _ mid _ _ right) = map (\n -> n + one) (allHeights left `append` allHeights mid `append` allHeights right)
 
 -- | Lookup a value for the specified key
 lookup :: forall k v. (Ord k) => k -> Map k v -> Maybe v
@@ -288,8 +288,8 @@ fromFoldableWith f = foldl (\m (Tuple k v) -> alter (combine v) k m) empty where
 -- | Convert a map to a list of key/value pairs
 toList :: forall k v. Map k v -> List (Tuple k v)
 toList Leaf = Nil
-toList (Two left k v right) = toList left ++ pure (Tuple k v) ++ toList right
-toList (Three left k1 v1 mid k2 v2 right) = toList left ++ pure (Tuple k1 v1) ++ toList mid ++ pure (Tuple k2 v2) ++ toList right
+toList (Two left k v right) = toList left `append` pure (Tuple k v) `append` toList right
+toList (Three left k1 v1 mid k2 v2 right) = toList left `append` pure (Tuple k1 v1) `append` toList mid `append` pure (Tuple k2 v2) `append` toList right
 
 -- | Create a map from a list of key/value pairs
 fromList :: forall k v. (Ord k) => List (Tuple k v) -> Map k v
@@ -303,14 +303,14 @@ fromListWith = fromFoldableWith
 -- | Get a list of the keys contained in a map
 keys :: forall k v. Map k v -> List k
 keys Leaf = Nil
-keys (Two left k _ right) = keys left ++ pure k ++ keys right
-keys (Three left k1 _ mid k2 _ right) = keys left ++ pure k1 ++ keys mid ++ pure k2 ++ keys right
+keys (Two left k _ right) = keys left `append` pure k `append` keys right
+keys (Three left k1 _ mid k2 _ right) = keys left `append` pure k1 `append` keys mid `append` pure k2 `append` keys right
 
 -- | Get a list of the values contained in a map
 values :: forall k v. Map k v -> List v
 values Leaf = Nil
-values (Two left _ v right) = values left ++ pure v ++ values right
-values (Three left _ v1 mid _ v2 right) = values left ++ pure v1 ++ values mid ++ pure v2 ++ values right
+values (Two left _ v right) = values left `append` pure v `append` values right
+values (Three left _ v1 mid _ v2 right) = values left `append` pure v1 `append` values mid `append` pure v2 `append` values right
 
 -- | Compute the union of two maps, using the specified function
 -- | to combine values for duplicate keys.
