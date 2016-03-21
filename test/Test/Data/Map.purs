@@ -3,17 +3,20 @@ module Test.Data.Map where
 import Prelude
 
 import Control.Alt ((<|>))
-import Control.Monad.Eff.Console (log)
+import Control.Monad.Eff (Eff())
+import Control.Monad.Eff.Console (log, CONSOLE())
+import Control.Monad.Eff.Exception (EXCEPTION())
+import Control.Monad.Eff.Random (RANDOM())
 import Data.Foldable (foldl, for_)
 import Data.Function (on)
-import Data.List (List(..), groupBy, length, nubBy, sortBy, singleton, toList)
+import Data.List (List(..), groupBy, length, nubBy, sortBy, singleton)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Maybe.Unsafe (unsafeThrow)
 import Data.Tuple (Tuple(..), fst)
 import Test.QuickCheck ((<?>), quickCheck, quickCheck')
-import Test.QuickCheck.Arbitrary (Arbitrary, arbitrary)
+import Test.QuickCheck.Arbitrary (class Arbitrary, arbitrary)
 
-import qualified Data.Map as M
+import Data.Map as M
 
 newtype TestMap k v = TestMap (M.Map k v)
 
@@ -107,6 +110,14 @@ smallKey k = k
 number :: Int -> Int
 number n = n
 
+mapTests :: forall t.
+      Eff
+        ( console :: CONSOLE
+        , random :: RANDOM
+        , err :: EXCEPTION
+        | t
+        )
+        Unit
 mapTests = do
 
   -- Data.Map
@@ -181,7 +192,7 @@ mapTests = do
                        in f (f arr) == f (arr :: List (Tuple SmallKey Int)) <?> show arr
 
   log "fromList . toList = id"
-  quickCheck $ \(TestMap m) -> let f m = M.fromList (M.toList m) in
+  quickCheck $ \(TestMap m) -> let f m' = M.fromList (M.toList m') in
                      M.toList (f m) == M.toList (m :: M.Map SmallKey Int) <?> show m
 
   log "fromListWith const = fromList"
