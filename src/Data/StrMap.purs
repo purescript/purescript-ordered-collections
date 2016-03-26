@@ -34,6 +34,7 @@ module Data.StrMap
   , thawST
   , freezeST
   , runST
+  , pureST
   ) where
 
 import Prelude (class Semigroup, class Eq, class Show, class Monad, class Functor, (<>), (<<<), return, (>>=), bind, const, (==), show, (++), (&&), id, (<$>), map, pure, (<*>), (#))
