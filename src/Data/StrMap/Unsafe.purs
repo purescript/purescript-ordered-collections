@@ -2,8 +2,6 @@ module Data.StrMap.Unsafe
   ( unsafeIndex
   ) where
 
-import Prelude
-
 import Data.StrMap (StrMap())
 
 -- | Unsafely get the value for a key in a map.

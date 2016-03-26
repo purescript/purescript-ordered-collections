@@ -8,11 +8,13 @@ import Data.Function (on)
 import Data.Maybe (Maybe(..))
 import Data.Maybe.Unsafe (unsafeThrow)
 import Data.Tuple (Tuple(..), fst)
-import Control.Monad.Eff.Console (log)
+import Control.Monad.Eff(Eff())
+import Control.Monad.Eff.Console (log, CONSOLE())
+import Control.Monad.Eff.Exception (EXCEPTION())
+import Control.Monad.Eff.Random (RANDOM())
 import Test.QuickCheck ((<?>), quickCheck, quickCheck')
-import Test.QuickCheck.Arbitrary (Arbitrary, arbitrary)
-import qualified Data.String as S
-import qualified Data.StrMap as M
+import Test.QuickCheck.Arbitrary (class Arbitrary, arbitrary)
+import Data.StrMap as M
 
 newtype TestStrMap v = TestStrMap (M.StrMap v)
 
@@ -45,6 +47,14 @@ runInstructions instrs t0 = foldl step t0 instrs
 number :: Int -> Int
 number n = n
 
+strMapTests :: forall t.
+        Eff
+          ( console :: CONSOLE
+          , random :: RANDOM
+          , err :: EXCEPTION
+          | t
+          )
+          Unit
 strMapTests = do
   log "Test inserting into empty tree"
   quickCheck $ \k v -> M.lookup k (M.insert k v M.empty) == Just (number v)
@@ -110,7 +120,7 @@ strMapTests = do
 
   log "fromList . toList = id"
   quickCheck $ \(TestStrMap m) ->
-    let f m = M.fromList (M.toList m) in
+    let f m1 = M.fromList (M.toList m1) in
     M.toList (f m) == M.toList (m :: M.StrMap Int) <?> show m
 
   log "fromListWith const = fromList"

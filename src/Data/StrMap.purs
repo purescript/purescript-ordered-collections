@@ -36,19 +36,19 @@ module Data.StrMap
   , runST
   ) where
 
-import Prelude
+import Prelude (class Semigroup, class Eq, class Show, class Monad, class Functor, (<>), (<<<), return, (>>=), bind, const, (==), show, (++), (&&), id, (<$>), map, pure, (<*>), (#))
 
 import Control.Monad.Eff (Eff(), runPure)
-import Data.Foldable (Foldable, foldl, foldr, for_)
+import Data.Foldable (class Foldable, foldl, foldr, for_)
 import Data.Function (Fn2(), runFn2, Fn4(), runFn4)
 import Data.Maybe (Maybe(..), maybe, fromMaybe)
-import Data.Monoid (Monoid, mempty)
-import Data.Traversable (Traversable, traverse)
+import Data.Monoid (class Monoid, mempty)
+import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (Tuple(..), uncurry)
 
-import qualified Data.List as L
-import qualified Control.Monad.ST as ST
-import qualified Data.StrMap.ST as SM
+import Data.List as L
+import Control.Monad.ST as ST
+import Data.StrMap.ST as SM
 
 -- | `StrMap a` represents a map from `String`s to values of type `a`.
 foreign import data StrMap :: * -> *
