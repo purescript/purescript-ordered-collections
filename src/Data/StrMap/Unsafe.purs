@@ -2,7 +2,7 @@ module Data.StrMap.Unsafe
   ( unsafeIndex
   ) where
 
-import Data.StrMap (StrMap())
+import Data.StrMap (StrMap)
 
 -- | Unsafely get the value for a key in a map.
 -- |

@@ -2,10 +2,10 @@ module Data.StrMap.ST.Unsafe
   ( unsafeGet
   ) where
 
-import Control.Monad.Eff (Eff())
-import Control.Monad.ST (ST())
-import Data.StrMap (StrMap())
-import Data.StrMap.ST (STStrMap())
+import Control.Monad.Eff (Eff)
+import Control.Monad.ST (ST)
+import Data.StrMap (StrMap)
+import Data.StrMap.ST (STStrMap)
 
 -- | Unsafely get the map out of ST without copying it
 -- |

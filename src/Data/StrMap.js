@@ -47,7 +47,7 @@ exports._foldM = function (bind) {
   return function (f) {
     return function (mz) {
       return function (m) {
-        function g (k) {
+        function g(k) {
           return function (z) {
             return f(z)(k)(m[k]);
           };
@@ -114,7 +114,7 @@ exports._lookupST = function (no, yes, k, m) {
   };
 };
 
-function _collect (f) {
+function _collect(f) {
   return function (m) {
     var r = [];
     for (var k in m) {
