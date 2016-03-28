@@ -5,7 +5,7 @@
 -- | and some native code is used even when it's not necessary.
 
 module Data.StrMap
-  ( StrMap()
+  ( StrMap
   , empty
   , isEmpty
   , size
@@ -37,19 +37,19 @@ module Data.StrMap
   , pureST
   ) where
 
-import Prelude (class Semigroup, class Eq, class Show, class Monad, class Functor, (<>), (<<<), return, (>>=), bind, const, (==), show, (++), (&&), id, (<$>), map, pure, (<*>), (#))
+import Prelude
 
-import Control.Monad.Eff (Eff(), runPure)
+import Control.Monad.Eff (Eff, runPure)
+import Control.Monad.ST as ST
+
 import Data.Foldable (class Foldable, foldl, foldr, for_)
-import Data.Function (Fn2(), runFn2, Fn4(), runFn4)
+import Data.Function.Uncurried (Fn2, runFn2, Fn4, runFn4)
+import Data.List as L
 import Data.Maybe (Maybe(..), maybe, fromMaybe)
 import Data.Monoid (class Monoid, mempty)
+import Data.StrMap.ST as SM
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (Tuple(..), uncurry)
-
-import Data.List as L
-import Control.Monad.ST as ST
-import Data.StrMap.ST as SM
 
 -- | `StrMap a` represents a map from `String`s to values of type `a`.
 foreign import data StrMap :: * -> *
@@ -79,7 +79,7 @@ mutate :: forall a b. (forall h e. SM.STStrMap h a -> Eff (st :: ST.ST h | e) b)
 mutate f m = pureST (do
   s <- thawST m
   f s
-  return s)
+  pure s)
 
 foreign import _fmapStrMap :: forall a b. Fn2 (StrMap a) (a -> b) (StrMap b)
 
@@ -130,7 +130,7 @@ instance eqStrMap :: (Eq a) => Eq (StrMap a) where
   eq m1 m2 = (isSubmap m1 m2) && (isSubmap m2 m1)
 
 instance showStrMap :: (Show a) => Show (StrMap a) where
-  show m = "fromList " ++ show (toList m)
+  show m = "fromList " <> show (toList m)
 
 -- | An empty map
 foreign import empty :: forall a. StrMap a
@@ -152,7 +152,7 @@ singleton :: forall a. String -> a -> StrMap a
 singleton k v = pureST (do
   s <- SM.new
   SM.poke s k v
-  return s)
+  pure s)
 
 foreign import _lookup :: forall a z. Fn4 z (a -> z) String (StrMap a) z
 
@@ -190,7 +190,7 @@ fromFoldable :: forall f a. (Foldable f) =>
 fromFoldable l = pureST (do
   s <- SM.new
   for_ l (\(Tuple k v) -> SM.poke s k v)
-  return s)
+  pure s)
 
 foreign import _lookupST :: forall a h r z. Fn4 z (a -> z) String (SM.STStrMap h a) (Eff (st :: ST.ST h | r) z)
 
@@ -201,7 +201,7 @@ fromFoldableWith :: forall f a. (Foldable f) =>
 fromFoldableWith f l = pureST (do
   s <- SM.new
   for_ l (\(Tuple k v) -> runFn4 _lookupST v (f v) k s >>= SM.poke s k)
-  return s)
+  pure s)
 
 -- | Create a map from a list of key/value pairs
 fromList :: forall a. L.List (Tuple String a) -> StrMap a
@@ -216,14 +216,14 @@ foreign import _collect :: forall a b . (String -> a -> b) -> StrMap a -> Array 
 
 -- | Convert a map into a list of key/value pairs
 toList :: forall a. StrMap a -> L.List (Tuple String a)
-toList = L.toList <<< _collect Tuple
+toList = L.fromFoldable <<< _collect Tuple
 
 -- | Get an array of the keys in a map
 foreign import keys :: forall a. StrMap a -> Array String
 
 -- | Get a list of the values in a map
 values :: forall a. StrMap a -> L.List a
-values = L.toList <<< _collect (\_ v -> v)
+values = L.fromFoldable <<< _collect (\_ v -> v)
 
 -- | Compute the union of two maps, preferring the first map in the case of
 -- | duplicate keys.

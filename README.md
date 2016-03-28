@@ -12,10 +12,6 @@ Purely-functional map data structures.
 bower install purescript-maps
 ```
 
-## Module documentation
+## Documentation
 
-- [Data.Map](docs/Data/Map.md)
-- [Data.StrMap](docs/Data/StrMap.md)
-- [Data.StrMap.ST](docs/Data/StrMap/ST.md)
-- [Data.StrMap.ST.Unsafe](docs/Data/StrMap/ST/Unsafe.md)
-- [Data.StrMap.Unsafe](docs/Data/StrMap/Unsafe.md)
+Module documentation is [published on Pursuit](http://pursuit.purescript.org/packages/purescript-maps).

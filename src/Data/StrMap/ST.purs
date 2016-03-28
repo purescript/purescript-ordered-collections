@@ -3,15 +3,15 @@
 -- | This module can be used when performance is important and mutation is a local effect.
 
 module Data.StrMap.ST
-  ( STStrMap()
+  ( STStrMap
   , new
   , peek
   , poke
   , delete
   ) where
 
-import Control.Monad.Eff (Eff())
-import Control.Monad.ST (ST())
+import Control.Monad.Eff (Eff)
+import Control.Monad.ST (ST)
 import Data.Maybe (Maybe(..))
 
 -- | A reference to a mutable map
