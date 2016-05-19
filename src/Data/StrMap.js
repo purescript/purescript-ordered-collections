@@ -47,6 +47,7 @@ exports._foldM = function (bind) {
   return function (f) {
     return function (mz) {
       return function (m) {
+        var acc = mz;
         function g(k) {
           return function (z) {
             return f(z)(k)(m[k]);
@@ -54,10 +55,10 @@ exports._foldM = function (bind) {
         }
         for (var k in m) {
           if (m.hasOwnProperty(k)) {
-            mz = bind(mz)(g(k));
+            acc = bind(acc)(g(k));
           }
         }
-        return mz;
+        return acc;
       };
     };
   };
