@@ -143,3 +143,12 @@ strMapTests = do
 
   log "fromFoldable = zip keys values"
   quickCheck $ \(TestStrMap m) -> M.toList m == zipWith Tuple (fromFoldable $ M.keys m) (M.values m :: List Int)
+
+  log "Bug #63: accidental observable mutation in foldMap"
+  quickCheck \(TestStrMap m) ->
+    let lhs = go m
+        rhs = go m
+    in lhs == rhs <?> ("lhs: " <> show lhs <> ", rhs: " <> show rhs)
+    where
+    go :: M.StrMap (Array Ordering) -> Array Ordering
+    go = M.foldMap \_ v -> v
