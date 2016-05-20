@@ -16,6 +16,7 @@ module Data.Map
   , fromList
   , fromListWith
   , delete
+  , pop
   , member
   , alter
   , update
@@ -34,7 +35,7 @@ import Data.List (List(..), length, nub)
 import Data.Maybe (Maybe(..), maybe, isJust)
 import Data.Monoid (class Monoid)
 import Data.Traversable (traverse, class Traversable)
-import Data.Tuple (Tuple(..), uncurry)
+import Data.Tuple (Tuple(..), uncurry, snd)
 
 import Partial.Unsafe (unsafePartial)
 
@@ -195,21 +196,26 @@ insert = down Nil
       ThreeMiddle a k1 v1 k2 v2 d, KickUp b k v c -> up ctx (KickUp (Two a k1 v1 b) k v (Two c k2 v2 d))
       ThreeRight a k1 v1 b k2 v2, KickUp c k v d -> up ctx (KickUp (Two a k1 v1 b) k2 v2 (Two c k v d))
 
--- | Delete a key and its corresponding value from a map
+-- | Delete a key and its corresponding value from a map.
 delete :: forall k v. Ord k => k -> Map k v -> Map k v
-delete = down Nil
+delete k m = maybe m snd (pop k m)
+
+-- | Delete a key and its corresponding value from a map, returning the value
+-- | as well as the subsequent map.
+pop :: forall k v. Ord k => k -> Map k v -> Maybe (Tuple v (Map k v))
+pop = down Nil
   where
   comp :: k -> k -> Ordering
   comp = compare
 
-  down :: List (TreeContext k v) -> k -> Map k v -> Map k v
+  down :: List (TreeContext k v) -> k -> Map k v -> Maybe (Tuple v (Map k v))
   down = unsafePartial \ctx k m -> case m of
-    Leaf -> fromZipper ctx Leaf
+    Leaf -> Nothing
     Two left k1 v1 right ->
       case right, comp k k1 of
-        Leaf, EQ -> up ctx Leaf
+        Leaf, EQ -> Just (Tuple v1 (up ctx Leaf))
         _   , EQ -> let max = maxNode left
-                     in removeMaxNode (Cons (TwoLeft max.key max.value right) ctx) left
+                     in Just (Tuple v1 (removeMaxNode (Cons (TwoLeft max.key max.value right) ctx) left))
         _   , LT -> down (Cons (TwoLeft k1 v1 right) ctx) k left
         _   , _  -> down (Cons (TwoRight left k1 v1) ctx) k right
     Three left k1 v1 mid k2 v2 right ->
@@ -218,12 +224,12 @@ delete = down Nil
               Leaf, Leaf, Leaf -> true
               _   , _   , _    -> false
       in case leaves, comp k k1, comp k k2 of
-        true, EQ, _  -> fromZipper ctx (Two Leaf k2 v2 Leaf)
-        true, _ , EQ -> fromZipper ctx (Two Leaf k1 v1 Leaf)
+        true, EQ, _  -> Just (Tuple v1 (fromZipper ctx (Two Leaf k2 v2 Leaf)))
+        true, _ , EQ -> Just (Tuple v2 (fromZipper ctx (Two Leaf k1 v1 Leaf)))
         _   , EQ, _  -> let max = maxNode left
-                         in removeMaxNode (Cons (ThreeLeft max.key max.value mid k2 v2 right) ctx) left
+                         in Just (Tuple v1 (removeMaxNode (Cons (ThreeLeft max.key max.value mid k2 v2 right) ctx) left))
         _   , _ , EQ -> let max = maxNode mid
-                         in removeMaxNode (Cons (ThreeMiddle left k1 v1 max.key max.value right) ctx) mid
+                         in Just (Tuple v2 (removeMaxNode (Cons (ThreeMiddle left k1 v1 max.key max.value right) ctx) mid))
         _   , LT, _  -> down (Cons (ThreeLeft k1 v1 mid k2 v2 right) ctx) k left
         _   , GT, LT -> down (Cons (ThreeMiddle left k1 v1 k2 v2 right) ctx) k mid
         _   , _ , _  -> down (Cons (ThreeRight left k1 v1 mid k2 v2) ctx) k right

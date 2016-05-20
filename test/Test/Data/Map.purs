@@ -125,6 +125,14 @@ mapTests = do
   quickCheck $ \k v -> M.isEmpty (M.delete (smallKey k) (M.insert k (number v) M.empty))
     <?> ("k: " <> show k <> ", v: " <> show v)
 
+  log "Test pop after inserting"
+  quickCheck $ \k v -> M.pop (smallKey k) (M.insert k (number v) M.empty) == Just (Tuple v M.empty)
+    <?> ("k: " <> show k <> ", v: " <> show v)
+
+  log "Pop non-existent key"
+  quickCheck $ \k1 k2 v -> k1 == k2 || M.pop (smallKey k2) (M.insert k1 (number v) M.empty) == Nothing
+    <?> ("k1: " <> show k1 <> ", k2: " <> show k2 <> ", v: " <> show v)
+
   log "Insert two, lookup first"
   quickCheck $ \k1 v1 k2 v2 -> k1 == k2 || M.lookup k1 (M.insert (smallKey k2) (number v2) (M.insert (smallKey k1) (number v1) M.empty)) == Just v1
     <?> ("k1: " <> show k1 <> ", v1: " <> show v1 <> ", k2: " <> show k2 <> ", v2: " <> show v2)

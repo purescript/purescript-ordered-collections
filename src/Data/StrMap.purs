@@ -18,6 +18,7 @@ module Data.StrMap
   , fromList
   , fromListWith
   , delete
+  , pop
   , member
   , alter
   , update
@@ -173,6 +174,11 @@ foreign import _unsafeDeleteStrMap :: forall a. Fn2 (StrMap a) String (StrMap a)
 -- | Delete a key and value from a map
 delete :: forall a. String -> StrMap a -> StrMap a
 delete k = mutate (\s -> SM.delete s k)
+
+-- | Delete a key and value from a map, returning the value
+-- | as well as the subsequent map
+pop :: forall a. String -> StrMap a -> Maybe (Tuple a (StrMap a))
+pop k m = lookup k m <#> \a -> Tuple a (delete k m)
 
 -- | Insert, remove or update a value for a key in a map
 alter :: forall a. (Maybe a -> Maybe a) -> String -> StrMap a -> StrMap a
