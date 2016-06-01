@@ -21,12 +21,12 @@
     "package.json"
   ],
   "dependencies": {
-    "purescript-arrays": "^1.0.0-rc.4",
-    "purescript-functions": "^1.0.0-rc.1",
-    "purescript-lists": "^1.0.0-rc.1",
-    "purescript-st": "^1.0.0-rc.1"
+    "purescript-arrays": "^1.0.0",
+    "purescript-functions": "^1.0.0",
+    "purescript-lists": "^1.0.0",
+    "purescript-st": "^1.0.0"
   },
   "devDependencies": {
-    "purescript-quickcheck": "^1.0.0-rc.1"
+    "purescript-quickcheck": "^1.0.0"
   }
 }
