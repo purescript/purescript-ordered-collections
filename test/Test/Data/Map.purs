@@ -8,7 +8,7 @@ import Control.Monad.Eff.Console (log, CONSOLE)
 import Control.Monad.Eff.Exception (EXCEPTION)
 import Control.Monad.Eff.Random (RANDOM)
 
-import Data.Foldable (foldl, for_)
+import Data.Foldable (foldl, for_, all)
 import Data.Function (on)
 import Data.List (List(..), groupBy, length, nubBy, sortBy, singleton)
 import Data.Map as M
@@ -111,6 +111,9 @@ smallKey k = k
 
 number :: Int -> Int
 number n = n
+
+smallKeyToNumberMap :: M.Map SmallKey Int -> M.Map SmallKey Int
+smallKeyToNumberMap m = m
 
 mapTests :: forall eff. Eff (console :: CONSOLE, random :: RANDOM, err :: EXCEPTION | eff) Unit
 mapTests = do
@@ -247,3 +250,53 @@ mapTests = do
   quickCheck $ \xs ->
     let xs' = nubBy ((==) `on` fst) xs
     in  M.size (M.fromList xs') == length (xs' :: List (Tuple SmallKey Int))
+
+  log "lookupLE result is correct"
+  quickCheck $ \k (TestMap m) -> case M.lookupLE k (smallKeyToNumberMap m) of
+    Nothing -> all (_ > k) $ M.keys m
+    Just { key: k1, value: v } -> let
+      isCloserKey k2 = k1 < k2 && k2 < k
+      isLTwhenEQexists = k1 < k && M.member k m
+      in   k1 <= k
+        && all (not <<< isCloserKey) (M.keys m)
+        && not isLTwhenEQexists
+        && M.lookup k1 m == Just v
+
+  log "lookupGE result is correct"
+  quickCheck $ \k (TestMap m) -> case M.lookupGE k (smallKeyToNumberMap m) of
+    Nothing -> all (_ < k) $ M.keys m
+    Just { key: k1, value: v } -> let
+      isCloserKey k2 = k < k2 && k2 < k1
+      isGTwhenEQexists = k < k1 && M.member k m
+      in   k1 >= k
+        && all (not <<< isCloserKey) (M.keys m)
+        && not isGTwhenEQexists
+        && M.lookup k1 m == Just v
+
+  log "lookupLT result is correct"
+  quickCheck $ \k (TestMap m) -> case M.lookupLT k (smallKeyToNumberMap m) of
+    Nothing -> all (_ >= k) $ M.keys m
+    Just { key: k1, value: v } -> let
+      isCloserKey k2 = k1 < k2 && k2 < k
+      in   k1 < k
+        && all (not <<< isCloserKey) (M.keys m)
+        && M.lookup k1 m == Just v
+
+  log "lookupGT result is correct"
+  quickCheck $ \k (TestMap m) -> case M.lookupGT k (smallKeyToNumberMap m) of
+    Nothing -> all (_ <= k) $ M.keys m
+    Just { key: k1, value: v } -> let
+      isCloserKey k2 = k < k2 && k2 < k1
+      in   k1 > k
+        && all (not <<< isCloserKey) (M.keys m)
+        && M.lookup k1 m == Just v
+
+  log "findMin result is correct"
+  quickCheck $ \(TestMap m) -> case M.findMin (smallKeyToNumberMap m) of
+    Nothing -> M.isEmpty m
+    Just { key: k, value: v } -> M.lookup k m == Just v && all (_ >= k) (M.keys m)
+
+  log "findMax result is correct"
+  quickCheck $ \(TestMap m) -> case M.findMax (smallKeyToNumberMap m) of
+    Nothing -> M.isEmpty m
+    Just { key: k, value: v } -> M.lookup k m == Just v && all (_ <= k) (M.keys m)
