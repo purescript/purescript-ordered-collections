@@ -10,6 +10,12 @@ module Data.Map
   , checkValid
   , insert
   , lookup
+  , lookupLE
+  , lookupLT
+  , lookupGE
+  , lookupGT
+  , findMin
+  , findMax
   , fromFoldable
   , fromFoldableWith
   , toList
@@ -32,7 +38,7 @@ import Prelude
 
 import Data.Foldable (foldl, foldMap, foldr, class Foldable)
 import Data.List (List(..), length, nub)
-import Data.Maybe (Maybe(..), maybe, isJust)
+import Data.Maybe (Maybe(..), maybe, isJust, fromMaybe)
 import Data.Monoid (class Monoid)
 import Data.Traversable (traverse, class Traversable)
 import Data.Tuple (Tuple(..), uncurry, snd)
@@ -138,6 +144,67 @@ lookup = unsafePartial \k tree ->
                 LT, _  -> lookup k left
                 _ , GT -> lookup k right
                 _ , _  -> lookup k mid
+
+
+-- | Lookup a value for the specified key, or the greatest one less than it
+lookupLE :: forall k v. (Ord k) => k -> Map k v -> Maybe { key :: k, value :: v }
+lookupLE _ Leaf = Nothing
+lookupLE k (Two left k1 v1 right) = case compare k k1 of
+  EQ -> Just { key: k1, value: v1 }
+  GT -> Just $ fromMaybe { key: k1, value: v1 } $ lookupLE k right
+  LT -> lookupLE k left
+lookupLE k (Three left k1 v1 mid k2 v2 right) = case compare k k2 of
+  EQ -> Just { key: k2, value: v2 }
+  GT -> Just $ fromMaybe { key: k2, value: v2 } $ lookupLE k right
+  LT -> lookupLE k $ Two left k1 v1 mid
+
+-- | Lookup a value for the greatest key less than the specified key
+lookupLT :: forall k v. (Ord k) => k -> Map k v -> Maybe { key :: k, value :: v }
+lookupLT _ Leaf = Nothing
+lookupLT k (Two left k1 v1 right) = case compare k k1 of
+  EQ -> findMax left
+  GT -> Just $ fromMaybe { key: k1, value: v1 } $ lookupLT k right
+  LT -> lookupLT k left
+lookupLT k (Three left k1 v1 mid k2 v2 right) = case compare k k2 of
+  EQ -> findMax $ Two left k1 v1 mid
+  GT -> Just $ fromMaybe { key: k2, value: v2 } $ lookupLT k right
+  LT -> lookupLT k $ Two left k1 v1 mid
+
+-- | Lookup a value for the specified key, or the least one greater than it
+lookupGE :: forall k v. (Ord k) => k -> Map k v -> Maybe { key :: k, value :: v }
+lookupGE _ Leaf = Nothing
+lookupGE k (Two left k1 v1 right) = case compare k k1 of
+  EQ -> Just { key: k1, value: v1 }
+  LT -> Just $ fromMaybe { key: k1, value: v1 } $ lookupGE k left
+  GT -> lookupGE k right
+lookupGE k (Three left k1 v1 mid k2 v2 right) = case compare k k1 of
+  EQ -> Just { key: k1, value: v1 }
+  LT -> Just $ fromMaybe { key: k1, value: v1 } $ lookupGE k left
+  GT -> lookupGE k $ Two mid k2 v2 right
+
+-- | Lookup a value for the least key greater than the specified key
+lookupGT :: forall k v. (Ord k) => k -> Map k v -> Maybe { key :: k, value :: v }
+lookupGT _ Leaf = Nothing
+lookupGT k (Two left k1 v1 right) = case compare k k1 of
+  EQ -> findMin right
+  LT -> Just $ fromMaybe { key: k1, value: v1 } $ lookupGT k left
+  GT -> lookupGT k right
+lookupGT k (Three left k1 v1 mid k2 v2 right) = case compare k k1 of
+  EQ -> findMin $ Two mid k2 v2 right
+  LT -> Just $ fromMaybe { key: k1, value: v1 } $ lookupGT k left
+  GT -> lookupGT k $ Two mid k2 v2 right
+
+-- | Returns the pair with the greatest key
+findMax :: forall k v. Map k v -> Maybe { key :: k, value :: v }
+findMax Leaf = Nothing
+findMax (Two _ k1 v1 right) = Just $ fromMaybe { key: k1, value: v1 } $ findMax right
+findMax (Three _ _ _ _ k2 v2 right) = Just $ fromMaybe { key: k2, value: v2 } $ findMax right
+
+-- | Returns the pair with the least key
+findMin :: forall k v. Map k v -> Maybe { key :: k, value :: v }
+findMin Leaf = Nothing
+findMin (Two left k1 v1 _) = Just $ fromMaybe { key: k1, value: v1 } $ findMin left
+findMin (Three left k1 v1 _ _ _ _) = Just $ fromMaybe { key: k1, value: v1 } $ findMin left
 
 -- | Test if a key is a member of a map
 member :: forall k v. Ord k => k -> Map k v -> Boolean
