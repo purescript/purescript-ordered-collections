@@ -32,6 +32,7 @@ module Data.Map
   , unionWith
   , unions
   , size
+  , mapWithKey
   ) where
 
 import Prelude
@@ -410,3 +411,9 @@ unions = foldl union empty
 -- | Calculate the number of key/value pairs in a map
 size :: forall k v. Map k v -> Int
 size = length <<< values
+
+-- | Apply a function of two arguments to each key/value pair, producing a new map
+mapWithKey :: forall k v v'. (k -> v -> v') -> Map k v -> Map k v'
+mapWithKey _ Leaf = Leaf
+mapWithKey f (Two left k v right) = Two (mapWithKey f left) k (f k v) (mapWithKey f right)
+mapWithKey f (Three left k1 v1 mid k2 v2 right) = Three (mapWithKey f left) k1 (f k1 v1) (mapWithKey f mid) k2 (f k2 v2) (mapWithKey f right)
