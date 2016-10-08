@@ -21,6 +21,7 @@ module Data.StrMap
   , member
   , alter
   , update
+  , mapWithKey
   , keys
   , values
   , union
@@ -231,6 +232,12 @@ union m = mutate (\s -> foldM SM.poke s m)
 -- | Compute the union of a collection of maps
 unions :: forall a. L.List (StrMap a) -> StrMap a
 unions = foldl union empty
+
+foreign import _mapWithKey :: forall a b. Fn2 (StrMap a) (String -> a -> b) (StrMap b)
+
+-- | Apply a function of two arguments to each key/value pair, producing a new map
+mapWithKey :: forall a b. (String -> a -> b) -> StrMap a -> StrMap b
+mapWithKey f m = runFn2 _mapWithKey m f
 
 instance semigroupStrMap :: (Semigroup a) => Semigroup (StrMap a) where
   append m1 m2 = mutate (\s1 -> foldM (\s2 k v2 -> SM.poke s2 k (runFn4 _lookup v2 (\v1 -> v1 <> v2) k m2)) s1 m1) m2
