@@ -10,6 +10,7 @@ import Control.Monad.Eff.Random (RANDOM)
 import Data.Foldable (foldl)
 import Data.Function (on)
 import Data.List (List(..), groupBy, sortBy, singleton, fromFoldable, zipWith)
+import Data.List.NonEmpty as NEL
 import Data.Maybe (Maybe(..))
 import Data.StrMap as M
 import Data.Tuple (Tuple(..), fst)
@@ -22,7 +23,7 @@ import Test.QuickCheck.Arbitrary (class Arbitrary, arbitrary)
 newtype TestStrMap v = TestStrMap (M.StrMap v)
 
 instance arbTestStrMap :: (Arbitrary v) => Arbitrary (TestStrMap v) where
-  arbitrary = TestStrMap <<< M.fromList <$> arbitrary
+  arbitrary = TestStrMap <<< (M.fromFoldable :: List (Tuple String v) -> M.StrMap v) <$> arbitrary
 
 data Instruction k v = Insert k v | Delete k
 
@@ -118,26 +119,26 @@ strMapTests = do
     quickCheck (M.lookup "1" nums == Just 2  <?> "invalid lookup - 1")
     quickCheck (M.lookup "2" nums == Nothing <?> "invalid lookup - 2")
 
-  log "fromFoldable . fromList = id"
-  quickCheck $ \arr -> let f x = M.toList (M.fromList x)
+  log "toList . fromFoldable = id"
+  quickCheck $ \arr -> let f x = M.toList (M.fromFoldable x)
                        in f (f arr) == f (arr :: List (Tuple String Int)) <?> show arr
 
-  log "fromList . fromFoldable = id"
+  log "fromFoldable . toList = id"
   quickCheck $ \(TestStrMap m) ->
-    let f m1 = M.fromList (M.toList m1) in
+    let f m1 = M.fromFoldable (M.toList m1) in
     M.toList (f m) == M.toList (m :: M.StrMap Int) <?> show m
 
-  log "fromListWith const = fromList"
-  quickCheck $ \arr -> M.fromListWith const arr ==
-                       M.fromList (arr :: List (Tuple String Int)) <?> show arr
+  log "fromFoldableWith const = fromFoldable"
+  quickCheck $ \arr -> M.fromFoldableWith const arr ==
+                       M.fromFoldable (arr :: List (Tuple String Int)) <?> show arr
 
-  log "fromListWith (<>) = fromList . collapse with (<>) . group on fst"
+  log "fromFoldableWith (<>) = fromFoldable . collapse with (<>) . group on fst"
   quickCheck $ \arr ->
     let combine (Tuple s a) (Tuple t b) = (Tuple s $ b <> a)
         foldl1 g = unsafePartial \(Cons x xs) -> foldl g x xs
-        f = M.fromList <<< map (foldl1 combine) <<<
+        f = M.fromFoldable <<< map (foldl1 combine <<< NEL.toList) <<<
             groupBy ((==) `on` fst) <<< sortBy (compare `on` fst) in
-    M.fromListWith (<>) arr == f (arr :: List (Tuple String String)) <?> show arr
+    M.fromFoldableWith (<>) arr == f (arr :: List (Tuple String String)) <?> show arr
 
   log "Lookup from union"
   quickCheck $ \(TestStrMap m1) (TestStrMap m2) k ->

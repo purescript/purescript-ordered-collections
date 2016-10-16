@@ -11,19 +11,20 @@ import Control.Monad.Eff.Random (RANDOM)
 import Data.Foldable (foldl, for_, all)
 import Data.Function (on)
 import Data.List (List(..), groupBy, length, nubBy, sortBy, singleton)
+import Data.List.NonEmpty as NEL
 import Data.Map as M
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Tuple (Tuple(..), fst)
 
 import Partial.Unsafe (unsafePartial)
 
-import Test.QuickCheck ((<?>), quickCheck, quickCheck')
+import Test.QuickCheck ((<?>), (===), quickCheck, quickCheck')
 import Test.QuickCheck.Arbitrary (class Arbitrary, arbitrary)
 
 newtype TestMap k v = TestMap (M.Map k v)
 
 instance arbTestMap :: (Eq k, Ord k, Arbitrary k, Arbitrary v) => Arbitrary (TestMap k v) where
-  arbitrary = TestMap <<< M.fromList <$> arbitrary
+  arbitrary = TestMap <<< (M.fromFoldable :: List (Tuple k v) -> M.Map k v) <$> arbitrary
 
 data SmallKey = A | B | C | D | E | F | G | H | I | J
 
@@ -193,25 +194,25 @@ mapTests = do
     quickCheck (M.lookup 1 nums == Just 2  <?> "invalid lookup - 1")
     quickCheck (M.lookup 2 nums == Nothing <?> "invalid lookup - 2")
 
-  log "toList . fromList = id"
-  quickCheck $ \arr -> let f x = M.toList (M.fromList x)
+  log "toList . fromFoldable = id"
+  quickCheck $ \arr -> let f x = M.toList (M.fromFoldable x)
                        in f (f arr) == f (arr :: List (Tuple SmallKey Int)) <?> show arr
 
-  log "fromList . toList = id"
-  quickCheck $ \(TestMap m) -> let f m' = M.fromList (M.toList m') in
+  log "fromFoldable . toList = id"
+  quickCheck $ \(TestMap m) -> let f m' = M.fromFoldable (M.toList m') in
                      M.toList (f m) == M.toList (m :: M.Map SmallKey Int) <?> show m
 
-  log "fromListWith const = fromList"
-  quickCheck $ \arr -> M.fromListWith const arr ==
-                       M.fromList (arr :: List (Tuple SmallKey Int)) <?> show arr
+  log "fromFoldableWith const = fromFoldable"
+  quickCheck $ \arr -> M.fromFoldableWith const arr ==
+                       M.fromFoldable (arr :: List (Tuple SmallKey Int)) <?> show arr
 
-  log "fromListWith (<>) = fromList . collapse with (<>) . group on fst"
+  log "fromFoldableWith (<>) = fromFoldable . collapse with (<>) . group on fst"
   quickCheck $ \arr ->
     let combine (Tuple s a) (Tuple t b) = (Tuple s $ b <> a)
         foldl1 g = unsafePartial \(Cons x xs) -> foldl g x xs
-        f = M.fromList <<< map (foldl1 combine) <<<
+        f = M.fromFoldable <<< map (foldl1 combine <<< NEL.toList) <<<
             groupBy ((==) `on` fst) <<< sortBy (compare `on` fst) in
-    M.fromListWith (<>) arr == f (arr :: List (Tuple String String)) <?> show arr
+    M.fromFoldableWith (<>) arr === f (arr :: List (Tuple String String))
 
   log "Lookup from union"
   quickCheck $ \(TestMap m1) (TestMap m2) k ->
@@ -249,7 +250,7 @@ mapTests = do
   log "size"
   quickCheck $ \xs ->
     let xs' = nubBy ((==) `on` fst) xs
-    in  M.size (M.fromList xs') == length (xs' :: List (Tuple SmallKey Int))
+    in  M.size (M.fromFoldable xs') == length (xs' :: List (Tuple SmallKey Int))
 
   log "lookupLE result is correct"
   quickCheck $ \k (TestMap m) -> case M.lookupLE k (smallKeyToNumberMap m) of

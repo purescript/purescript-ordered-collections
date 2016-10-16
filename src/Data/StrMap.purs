@@ -13,10 +13,9 @@ module Data.StrMap
   , insert
   , lookup
   , toList
+  , toUnfoldable
   , fromFoldable
   , fromFoldableWith
-  , fromList
-  , fromListWith
   , delete
   , pop
   , member
@@ -51,6 +50,7 @@ import Data.Monoid (class Monoid, mempty)
 import Data.StrMap.ST as SM
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (Tuple(..), uncurry)
+import Data.Unfoldable (class Unfoldable)
 
 -- | `StrMap a` represents a map from `String`s to values of type `a`.
 foreign import data StrMap :: * -> *
@@ -191,8 +191,7 @@ update :: forall a. (a -> Maybe a) -> String -> StrMap a -> StrMap a
 update f k m = alter (maybe Nothing f) k m
 
 -- | Create a map from a foldable collection of key/value pairs
-fromFoldable :: forall f a. (Foldable f) =>
-                f (Tuple String a) -> StrMap a
+fromFoldable :: forall f a. Foldable f => f (Tuple String a) -> StrMap a
 fromFoldable l = pureST (do
   s <- SM.new
   for_ l (\(Tuple k v) -> SM.poke s k v)
@@ -202,27 +201,20 @@ foreign import _lookupST :: forall a h r z. Fn4 z (a -> z) String (SM.STStrMap h
 
 -- | Create a map from a foldable collection of key/value pairs, using the
 -- | specified function to combine values for duplicate keys.
-fromFoldableWith :: forall f a. (Foldable f) =>
-                    (a -> a -> a) -> f (Tuple String a) -> StrMap a
+fromFoldableWith :: forall f a. Foldable f => (a -> a -> a) -> f (Tuple String a) -> StrMap a
 fromFoldableWith f l = pureST (do
   s <- SM.new
   for_ l (\(Tuple k v) -> runFn4 _lookupST v (f v) k s >>= SM.poke s k)
   pure s)
-
--- | Create a map from a list of key/value pairs
-fromList :: forall a. L.List (Tuple String a) -> StrMap a
-fromList = fromFoldable
-
--- | Create a map from a list of key/value pairs, using the specified function
--- | to combine values for duplicate keys.
-fromListWith :: forall a. (a -> a -> a) -> L.List (Tuple String a) -> StrMap a
-fromListWith = fromFoldableWith
 
 foreign import _collect :: forall a b . (String -> a -> b) -> StrMap a -> Array b
 
 -- | Convert a map into a list of key/value pairs
 toList :: forall a. StrMap a -> L.List (Tuple String a)
 toList = L.fromFoldable <<< _collect Tuple
+
+toUnfoldable :: forall f a. Unfoldable f => StrMap a -> f (Tuple String a)
+toUnfoldable = L.toUnfoldable <<< toList
 
 -- | Get an array of the keys in a map
 foreign import keys :: forall a. StrMap a -> Array String
