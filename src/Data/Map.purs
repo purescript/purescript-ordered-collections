@@ -19,8 +19,7 @@ module Data.Map
   , fromFoldable
   , fromFoldableWith
   , toList
-  , fromList
-  , fromListWith
+  , toUnfoldable
   , delete
   , pop
   , member
@@ -38,11 +37,12 @@ module Data.Map
 import Prelude
 
 import Data.Foldable (foldl, foldMap, foldr, class Foldable)
-import Data.List (List(..), length, nub)
+import Data.List (List(..), (:), length, nub)
 import Data.Maybe (Maybe(..), maybe, isJust, fromMaybe)
 import Data.Monoid (class Monoid)
 import Data.Traversable (traverse, class Traversable)
 import Data.Tuple (Tuple(..), uncurry, snd)
+import Data.Unfoldable (class Unfoldable, unfoldr)
 
 import Partial.Unsafe (unsafePartial)
 
@@ -55,16 +55,16 @@ data Map k v
 instance eqMap :: (Eq k, Eq v) => Eq (Map k v) where
   eq m1 m2 = toList m1 == toList m2
 
-instance showMap :: (Show k, Show v) => Show (Map k v) where
-  show m = "(fromList " <> show (toList m) <> ")"
-
 instance ordMap :: (Ord k, Ord v) => Ord (Map k v) where
   compare m1 m2 = compare (toList m1) (toList m2)
 
-instance semigroupMap :: (Ord k) => Semigroup (Map k v) where
+instance showMap :: (Show k, Show v) => Show (Map k v) where
+  show m = "(fromList " <> show (toList m) <> ")"
+
+instance semigroupMap :: Ord k => Semigroup (Map k v) where
   append = union
 
-instance monoidMap :: (Ord k) => Monoid (Map k v) where
+instance monoidMap :: Ord k => Monoid (Map k v) where
   mempty = empty
 
 instance functorMap :: Functor (Map k) where
@@ -77,7 +77,7 @@ instance foldableMap :: Foldable (Map k) where
   foldr   f z m = foldr   f z (values m)
   foldMap f   m = foldMap f   (values m)
 
-instance traversableMap :: (Ord k) => Traversable (Map k) where
+instance traversableMap :: Ord k => Traversable (Map k) where
   traverse f ms = foldr (\x acc -> union <$> x <*> acc) (pure empty) ((map (uncurry singleton)) <$> (traverse f <$> toList ms))
   sequence = traverse id
 
@@ -368,17 +368,17 @@ fromFoldableWith f = foldl (\m (Tuple k v) -> alter (combine v) k m) empty where
 -- | Convert a map to a list of key/value pairs
 toList :: forall k v. Map k v -> List (Tuple k v)
 toList Leaf = Nil
-toList (Two left k v right) = toList left <> pure (Tuple k v) <> toList right
-toList (Three left k1 v1 mid k2 v2 right) = toList left <> pure (Tuple k1 v1) <> toList mid <> pure (Tuple k2 v2) <> toList right
+toList (Two left k v right) = toList left <> Tuple k v : toList right
+toList (Three left k1 v1 mid k2 v2 right) = toList left <> Tuple k1 v1 : toList mid <> Tuple k2 v2 : toList right
 
--- | Create a map from a list of key/value pairs
-fromList :: forall k v. Ord k => List (Tuple k v) -> Map k v
-fromList = fromFoldable
-
--- | Create a map from a list of key/value pairs, using the specified function
--- | to combine values for duplicate keys.
-fromListWith :: forall k v. Ord k => (v -> v -> v) -> List (Tuple k v) -> Map k v
-fromListWith = fromFoldableWith
+-- | Convert a map to an unfoldable structure of key/value pairs
+toUnfoldable :: forall f k v. (Ord k, Unfoldable f) => Map k v -> f (Tuple k v)
+toUnfoldable = unfoldr go
+  where
+  go :: Map k v -> Maybe (Tuple (Tuple k v) (Map k v))
+  go Leaf = Nothing
+  go (Two left k v right) = Just $ Tuple (Tuple k v) (left <> right)
+  go (Three left k1 v1 mid k2 v2 right) = Just $ Tuple (Tuple k1 v1) (Two left k2 v2 right)
 
 -- | Get a list of the keys contained in a map
 keys :: forall k v. Map k v -> List k
