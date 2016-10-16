@@ -301,3 +301,10 @@ mapTests = do
   quickCheck $ \(TestMap m) -> case M.findMax (smallKeyToNumberMap m) of
     Nothing -> M.isEmpty m
     Just { key: k, value: v } -> M.lookup k m == Just v && all (_ <= k) (M.keys m)
+
+  log "mapWithKey is correct"
+  quickCheck $ \(TestMap m :: TestMap String Int) -> let
+    f k v = k <> show v
+    resultViaMapWithKey = m # M.mapWithKey f
+    resultViaLists = m # M.toList # map (\(Tuple k v) → Tuple k (f k v)) # M.fromFoldable
+    in resultViaMapWithKey === resultViaLists

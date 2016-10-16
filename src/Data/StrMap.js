@@ -42,6 +42,17 @@ exports._fmapStrMap = function (m0, f) {
   return m;
 };
 
+// jshint maxparams: 2
+exports._mapWithKey = function (m0, f) {
+  var m = {};
+  for (var k in m0) {
+    if (m0.hasOwnProperty(k)) {
+      m[k] = f(k)(m0[k]);
+    }
+  }
+  return m;
+};
+
 // jshint maxparams: 1
 exports._foldM = function (bind) {
   return function (f) {
