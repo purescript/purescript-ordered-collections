@@ -202,6 +202,10 @@ mapTests = do
   quickCheck $ \(TestMap m) -> let f m' = M.fromFoldable (M.toList m') in
                      M.toList (f m) == M.toList (m :: M.Map SmallKey Int) <?> show m
 
+  log "fromFoldable . toUnfoldable = id"
+  quickCheck $ \(TestMap m) -> let f m' = M.fromFoldable (M.toUnfoldable m' :: List (Tuple SmallKey Int)) in
+                     f m == (m :: M.Map SmallKey Int) <?> show m
+
   log "fromFoldableWith const = fromFoldable"
   quickCheck $ \arr -> M.fromFoldableWith const arr ==
                        M.fromFoldable (arr :: List (Tuple SmallKey Int)) <?> show arr
