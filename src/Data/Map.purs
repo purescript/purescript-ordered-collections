@@ -378,7 +378,7 @@ toUnfoldable = unfoldr go
   go :: Map k v -> Maybe (Tuple (Tuple k v) (Map k v))
   go Leaf = Nothing
   go (Two left k v right) = Just $ Tuple (Tuple k v) (left <> right)
-  go (Three left k1 v1 mid k2 v2 right) = Just $ Tuple (Tuple k1 v1) (Two left k2 v2 right)
+  go (Three left k1 v1 mid k2 v2 right) = Just $ Tuple (Tuple k1 v1) (insert k2 v2 (left <> mid <> right))
 
 -- | Get a list of the keys contained in a map
 keys :: forall k v. Map k v -> List k
