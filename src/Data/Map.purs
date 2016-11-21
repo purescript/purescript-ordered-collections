@@ -372,13 +372,15 @@ toList (Two left k v right) = toList left <> Tuple k v : toList right
 toList (Three left k1 v1 mid k2 v2 right) = toList left <> Tuple k1 v1 : toList mid <> Tuple k2 v2 : toList right
 
 -- | Convert a map to an unfoldable structure of key/value pairs
-toUnfoldable :: forall f k v. (Ord k, Unfoldable f) => Map k v -> f (Tuple k v)
-toUnfoldable = unfoldr go
-  where
-  go :: Map k v -> Maybe (Tuple (Tuple k v) (Map k v))
-  go Leaf = Nothing
-  go (Two left k v right) = Just $ Tuple (Tuple k v) (left <> right)
-  go (Three left k1 v1 mid k2 v2 right) = Just $ Tuple (Tuple k1 v1) (insert k2 v2 (left <> mid <> right))
+toUnfoldable :: forall f k v. Unfoldable f => Map k v -> f (Tuple k v)
+toUnfoldable m = unfoldr go (m : Nil) where
+  go Nil = Nothing
+  go (hd : tl) = case hd of
+    Leaf -> go tl
+    Two left k v right ->
+      Just $ Tuple (Tuple k v) (left : right : tl)
+    Three left k1 v1 mid k2 v2 right ->
+      Just $ Tuple (Tuple k1 v1) ((singleton k2 v2) : left : mid : right : tl)
 
 -- | Get a list of the keys contained in a map
 keys :: forall k v. Map k v -> List k
