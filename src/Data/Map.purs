@@ -41,7 +41,7 @@ import Data.List (List(..), (:), length, nub)
 import Data.Maybe (Maybe(..), maybe, isJust, fromMaybe)
 import Data.Monoid (class Monoid)
 import Data.Traversable (traverse, class Traversable)
-import Data.Tuple (Tuple(..), uncurry, snd)
+import Data.Tuple (Tuple(Tuple), snd)
 import Data.Unfoldable (class Unfoldable, unfoldr)
 
 import Partial.Unsafe (unsafePartial)
