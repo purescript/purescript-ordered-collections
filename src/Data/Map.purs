@@ -41,7 +41,7 @@ import Data.List (List(..), (:), length, nub)
 import Data.Maybe (Maybe(..), maybe, isJust, fromMaybe)
 import Data.Monoid (class Monoid)
 import Data.Traversable (traverse, class Traversable)
-import Data.Tuple (Tuple(..), uncurry, snd)
+import Data.Tuple (Tuple(Tuple), snd)
 import Data.Unfoldable (class Unfoldable, unfoldr)
 
 import Partial.Unsafe (unsafePartial)
@@ -77,8 +77,21 @@ instance foldableMap :: Foldable (Map k) where
   foldr   f z m = foldr   f z (values m)
   foldMap f   m = foldMap f   (values m)
 
-instance traversableMap :: Ord k => Traversable (Map k) where
-  traverse f ms = foldr (\x acc -> union <$> x <*> acc) (pure empty) ((map (uncurry singleton)) <$> (traverse f <$> toList ms))
+instance traversableMap :: Traversable (Map k) where
+  traverse f Leaf = pure Leaf
+  traverse f (Two left k v right) =
+    Two <$> traverse f left
+        <*> pure k
+        <*> f v
+        <*> traverse f right
+  traverse f (Three left k1 v1 mid k2 v2 right) =
+    Three <$> traverse f left
+          <*> pure k1
+          <*> f v1
+          <*> traverse f mid
+          <*> pure k2
+          <*> f v2
+          <*> traverse f right
   sequence = traverse id
 
 -- | Render a `Map` as a `String`
