@@ -380,7 +380,7 @@ toUnfoldable m = unfoldr go (m : Nil) where
     Two left k v right ->
       Just $ Tuple (Tuple k v) (left : right : tl)
     Three left k1 v1 mid k2 v2 right ->
-      Just $ Tuple (Tuple k1 v1) ((singleton k2 v2) : left : mid : right : tl)
+      Just $ Tuple (Tuple k1 v1) (singleton k2 v2 : left : mid : right : tl)
 
 -- | Get a list of the keys contained in a map
 keys :: forall k v. Map k v -> List k
