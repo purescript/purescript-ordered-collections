@@ -218,6 +218,12 @@ mapTests = do
             groupBy ((==) `on` fst) <<< sortBy (compare `on` fst) in
     M.fromFoldableWith (<>) arr === f (arr :: List (Tuple String String))
 
+  log "toAscList is sorted version of toList"
+  quickCheck $ \(TestMap m) ->
+    let list = M.toList (m :: M.Map SmallKey Int)
+        ascList = M.toAscList m
+    in ascList === sortBy (compare `on` fst) list
+
   log "Lookup from union"
   quickCheck $ \(TestMap m1) (TestMap m2) k ->
     M.lookup (smallKey k) (M.union m1 m2) == (case M.lookup k m1 of

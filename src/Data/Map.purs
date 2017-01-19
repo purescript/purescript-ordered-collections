@@ -19,6 +19,7 @@ module Data.Map
   , fromFoldable
   , fromFoldableWith
   , toList
+  , toAscList
   , toUnfoldable
   , delete
   , pop
@@ -383,6 +384,10 @@ toList :: forall k v. Map k v -> List (Tuple k v)
 toList Leaf = Nil
 toList (Two left k v right) = toList left <> Tuple k v : toList right
 toList (Three left k1 v1 mid k2 v2 right) = toList left <> Tuple k1 v1 : toList mid <> Tuple k2 v2 : toList right
+
+-- | Convert a map to a list of key/value pairs where the keys are in ascending order
+toAscList :: forall k v. Map k v -> List (Tuple k v)
+toAscList = toList
 
 -- | Convert a map to an unfoldable structure of key/value pairs
 toUnfoldable :: forall f k v. Unfoldable f => Map k v -> f (Tuple k v)
