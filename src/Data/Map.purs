@@ -54,13 +54,13 @@ data Map k v
   | Three (Map k v) k v (Map k v) k v (Map k v)
 
 instance eqMap :: (Eq k, Eq v) => Eq (Map k v) where
-  eq m1 m2 = toList m1 == toList m2
+  eq m1 m2 = toAscList m1 == toAscList m2
 
 instance ordMap :: (Ord k, Ord v) => Ord (Map k v) where
-  compare m1 m2 = compare (toList m1) (toList m2)
+  compare m1 m2 = compare (toAscList m1) (toAscList m2)
 
 instance showMap :: (Show k, Show v) => Show (Map k v) where
-  show m = "(fromList " <> show (toList m) <> ")"
+  show m = "(fromList " <> show (toAscList m) <> ")"
 
 instance semigroupMap :: Ord k => Semigroup (Map k v) where
   append = union
