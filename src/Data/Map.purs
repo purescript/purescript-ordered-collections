@@ -381,9 +381,10 @@ fromFoldableWith f = foldl (\m (Tuple k v) -> alter (combine v) k m) empty where
   combine v (Just v') = Just $ f v v'
   combine v Nothing = Just v
 
--- | Convert a map to a list of key/value pairs
+-- | Convert a map to a list of key/value pairs.
+-- | DEPRECATED: use toUnfoldable or toAscUnfoldable instead.
 toList :: forall k v. Map k v -> List (Tuple k v)
-toList = toUnfoldable
+toList = toAscUnfoldable
 
 -- | Convert a map to an unfoldable structure of key/value pairs
 toUnfoldable :: forall f k v. Unfoldable f => Map k v -> f (Tuple k v)
