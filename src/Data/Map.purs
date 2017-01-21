@@ -20,6 +20,7 @@ module Data.Map
   , fromFoldableWith
   , toList
   , toUnfoldable
+  , toAscUnfoldable
   , delete
   , pop
   , member
@@ -35,7 +36,6 @@ module Data.Map
   ) where
 
 import Prelude
-
 import Data.Foldable (foldl, foldMap, foldr, class Foldable)
 import Data.List (List(..), (:), length, nub)
 import Data.Maybe (Maybe(..), maybe, isJust, fromMaybe)
@@ -43,7 +43,6 @@ import Data.Monoid (class Monoid)
 import Data.Traversable (traverse, class Traversable)
 import Data.Tuple (Tuple(Tuple), snd)
 import Data.Unfoldable (class Unfoldable, unfoldr)
-
 import Partial.Unsafe (unsafePartial)
 
 -- | `Map k v` represents maps from keys of type `k` to values of type `v`.
@@ -52,14 +51,18 @@ data Map k v
   | Two (Map k v) k v (Map k v)
   | Three (Map k v) k v (Map k v) k v (Map k v)
 
+-- Internal use
+toAscArray :: forall k v. Map k v -> Array (Tuple k v)
+toAscArray = toAscUnfoldable
+
 instance eqMap :: (Eq k, Eq v) => Eq (Map k v) where
-  eq m1 m2 = toList m1 == toList m2
+  eq m1 m2 = toAscArray m1 == toAscArray m2
 
 instance ordMap :: (Ord k, Ord v) => Ord (Map k v) where
-  compare m1 m2 = compare (toList m1) (toList m2)
+  compare m1 m2 = compare (toAscArray m1) (toAscArray m2)
 
 instance showMap :: (Show k, Show v) => Show (Map k v) where
-  show m = "(fromList " <> show (toList m) <> ")"
+  show m = "(fromFoldable " <> show (toAscArray m) <> ")"
 
 instance semigroupMap :: Ord k => Semigroup (Map k v) where
   append = union
@@ -378,11 +381,10 @@ fromFoldableWith f = foldl (\m (Tuple k v) -> alter (combine v) k m) empty where
   combine v (Just v') = Just $ f v v'
   combine v Nothing = Just v
 
--- | Convert a map to a list of key/value pairs
+-- | Convert a map to a list of key/value pairs.
+-- | DEPRECATED: use toUnfoldable or toAscUnfoldable instead.
 toList :: forall k v. Map k v -> List (Tuple k v)
-toList Leaf = Nil
-toList (Two left k v right) = toList left <> Tuple k v : toList right
-toList (Three left k1 v1 mid k2 v2 right) = toList left <> Tuple k1 v1 : toList mid <> Tuple k2 v2 : toList right
+toList = toAscUnfoldable
 
 -- | Convert a map to an unfoldable structure of key/value pairs
 toUnfoldable :: forall f k v. Unfoldable f => Map k v -> f (Tuple k v)
@@ -394,6 +396,21 @@ toUnfoldable m = unfoldr go (m : Nil) where
       Just $ Tuple (Tuple k v) (left : right : tl)
     Three left k1 v1 mid k2 v2 right ->
       Just $ Tuple (Tuple k1 v1) (singleton k2 v2 : left : mid : right : tl)
+
+-- | Convert a map to an unfoldable structure of key/value pairs where the keys are in ascending order
+toAscUnfoldable :: forall f k v. Unfoldable f => Map k v -> f (Tuple k v)
+toAscUnfoldable m = unfoldr go (m : Nil) where
+  go Nil = Nothing
+  go (hd : tl) = case hd of
+    Leaf -> go tl
+    Two Leaf k v Leaf ->
+      Just $ Tuple (Tuple k v) tl
+    Two Leaf k v right ->
+      Just $ Tuple (Tuple k v) (right : tl)
+    Two left k v right ->
+      go $ left : singleton k v : right : tl
+    Three left k1 v1 mid k2 v2 right ->
+      go $ left : singleton k1 v1 : mid : singleton k2 v2 : right : tl
 
 -- | Get a list of the keys contained in a map
 keys :: forall k v. Map k v -> List k

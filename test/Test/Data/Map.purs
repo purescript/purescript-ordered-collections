@@ -1,23 +1,19 @@
 module Test.Data.Map where
 
 import Prelude
-
+import Data.List.NonEmpty as NEL
+import Data.Map as M
 import Control.Alt ((<|>))
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (log, CONSOLE)
 import Control.Monad.Eff.Exception (EXCEPTION)
 import Control.Monad.Eff.Random (RANDOM)
-
 import Data.Foldable (foldl, for_, all)
 import Data.Function (on)
-import Data.List (List(..), groupBy, length, nubBy, sortBy, singleton)
-import Data.List.NonEmpty as NEL
-import Data.Map as M
+import Data.List (List(Cons), groupBy, length, nubBy, singleton, sort, sortBy)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Tuple (Tuple(..), fst)
-
 import Partial.Unsafe (unsafePartial)
-
 import Test.QuickCheck ((<?>), (===), quickCheck, quickCheck')
 import Test.QuickCheck.Arbitrary (class Arbitrary, arbitrary)
 
@@ -170,7 +166,7 @@ mapTests = do
     in M.lookup k tree == Just v <?> ("instrs:\n  " <> show instrs <> "\nk:\n  " <> show k <> "\nv:\n  " <> show v)
 
   log "Singleton to list"
-  quickCheck $ \k v -> M.toList (M.singleton k v :: M.Map SmallKey Int) == singleton (Tuple k v)
+  quickCheck $ \k v -> M.toUnfoldable (M.singleton k v :: M.Map SmallKey Int) == singleton (Tuple k v)
 
   log "fromFoldable [] = empty"
   quickCheck (M.fromFoldable [] == (M.empty :: M.Map Unit Unit)
@@ -194,21 +190,21 @@ mapTests = do
     quickCheck (M.lookup 1 nums == Just 2  <?> "invalid lookup - 1")
     quickCheck (M.lookup 2 nums == Nothing <?> "invalid lookup - 2")
 
-  log "toList . fromFoldable = id"
-  quickCheck $ \arr -> let f x = M.toList (M.fromFoldable x)
-                       in f (f arr) == f (arr :: List (Tuple SmallKey Int)) <?> show arr
-
-  log "fromFoldable . toList = id"
-  quickCheck $ \(TestMap m) -> let f m' = M.fromFoldable (M.toList m') in
-                     M.toList (f m) == M.toList (m :: M.Map SmallKey Int) <?> show m
+  log "sort . toUnfoldable . fromFoldable = sort (on lists without key-duplicates)"
+  quickCheck $ \(list :: List (Tuple SmallKey Int)) ->
+    let nubbedList = nubBy ((==) `on` fst) list
+        f x = M.toUnfoldable (M.fromFoldable x)
+    in sort (f nubbedList) == sort nubbedList <?> show nubbedList
 
   log "fromFoldable . toUnfoldable = id"
-  quickCheck $ \(TestMap m) -> let f m' = M.fromFoldable (M.toUnfoldable m' :: List (Tuple SmallKey Int)) in
-                     f m == (m :: M.Map SmallKey Int) <?> show m
+  quickCheck $ \(TestMap (m :: M.Map SmallKey Int)) ->
+    let f m' = M.fromFoldable (M.toUnfoldable m' :: List (Tuple SmallKey Int))
+    in f m == m <?> show m
 
   log "fromFoldableWith const = fromFoldable"
-  quickCheck $ \arr -> M.fromFoldableWith const arr ==
-                       M.fromFoldable (arr :: List (Tuple SmallKey Int)) <?> show arr
+  quickCheck $ \arr ->
+    M.fromFoldableWith const arr ==
+    M.fromFoldable (arr :: List (Tuple SmallKey Int)) <?> show arr
 
   log "fromFoldableWith (<>) = fromFoldable . collapse with (<>) . group on fst"
   quickCheck $ \arr ->
@@ -217,6 +213,12 @@ mapTests = do
         f = M.fromFoldable <<< map (foldl1 combine <<< NEL.toList) <<<
             groupBy ((==) `on` fst) <<< sortBy (compare `on` fst) in
     M.fromFoldableWith (<>) arr === f (arr :: List (Tuple String String))
+
+  log "toAscUnfoldable is sorted version of toUnfoldable"
+  quickCheck $ \(TestMap m) ->
+    let list = M.toUnfoldable (m :: M.Map SmallKey Int)
+        ascList = M.toAscUnfoldable m
+    in ascList === sortBy (compare `on` fst) list
 
   log "Lookup from union"
   quickCheck $ \(TestMap m1) (TestMap m2) k ->
@@ -310,5 +312,6 @@ mapTests = do
   quickCheck $ \(TestMap m :: TestMap String Int) -> let
     f k v = k <> show v
     resultViaMapWithKey = m # M.mapWithKey f
-    resultViaLists = m # M.toList # map (\(Tuple k v) → Tuple k (f k v)) # M.fromFoldable
+    toList = M.toUnfoldable :: forall k v. M.Map k v -> List (Tuple k v)
+    resultViaLists = m # toList # map (\(Tuple k v) → Tuple k (f k v)) # M.fromFoldable
     in resultViaMapWithKey === resultViaLists
