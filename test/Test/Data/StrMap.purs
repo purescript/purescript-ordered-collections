@@ -19,6 +19,7 @@ import Partial.Unsafe (unsafePartial)
 
 import Test.QuickCheck ((<?>), quickCheck, quickCheck', (===))
 import Test.QuickCheck.Arbitrary (class Arbitrary, arbitrary)
+import Test.QuickCheck.Gen as Gen
 
 newtype TestStrMap v = TestStrMap (M.StrMap v)
 
@@ -34,8 +35,8 @@ instance showInstruction :: (Show k, Show v) => Show (Instruction k v) where
 instance arbInstruction :: (Arbitrary v) => Arbitrary (Instruction String v) where
   arbitrary = do
     b <- arbitrary
-    kIshasOwnProperty <- (&&) <$> arbitrary <*> arbitrary
-    k <- if kIshasOwnProperty then pure "hasOwnProperty" else arbitrary
+    k <- Gen.frequency (Tuple 10.0 (pure "hasOwnProperty"))
+                       (Tuple 50.0 arbitrary `Cons` Nil)
     case b of
       true -> do
         v <- arbitrary
