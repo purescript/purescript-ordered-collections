@@ -34,7 +34,8 @@ instance showInstruction :: (Show k, Show v) => Show (Instruction k v) where
 instance arbInstruction :: (Arbitrary v) => Arbitrary (Instruction String v) where
   arbitrary = do
     b <- arbitrary
-    k <- arbitrary
+    kIshasOwnProperty <- (&&) <$> arbitrary <*> arbitrary
+    k <- if kIshasOwnProperty then pure "hasOwnProperty" else arbitrary
     case b of
       true -> do
         v <- arbitrary
