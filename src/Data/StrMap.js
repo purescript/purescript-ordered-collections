@@ -3,21 +3,11 @@
 
 // module Data.StrMap
 
-exports._copy = function (m) {
-  var r = {};
-  for (var k in m) {
-    if ({}.hasOwnProperty.call(m, k)) {
-      r[k] = m[k];
-    }
-  }
-  return r;
-};
-
 exports._copyEff = function (m) {
   return function () {
     var r = {};
     for (var k in m) {
-      if ({}.hasOwnProperty.call(m, k)) {
+      if (hasOwnProperty.call(m, k)) {
         r[k] = m[k];
       }
     }
@@ -35,7 +25,7 @@ exports.runST = function (f) {
 exports._fmapStrMap = function (m0, f) {
   var m = {};
   for (var k in m0) {
-    if ({}.hasOwnProperty.call(m0, k)) {
+    if (hasOwnProperty.call(m0, k)) {
       m[k] = f(m0[k]);
     }
   }
@@ -46,7 +36,7 @@ exports._fmapStrMap = function (m0, f) {
 exports._mapWithKey = function (m0, f) {
   var m = {};
   for (var k in m0) {
-    if ({}.hasOwnProperty.call(m0, k)) {
+    if (hasOwnProperty.call(m0, k)) {
       m[k] = f(k)(m0[k]);
     }
   }
@@ -65,7 +55,7 @@ exports._foldM = function (bind) {
           };
         }
         for (var k in m) {
-          if ({}.hasOwnProperty.call(m, k)) {
+          if (hasOwnProperty.call(m, k)) {
             acc = bind(acc)(g(k));
           }
         }
@@ -78,7 +68,7 @@ exports._foldM = function (bind) {
 // jshint maxparams: 4
 exports._foldSCStrMap = function (m, z, f, fromMaybe) {
   for (var k in m) {
-    if ({}.hasOwnProperty.call(m, k)) {
+    if (hasOwnProperty.call(m, k)) {
       var maybeR = f(z)(k)(m[k]);
       var r = fromMaybe(null)(maybeR);
       if (r === null) return z;
@@ -92,7 +82,7 @@ exports._foldSCStrMap = function (m, z, f, fromMaybe) {
 exports.all = function (f) {
   return function (m) {
     for (var k in m) {
-      if ({}.hasOwnProperty.call(m, k) && !f(k)(m[k])) return false;
+      if (hasOwnProperty.call(m, k) && !f(k)(m[k])) return false;
     }
     return true;
   };
@@ -101,7 +91,7 @@ exports.all = function (f) {
 exports.size = function (m) {
   var s = 0;
   for (var k in m) {
-    if ({}.hasOwnProperty.call(m, k)) {
+    if (hasOwnProperty.call(m, k)) {
       ++s;
     }
   }
@@ -130,7 +120,7 @@ function _collect(f) {
   return function (m) {
     var r = [];
     for (var k in m) {
-      if ({}.hasOwnProperty.call(m, k)) {
+      if (hasOwnProperty.call(m, k)) {
         r.push(f(k)(m[k]));
       }
     }

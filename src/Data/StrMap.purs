@@ -56,8 +56,6 @@ import Data.Unfoldable (class Unfoldable)
 -- | `StrMap a` represents a map from `String`s to values of type `a`.
 foreign import data StrMap :: * -> *
 
-foreign import _copy :: forall a. StrMap a -> StrMap a
-
 foreign import _copyEff :: forall a b h r. a -> Eff (st :: ST.ST h | r) b
 
 -- | Convert an immutable map into a mutable map
