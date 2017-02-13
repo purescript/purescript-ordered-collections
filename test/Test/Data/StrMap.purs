@@ -59,6 +59,9 @@ strMapTests = do
   quickCheck $ \k v -> M.lookup k (M.insert k v M.empty) == Just (number v)
     <?> ("k: " <> show k <> ", v: " <> show v)
 
+  quickCheck $ \k v1 v2 ->
+    M.lookup (smallKey k) (M.insert k v2 (M.insert k v1 M.empty)) == Just (number v2)
+
   log "Test delete after inserting"
   quickCheck $ \k v -> M.isEmpty (M.delete k (M.insert k (number v) M.empty))
     <?> ("k: " <> show k <> ", v: " <> show v)

@@ -246,7 +246,7 @@ fromZipper (Cons x ctx) tree =
 
 data KickUp k v = KickUp (Map k v) k v (Map k v)
 
--- | Insert a key/value pair into a map
+-- | Insert or replace a key/value pair in a map
 insert :: forall k v. Ord k => k -> v -> Map k v -> Map k v
 insert = down Nil
   where
