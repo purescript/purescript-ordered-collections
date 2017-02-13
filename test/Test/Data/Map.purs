@@ -49,7 +49,7 @@ instance showInstruction :: (Show k, Show v) => Show (Instruction k v) where
   show (Delete k) = "Delete (" <> show k <> ")"
 
 instance arbInstruction :: (Arbitrary k, Arbitrary v) => Arbitrary (Instruction k v) where
-  arbitrary = oneOf (Insert <$> arbitrary <*> arbitrary) [(Delete <$> arbitrary)]
+  arbitrary = oneOf (Insert <$> arbitrary <*> arbitrary) [Delete <$> arbitrary]
 
 runInstructions :: forall k v. Ord k => List (Instruction k v) -> M.Map k v -> M.Map k v
 runInstructions instrs t0 = foldl step t0 instrs
