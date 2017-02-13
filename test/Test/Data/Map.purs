@@ -23,6 +23,8 @@ instance arbTestMap :: (Eq k, Ord k, Arbitrary k, Arbitrary v) => Arbitrary (Tes
   arbitrary = TestMap <<< (M.fromFoldable :: List (Tuple k v) -> M.Map k v) <$> arbitrary
 
 data SmallKey = A | B | C | D | E | F | G | H | I | J
+derive instance eqSmallKey :: Eq SmallKey
+derive instance ordSmallKey :: Ord SmallKey
 
 instance showSmallKey :: Show SmallKey where
   show A = "A"
@@ -35,34 +37,6 @@ instance showSmallKey :: Show SmallKey where
   show H = "H"
   show I = "I"
   show J = "J"
-
-instance eqSmallKey :: Eq SmallKey where
-  eq A A = true
-  eq B B = true
-  eq C C = true
-  eq D D = true
-  eq E E = true
-  eq F F = true
-  eq G G = true
-  eq H H = true
-  eq I I = true
-  eq J J = true
-  eq _ _ = false
-
-smallKeyToInt :: SmallKey -> Int
-smallKeyToInt A = 0
-smallKeyToInt B = 1
-smallKeyToInt C = 2
-smallKeyToInt D = 3
-smallKeyToInt E = 4
-smallKeyToInt F = 5
-smallKeyToInt G = 6
-smallKeyToInt H = 7
-smallKeyToInt I = 8
-smallKeyToInt J = 9
-
-instance ordSmallKey :: Ord SmallKey where
-  compare = compare `on` smallKeyToInt
 
 instance arbSmallKey :: Arbitrary SmallKey where
   arbitrary = do
