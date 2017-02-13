@@ -15,7 +15,7 @@ import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Tuple (Tuple(..), fst)
 import Partial.Unsafe (unsafePartial)
 import Test.QuickCheck ((<?>), (===), quickCheck, quickCheck')
-import Test.QuickCheck.Gen (oneOf)
+import Test.QuickCheck.Gen (elements, oneOf)
 import Test.QuickCheck.Arbitrary (class Arbitrary, arbitrary)
 
 newtype TestMap k v = TestMap (M.Map k v)
@@ -40,7 +40,7 @@ instance showSmallKey :: Show SmallKey where
   show J = "J"
 
 instance arbSmallKey :: Arbitrary SmallKey where
-  arbitrary = oneOf (pure A) (map pure [B, C, D, E, F, G, H, I])
+  arbitrary = elements A [B, C, D, E, F, G, H, I, J]
 
 data Instruction k v = Insert k v | Delete k
 
