@@ -76,10 +76,10 @@ pureST :: forall a. (forall h e. Eff (st :: ST.ST h | e) (SM.STStrMap h a)) -> S
 pureST f = runPure (runST f)
 
 mutate :: forall a b. (forall h e. SM.STStrMap h a -> Eff (st :: ST.ST h | e) b) -> StrMap a -> StrMap a
-mutate f m = pureST (do
+mutate f m = pureST do
   s <- thawST m
-  f s
-  pure s)
+  _ <- f s
+  pure s
 
 foreign import _fmapStrMap :: forall a b. Fn2 (StrMap a) (a -> b) (StrMap b)
 
@@ -149,10 +149,10 @@ foreign import size :: forall a. StrMap a -> Number
 
 -- | Create a map with one key/value pair
 singleton :: forall a. String -> a -> StrMap a
-singleton k v = pureST (do
+singleton k v = pureST do
   s <- SM.new
-  SM.poke s k v
-  pure s)
+  _ <- SM.poke s k v
+  pure s
 
 foreign import _lookup :: forall a z. Fn4 z (a -> z) String (StrMap a) z
 
@@ -166,13 +166,13 @@ member = runFn4 _lookup false (const true)
 
 -- | Insert a key and value into a map
 insert :: forall a. String -> a -> StrMap a -> StrMap a
-insert k v = mutate (\s -> SM.poke s k v)
+insert k v = mutate (\s -> void $ SM.poke s k v)
 
 foreign import _unsafeDeleteStrMap :: forall a. Fn2 (StrMap a) String (StrMap a)
 
 -- | Delete a key and value from a map
 delete :: forall a. String -> StrMap a -> StrMap a
-delete k = mutate (\s -> SM.delete s k)
+delete k = mutate (\s -> void $ SM.delete s k)
 
 -- | Delete a key and value from a map, returning the value
 -- | as well as the subsequent map
@@ -225,7 +225,7 @@ values = L.fromFoldable <<< _collect (\_ v -> v)
 -- | Compute the union of two maps, preferring the first map in the case of
 -- | duplicate keys.
 union :: forall a. StrMap a -> StrMap a -> StrMap a
-union m = mutate (\s -> foldM SM.poke s m)
+union m = mutate (\s -> void $ foldM SM.poke s m)
 
 -- | Compute the union of a collection of maps
 unions :: forall a. L.List (StrMap a) -> StrMap a
@@ -238,7 +238,7 @@ mapWithKey :: forall a b. (String -> a -> b) -> StrMap a -> StrMap b
 mapWithKey f m = runFn2 _mapWithKey m f
 
 instance semigroupStrMap :: (Semigroup a) => Semigroup (StrMap a) where
-  append m1 m2 = mutate (\s1 -> foldM (\s2 k v2 -> SM.poke s2 k (runFn4 _lookup v2 (\v1 -> v1 <> v2) k m2)) s1 m1) m2
+  append m1 m2 = mutate (\s1 -> void $ foldM (\s2 k v2 -> SM.poke s2 k (runFn4 _lookup v2 (\v1 -> v1 <> v2) k m2)) s1 m1) m2
 
 instance monoidStrMap :: (Semigroup a) => Monoid (StrMap a) where
   mempty = empty
