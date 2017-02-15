@@ -145,7 +145,7 @@ isEmpty :: forall a. StrMap a -> Boolean
 isEmpty = all (\_ _ -> false)
 
 -- | Calculate the number of key/value pairs in a map
-foreign import size :: forall a. StrMap a -> Number
+foreign import size :: forall a. StrMap a -> Int
 
 -- | Create a map with one key/value pair
 singleton :: forall a. String -> a -> StrMap a
