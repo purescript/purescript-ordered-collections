@@ -54,7 +54,7 @@ import Data.Tuple (Tuple(..), uncurry)
 import Data.Unfoldable (class Unfoldable)
 
 -- | `StrMap a` represents a map from `String`s to values of type `a`.
-foreign import data StrMap :: * -> *
+foreign import data StrMap :: Type -> Type
 
 foreign import _copyEff :: forall a b h r. a -> Eff (st :: ST.ST h | r) b
 
@@ -94,13 +94,13 @@ fold = _foldM ((#))
 
 -- | Fold the keys and values of a map, accumulating values using
 -- | some `Monoid`.
-foldMap :: forall a m. (Monoid m) => (String -> a -> m) -> StrMap a -> m
+foldMap :: forall a m. Monoid m => (String -> a -> m) -> StrMap a -> m
 foldMap f = fold (\acc k v -> acc <> f k v) mempty
 
 -- | Fold the keys and values of a map, accumulating values and effects in
 -- | some `Monad`.
-foldM :: forall a m z. (Monad m) => (z -> String -> a -> m z) -> z -> StrMap a -> m z
-foldM f z = _foldM (>>=) f (pure z)
+foldM :: forall a m z. Monad m => (z -> String -> a -> m z) -> z -> StrMap a -> m z
+foldM f z = _foldM bind f (pure z)
 
 instance foldableStrMap :: Foldable StrMap where
   foldl f = fold (\z _ -> f z)
@@ -136,7 +136,7 @@ instance showStrMap :: (Show a) => Show (StrMap a) where
 foreign import empty :: forall a. StrMap a
 
 -- | Test whether one map contains all of the keys and values contained in another map
-isSubmap :: forall a. (Eq a) => StrMap a -> StrMap a -> Boolean
+isSubmap :: forall a. Eq a => StrMap a -> StrMap a -> Boolean
 isSubmap m1 m2 = all f m1 where
   f k v = runFn4 _lookup false ((==) v) k m2
 

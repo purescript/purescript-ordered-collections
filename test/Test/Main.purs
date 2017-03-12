@@ -10,7 +10,7 @@ import Control.Monad.Eff.Random (RANDOM)
 import Test.Data.Map (mapTests)
 import Test.Data.StrMap (strMapTests)
 
-main :: Eff (console :: CONSOLE, random :: RANDOM, err :: EXCEPTION) Unit
+main :: Eff (console :: CONSOLE, random :: RANDOM, exception :: EXCEPTION) Unit
 main = do
   log "Running Map tests"
   mapTests

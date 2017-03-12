@@ -1,7 +1,4 @@
-/* global exports */
 "use strict";
-
-// module Data.StrMap
 
 exports._copyEff = function (m) {
   return function () {
@@ -21,7 +18,6 @@ exports.runST = function (f) {
   return f;
 };
 
-// jshint maxparams: 2
 exports._fmapStrMap = function (m0, f) {
   var m = {};
   for (var k in m0) {
@@ -32,7 +28,6 @@ exports._fmapStrMap = function (m0, f) {
   return m;
 };
 
-// jshint maxparams: 2
 exports._mapWithKey = function (m0, f) {
   var m = {};
   for (var k in m0) {
@@ -43,7 +38,6 @@ exports._mapWithKey = function (m0, f) {
   return m;
 };
 
-// jshint maxparams: 1
 exports._foldM = function (bind) {
   return function (f) {
     return function (mz) {
@@ -65,20 +59,19 @@ exports._foldM = function (bind) {
   };
 };
 
-// jshint maxparams: 4
 exports._foldSCStrMap = function (m, z, f, fromMaybe) {
+  var acc = z;
   for (var k in m) {
     if (hasOwnProperty.call(m, k)) {
-      var maybeR = f(z)(k)(m[k]);
+      var maybeR = f(acc)(k)(m[k]);
       var r = fromMaybe(null)(maybeR);
-      if (r === null) return z;
-      else z = r;
+      if (r === null) return acc;
+      else acc = r;
     }
   }
-  return z;
+  return acc;
 };
 
-// jshint maxparams: 1
 exports.all = function (f) {
   return function (m) {
     for (var k in m) {
@@ -98,18 +91,15 @@ exports.size = function (m) {
   return s;
 };
 
-// jshint maxparams: 4
 exports._lookup = function (no, yes, k, m) {
   return k in m ? yes(m[k]) : no;
 };
 
-// jshint maxparams: 2
 exports._unsafeDeleteStrMap = function (m, k) {
   delete m[k];
   return m;
 };
 
-// jshint maxparams: 4
 exports._lookupST = function (no, yes, k, m) {
   return function () {
     return k in m ? yes(m[k]) : no;
