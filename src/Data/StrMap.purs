@@ -228,7 +228,7 @@ union :: forall a. StrMap a -> StrMap a -> StrMap a
 union m = mutate (\s -> void $ foldM SM.poke s m)
 
 -- | Compute the union of a collection of maps
-unions :: forall a. L.List (StrMap a) -> StrMap a
+unions :: forall f a. Foldable f => f (StrMap a) -> StrMap a
 unions = foldl union empty
 
 foreign import _mapWithKey :: forall a b. Fn2 (StrMap a) (String -> a -> b) (StrMap b)
