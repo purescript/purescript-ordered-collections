@@ -11,6 +11,7 @@ import Data.Foldable (foldl)
 import Data.Function (on)
 import Data.List (List(..), groupBy, sortBy, singleton, fromFoldable, zipWith)
 import Data.List.NonEmpty as NEL
+import Data.NonEmpty ((:|))
 import Data.Maybe (Maybe(..))
 import Data.StrMap as M
 import Data.Tuple (Tuple(..), fst)
@@ -35,8 +36,7 @@ instance showInstruction :: (Show k, Show v) => Show (Instruction k v) where
 instance arbInstruction :: (Arbitrary v) => Arbitrary (Instruction String v) where
   arbitrary = do
     b <- arbitrary
-    k <- Gen.frequency (Tuple 10.0 (pure "hasOwnProperty"))
-                       (Tuple 50.0 arbitrary `Cons` Nil)
+    k <- Gen.frequency $ Tuple 10.0 (pure "hasOwnProperty") :| Tuple 50.0 arbitrary `Cons` Nil
     case b of
       true -> do
         v <- arbitrary
@@ -53,7 +53,7 @@ runInstructions instrs t0 = foldl step t0 instrs
 number :: Int -> Int
 number n = n
 
-strMapTests :: forall eff. Eff (console :: CONSOLE, random :: RANDOM, err :: EXCEPTION | eff) Unit
+strMapTests :: forall eff. Eff (console :: CONSOLE, random :: RANDOM, exception :: EXCEPTION | eff) Unit
 strMapTests = do
   log "Test inserting into empty tree"
   quickCheck $ \k v -> M.lookup k (M.insert k v M.empty) == Just (number v)

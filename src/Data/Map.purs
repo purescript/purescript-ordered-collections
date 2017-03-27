@@ -18,7 +18,6 @@ module Data.Map
   , findMax
   , fromFoldable
   , fromFoldableWith
-  , toList
   , toUnfoldable
   , toAscUnfoldable
   , delete
@@ -98,7 +97,7 @@ instance traversableMap :: Traversable (Map k) where
   sequence = traverse id
 
 -- | Render a `Map` as a `String`
-showTree :: forall k v. (Show k, Show v) => Map k v -> String
+showTree :: forall k v. Show k => Show v => Map k v -> String
 showTree Leaf = "Leaf"
 showTree (Two left k v right) =
   "Two (" <> showTree left <>
@@ -164,7 +163,7 @@ lookup = unsafePartial \k tree ->
 
 
 -- | Lookup a value for the specified key, or the greatest one less than it
-lookupLE :: forall k v. (Ord k) => k -> Map k v -> Maybe { key :: k, value :: v }
+lookupLE :: forall k v. Ord k => k -> Map k v -> Maybe { key :: k, value :: v }
 lookupLE _ Leaf = Nothing
 lookupLE k (Two left k1 v1 right) = case compare k k1 of
   EQ -> Just { key: k1, value: v1 }
@@ -176,7 +175,7 @@ lookupLE k (Three left k1 v1 mid k2 v2 right) = case compare k k2 of
   LT -> lookupLE k $ Two left k1 v1 mid
 
 -- | Lookup a value for the greatest key less than the specified key
-lookupLT :: forall k v. (Ord k) => k -> Map k v -> Maybe { key :: k, value :: v }
+lookupLT :: forall k v. Ord k => k -> Map k v -> Maybe { key :: k, value :: v }
 lookupLT _ Leaf = Nothing
 lookupLT k (Two left k1 v1 right) = case compare k k1 of
   EQ -> findMax left
@@ -188,7 +187,7 @@ lookupLT k (Three left k1 v1 mid k2 v2 right) = case compare k k2 of
   LT -> lookupLT k $ Two left k1 v1 mid
 
 -- | Lookup a value for the specified key, or the least one greater than it
-lookupGE :: forall k v. (Ord k) => k -> Map k v -> Maybe { key :: k, value :: v }
+lookupGE :: forall k v. Ord k => k -> Map k v -> Maybe { key :: k, value :: v }
 lookupGE _ Leaf = Nothing
 lookupGE k (Two left k1 v1 right) = case compare k k1 of
   EQ -> Just { key: k1, value: v1 }
@@ -200,7 +199,7 @@ lookupGE k (Three left k1 v1 mid k2 v2 right) = case compare k k1 of
   GT -> lookupGE k $ Two mid k2 v2 right
 
 -- | Lookup a value for the least key greater than the specified key
-lookupGT :: forall k v. (Ord k) => k -> Map k v -> Maybe { key :: k, value :: v }
+lookupGT :: forall k v. Ord k => k -> Map k v -> Maybe { key :: k, value :: v }
 lookupGT _ Leaf = Nothing
 lookupGT k (Two left k1 v1 right) = case compare k k1 of
   EQ -> findMin right
@@ -371,20 +370,15 @@ update f k m = alter (maybe Nothing f) k m
 
 -- | Convert any foldable collection of key/value pairs to a map.
 -- | On key collision, later values take precedence over earlier ones.
-fromFoldable :: forall f k v. (Ord k, Foldable f) => f (Tuple k v) -> Map k v
+fromFoldable :: forall f k v. Ord k => Foldable f => f (Tuple k v) -> Map k v
 fromFoldable = foldl (\m (Tuple k v) -> insert k v m) empty
 
 -- | Convert any foldable collection of key/value pairs to a map.
 -- | On key collision, the values are configurably combined.
-fromFoldableWith :: forall f k v. (Ord k, Foldable f) => (v -> v -> v) -> f (Tuple k v) -> Map k v
+fromFoldableWith :: forall f k v. Ord k => Foldable f => (v -> v -> v) -> f (Tuple k v) -> Map k v
 fromFoldableWith f = foldl (\m (Tuple k v) -> alter (combine v) k m) empty where
   combine v (Just v') = Just $ f v v'
   combine v Nothing = Just v
-
--- | Convert a map to a list of key/value pairs.
--- | DEPRECATED: use toUnfoldable or toAscUnfoldable instead.
-toList :: forall k v. Map k v -> List (Tuple k v)
-toList = toAscUnfoldable
 
 -- | Convert a map to an unfoldable structure of key/value pairs
 toUnfoldable :: forall f k v. Unfoldable f => Map k v -> f (Tuple k v)
@@ -427,7 +421,7 @@ values (Three left _ v1 mid _ v2 right) = values left <> pure v1 <> values mid <
 -- | Compute the union of two maps, using the specified function
 -- | to combine values for duplicate keys.
 unionWith :: forall k v. Ord k => (v -> v -> v) -> Map k v -> Map k v -> Map k v
-unionWith f m1 m2 = foldl go m2 (toList m1)
+unionWith f m1 m2 = foldl go m2 (toUnfoldable m1 :: List (Tuple k v))
   where
   go m (Tuple k v) = alter (Just <<< maybe v (f v)) k m
 
@@ -437,7 +431,7 @@ union :: forall k v. Ord k => Map k v -> Map k v -> Map k v
 union = unionWith const
 
 -- | Compute the union of a collection of maps
-unions :: forall k v f. (Ord k, Foldable f) => f (Map k v) -> Map k v
+unions :: forall k v f. Ord k => Foldable f => f (Map k v) -> Map k v
 unions = foldl union empty
 
 -- | Calculate the number of key/value pairs in a map

@@ -1,7 +1,4 @@
-/* global exports */
 "use strict";
-
-// module Data.StrMap.ST
 
 exports["new"] = function () {
   return {};

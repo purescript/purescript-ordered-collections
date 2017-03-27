@@ -19,7 +19,7 @@ import Data.Maybe (Maybe(..))
 -- | The first type parameter represents the memory region which the map belongs to. The second type parameter defines the type of elements of the mutable array.
 -- |
 -- | The runtime representation of a value of type `STStrMap h a` is the same as that of `StrMap a`, except that mutation is allowed.
-foreign import data STStrMap :: * -> * -> *
+foreign import data STStrMap :: Type -> Type -> Type
 
 -- | Create a new, empty mutable map
 foreign import new :: forall a h r. Eff (st :: ST h | r) (STStrMap h a)
