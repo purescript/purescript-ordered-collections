@@ -35,10 +35,12 @@ module Data.Map
   ) where
 
 import Prelude
+import Data.Eq (class Eq1)
 import Data.Foldable (foldl, foldMap, foldr, class Foldable)
 import Data.List (List(..), (:), length, nub)
 import Data.Maybe (Maybe(..), maybe, isJust, fromMaybe)
 import Data.Monoid (class Monoid)
+import Data.Ord (class Ord1)
 import Data.Traversable (traverse, class Traversable)
 import Data.Tuple (Tuple(Tuple), snd)
 import Data.Unfoldable (class Unfoldable, unfoldr)
@@ -54,8 +56,14 @@ data Map k v
 toAscArray :: forall k v. Map k v -> Array (Tuple k v)
 toAscArray = toAscUnfoldable
 
+instance eq1Map :: Eq k => Eq1 (Map k) where
+  eq1 = eq
+
 instance eqMap :: (Eq k, Eq v) => Eq (Map k v) where
   eq m1 m2 = toAscArray m1 == toAscArray m2
+
+instance ord1Map :: Ord k => Ord1 (Map k) where
+  compare1 = compare
 
 instance ordMap :: (Ord k, Ord v) => Ord (Map k v) where
   compare m1 m2 = compare (toAscArray m1) (toAscArray m2)
