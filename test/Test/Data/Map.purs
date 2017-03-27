@@ -8,6 +8,7 @@ import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (log, CONSOLE)
 import Control.Monad.Eff.Exception (EXCEPTION)
 import Control.Monad.Eff.Random (RANDOM)
+import Data.NonEmpty ((:|))
 import Data.Foldable (foldl, for_, all)
 import Data.Function (on)
 import Data.List (List(Cons), groupBy, length, nubBy, singleton, sort, sortBy)
@@ -15,6 +16,7 @@ import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Tuple (Tuple(..), fst)
 import Partial.Unsafe (unsafePartial)
 import Test.QuickCheck ((<?>), (===), quickCheck, quickCheck')
+import Test.QuickCheck.Gen (elements, oneOf)
 import Test.QuickCheck.Arbitrary (class Arbitrary, arbitrary)
 
 newtype TestMap k v = TestMap (M.Map k v)
@@ -39,19 +41,7 @@ instance showSmallKey :: Show SmallKey where
   show J = "J"
 
 instance arbSmallKey :: Arbitrary SmallKey where
-  arbitrary = do
-    n <- arbitrary
-    pure case n of
-      _ | n < 0.1 -> A
-      _ | n < 0.2 -> B
-      _ | n < 0.3 -> C
-      _ | n < 0.4 -> D
-      _ | n < 0.5 -> E
-      _ | n < 0.6 -> F
-      _ | n < 0.7 -> G
-      _ | n < 0.8 -> H
-      _ | n < 0.9 -> I
-      _ -> J
+  arbitrary = elements $ A :| [B, C, D, E, F, G, H, I, J]
 
 data Instruction k v = Insert k v | Delete k
 
@@ -60,16 +50,7 @@ instance showInstruction :: (Show k, Show v) => Show (Instruction k v) where
   show (Delete k) = "Delete (" <> show k <> ")"
 
 instance arbInstruction :: (Arbitrary k, Arbitrary v) => Arbitrary (Instruction k v) where
-  arbitrary = do
-    b <- arbitrary
-    case b of
-      true -> do
-        k <- arbitrary
-        v <- arbitrary
-        pure (Insert k v)
-      false -> do
-        k <- arbitrary
-        pure (Delete k)
+  arbitrary = oneOf $ (Insert <$> arbitrary <*> arbitrary) :| [Delete <$> arbitrary]
 
 runInstructions :: forall k v. Ord k => List (Instruction k v) -> M.Map k v -> M.Map k v
 runInstructions instrs t0 = foldl step t0 instrs
