@@ -12,7 +12,6 @@ module Data.StrMap
   , singleton
   , insert
   , lookup
-  , toList
   , toUnfoldable
   , fromFoldable
   , fromFoldableWith
@@ -43,9 +42,10 @@ import Prelude
 import Control.Monad.Eff (Eff, runPure)
 import Control.Monad.ST as ST
 
+import Data.Array as A
+import Data.Eq (class Eq1)
 import Data.Foldable (class Foldable, foldl, foldr, for_)
 import Data.Function.Uncurried (Fn2, runFn2, Fn4, runFn4)
-import Data.List as L
 import Data.Maybe (Maybe(..), maybe, fromMaybe)
 import Data.Monoid (class Monoid, mempty)
 import Data.StrMap.ST as SM
@@ -108,7 +108,7 @@ instance foldableStrMap :: Foldable StrMap where
   foldMap f = foldMap (const f)
 
 instance traversableStrMap :: Traversable StrMap where
-  traverse f ms = foldr (\x acc -> union <$> x <*> acc) (pure empty) ((map (uncurry singleton)) <$> (traverse f <$> toList ms))
+  traverse f ms = foldr (\x acc -> union <$> x <*> acc) (pure empty) ((map (uncurry singleton)) <$> (traverse f <$> toArray ms))
   sequence = traverse id
 
 -- Unfortunately the above are not short-circuitable (consider using purescript-machines)
@@ -126,11 +126,14 @@ foldMaybe f z m = runFn4 _foldSCStrMap m z f fromMaybe
 -- | Test whether all key/value pairs in a `StrMap` satisfy a predicate.
 foreign import all :: forall a. (String -> a -> Boolean) -> StrMap a -> Boolean
 
-instance eqStrMap :: (Eq a) => Eq (StrMap a) where
+instance eqStrMap :: Eq a => Eq (StrMap a) where
   eq m1 m2 = (isSubmap m1 m2) && (isSubmap m2 m1)
 
-instance showStrMap :: (Show a) => Show (StrMap a) where
-  show m = "fromList " <> show (toList m)
+instance eq1StrMap :: Eq1 StrMap where
+  eq1 = eq
+
+instance showStrMap :: Show a => Show (StrMap a) where
+  show m = "(fromFoldable " <> show (toArray m) <> ")"
 
 -- | An empty map
 foreign import empty :: forall a. StrMap a
@@ -208,19 +211,20 @@ fromFoldableWith f l = pureST (do
 
 foreign import _collect :: forall a b . (String -> a -> b) -> StrMap a -> Array b
 
--- | Convert a map into a list of key/value pairs
-toList :: forall a. StrMap a -> L.List (Tuple String a)
-toList = L.fromFoldable <<< _collect Tuple
-
+-- | Unfolds a map into a list of key/value pairs
 toUnfoldable :: forall f a. Unfoldable f => StrMap a -> f (Tuple String a)
-toUnfoldable = L.toUnfoldable <<< toList
+toUnfoldable = A.toUnfoldable <<< _collect Tuple
+
+-- Internal
+toArray :: forall a. StrMap a -> Array (Tuple String a)
+toArray = _collect Tuple
 
 -- | Get an array of the keys in a map
 foreign import keys :: forall a. StrMap a -> Array String
 
 -- | Get a list of the values in a map
-values :: forall a. StrMap a -> L.List a
-values = L.fromFoldable <<< _collect (\_ v -> v)
+values :: forall a. StrMap a -> Array a
+values = _collect (\_ v -> v)
 
 -- | Compute the union of two maps, preferring the first map in the case of
 -- | duplicate keys.
