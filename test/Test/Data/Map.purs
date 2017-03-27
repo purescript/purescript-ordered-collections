@@ -8,6 +8,7 @@ import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (log, CONSOLE)
 import Control.Monad.Eff.Exception (EXCEPTION)
 import Control.Monad.Eff.Random (RANDOM)
+import Data.NonEmpty ((:|))
 import Data.Foldable (foldl, for_, all)
 import Data.Function (on)
 import Data.List (List(Cons), groupBy, length, nubBy, singleton, sort, sortBy)
@@ -40,7 +41,7 @@ instance showSmallKey :: Show SmallKey where
   show J = "J"
 
 instance arbSmallKey :: Arbitrary SmallKey where
-  arbitrary = elements A [B, C, D, E, F, G, H, I, J]
+  arbitrary = elements $ A :| [B, C, D, E, F, G, H, I, J]
 
 data Instruction k v = Insert k v | Delete k
 
@@ -49,7 +50,7 @@ instance showInstruction :: (Show k, Show v) => Show (Instruction k v) where
   show (Delete k) = "Delete (" <> show k <> ")"
 
 instance arbInstruction :: (Arbitrary k, Arbitrary v) => Arbitrary (Instruction k v) where
-  arbitrary = oneOf (Insert <$> arbitrary <*> arbitrary) [Delete <$> arbitrary]
+  arbitrary = oneOf $ (Insert <$> arbitrary <*> arbitrary) :| [Delete <$> arbitrary]
 
 runInstructions :: forall k v. Ord k => List (Instruction k v) -> M.Map k v -> M.Map k v
 runInstructions instrs t0 = foldl step t0 instrs
