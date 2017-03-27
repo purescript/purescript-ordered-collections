@@ -164,7 +164,7 @@ lookup = runFn4 _lookup Nothing Just
 member :: forall a. String -> StrMap a -> Boolean
 member = runFn4 _lookup false (const true)
 
--- | Insert a key and value into a map
+-- | Insert or replace a key/value pair in a map
 insert :: forall a. String -> a -> StrMap a -> StrMap a
 insert k v = mutate (\s -> void $ SM.poke s k v)
 
