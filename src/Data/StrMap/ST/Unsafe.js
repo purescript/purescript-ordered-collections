@@ -1,6 +1,6 @@
 "use strict";
 
-exports.unsafeGet = function (m) {
+exports.unsafeFreeze = function (m) {
   return function () {
     return m;
   };
