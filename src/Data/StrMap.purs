@@ -13,6 +13,7 @@ module Data.StrMap
   , insert
   , lookup
   , toUnfoldable
+  , toAscUnfoldable
   , fromFoldable
   , fromFoldableWith
   , delete
@@ -50,7 +51,7 @@ import Data.Maybe (Maybe(..), maybe, fromMaybe)
 import Data.Monoid (class Monoid, mempty)
 import Data.StrMap.ST as SM
 import Data.Traversable (class Traversable, traverse)
-import Data.Tuple (Tuple(..), uncurry)
+import Data.Tuple (Tuple(..), fst)
 import Data.Unfoldable (class Unfoldable)
 
 -- | `StrMap a` represents a map from `String`s to values of type `a`.
@@ -108,7 +109,7 @@ instance foldableStrMap :: Foldable StrMap where
   foldMap f = foldMap (const f)
 
 instance traversableStrMap :: Traversable StrMap where
-  traverse f ms = foldr (\x acc -> union <$> x <*> acc) (pure empty) ((map (uncurry singleton)) <$> (traverse f <$> toArray ms))
+  traverse f ms = fold (\acc k v -> insert k <$> f v <*> acc) (pure empty) ms
   sequence = traverse id
 
 -- Unfortunately the above are not short-circuitable (consider using purescript-machines)
@@ -214,6 +215,11 @@ foreign import _collect :: forall a b . (String -> a -> b) -> StrMap a -> Array 
 -- | Unfolds a map into a list of key/value pairs
 toUnfoldable :: forall f a. Unfoldable f => StrMap a -> f (Tuple String a)
 toUnfoldable = A.toUnfoldable <<< _collect Tuple
+
+-- | Unfolds a map into a list of key/value pairs which is guaranteed to be
+-- | sorted by key
+toAscUnfoldable :: forall f a. Unfoldable f => StrMap a -> f (Tuple String a)
+toAscUnfoldable = A.toUnfoldable <<< A.sortWith fst <<< _collect Tuple
 
 -- Internal
 toArray :: forall a. StrMap a -> Array (Tuple String a)

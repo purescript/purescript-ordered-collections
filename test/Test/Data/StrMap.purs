@@ -15,7 +15,8 @@ import Data.List.NonEmpty as NEL
 import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.StrMap as M
-import Data.Tuple (Tuple(..), fst)
+import Data.Tuple (Tuple(..), fst, uncurry)
+import Data.Traversable (traverse, sequence)
 
 import Partial.Unsafe (unsafePartial)
 
@@ -27,6 +28,11 @@ newtype TestStrMap v = TestStrMap (M.StrMap v)
 
 instance arbTestStrMap :: (Arbitrary v) => Arbitrary (TestStrMap v) where
   arbitrary = TestStrMap <<< (M.fromFoldable :: L.List (Tuple String v) -> M.StrMap v) <$> arbitrary
+
+newtype SmallArray v = SmallArray (Array v)
+
+instance arbSmallArray :: (Arbitrary v) => Arbitrary (SmallArray v) where
+  arbitrary = SmallArray <$> Gen.resize 3 arbitrary
 
 data Instruction k v = Insert k v | Delete k
 
@@ -53,6 +59,14 @@ runInstructions instrs t0 = foldl step t0 instrs
 
 number :: Int -> Int
 number n = n
+
+oldTraverse :: forall a b m. Applicative m => (a -> m b) -> M.StrMap a -> m (M.StrMap b)
+oldTraverse f ms = A.foldr (\x acc -> M.union <$> x <*> acc) (pure M.empty) ((map (uncurry M.singleton)) <$> (traverse f <$> (M.toUnfoldable ms :: Array (Tuple String a))))
+oldSequence :: forall a m. Applicative m => M.StrMap (m a) -> m (M.StrMap a)
+oldSequence = oldTraverse id
+
+toAscArray :: forall a. M.StrMap a -> Array (Tuple String a)
+toAscArray = M.toAscUnfoldable
 
 strMapTests :: forall eff. Eff (console :: CONSOLE, random :: RANDOM, exception :: EXCEPTION | eff) Unit
 strMapTests = do
@@ -166,6 +180,11 @@ strMapTests = do
     resultViaMapWithKey = m # M.mapWithKey f
     resultViaLists = m # M.toUnfoldable # map (\(Tuple k v) → Tuple k (f k v)) # (M.fromFoldable :: forall a. L.List (Tuple String a) -> M.StrMap a)
     in resultViaMapWithKey === resultViaLists
+
+  log "sequence gives the same results as an old version (up to ordering)"
+  quickCheck \(TestStrMap mOfSmallArrays :: TestStrMap (SmallArray Int)) ->
+    let m = (\(SmallArray a) -> a) <$> mOfSmallArrays
+    in A.sort (toAscArray <$> oldSequence m) === A.sort (toAscArray <$> sequence m)
 
   log "Bug #63: accidental observable mutation in foldMap"
   quickCheck \(TestStrMap m) ->
