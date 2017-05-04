@@ -15,8 +15,8 @@ import Data.List.NonEmpty as NEL
 import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.StrMap as M
-import Data.Tuple (Tuple(..), fst, uncurry)
-import Data.Traversable (traverse, sequence)
+import Data.Tuple (Tuple(..), fst)
+import Data.Traversable (sequence)
 
 import Partial.Unsafe (unsafePartial)
 
@@ -59,11 +59,6 @@ runInstructions instrs t0 = foldl step t0 instrs
 
 number :: Int -> Int
 number n = n
-
-oldTraverse :: forall a b m. Applicative m => (a -> m b) -> M.StrMap a -> m (M.StrMap b)
-oldTraverse f ms = A.foldr (\x acc -> M.union <$> x <*> acc) (pure M.empty) ((map (uncurry M.singleton)) <$> (traverse f <$> (M.toUnfoldable ms :: Array (Tuple String a))))
-oldSequence :: forall a m. Applicative m => M.StrMap (m a) -> m (M.StrMap a)
-oldSequence = oldTraverse id
 
 toAscArray :: forall a. M.StrMap a -> Array (Tuple String a)
 toAscArray = M.toAscUnfoldable
@@ -181,10 +176,18 @@ strMapTests = do
     resultViaLists = m # M.toUnfoldable # map (\(Tuple k v) → Tuple k (f k v)) # (M.fromFoldable :: forall a. L.List (Tuple String a) -> M.StrMap a)
     in resultViaMapWithKey === resultViaLists
 
-  log "sequence gives the same results as an old version (up to ordering)"
+  log "sequence works (for m = Array)"
   quickCheck \(TestStrMap mOfSmallArrays :: TestStrMap (SmallArray Int)) ->
-    let m = (\(SmallArray a) -> a) <$> mOfSmallArrays
-    in A.sort (toAscArray <$> oldSequence m) === A.sort (toAscArray <$> sequence m)
+    let m                 = (\(SmallArray a) -> a) <$> mOfSmallArrays
+        Tuple keys values = A.unzip (toAscArray m)
+        resultViaArrays   = (M.fromFoldable <<< A.zip keys) <$> sequence values
+    in  A.sort (sequence m) === A.sort (resultViaArrays)
+
+  log "sequence works (for m = Maybe)"
+  quickCheck \(TestStrMap m :: TestStrMap (Maybe Int)) ->
+    let Tuple keys values = A.unzip (toAscArray m)
+        resultViaArrays   = (M.fromFoldable <<< A.zip keys) <$> sequence values
+    in  sequence m === resultViaArrays
 
   log "Bug #63: accidental observable mutation in foldMap"
   quickCheck \(TestStrMap m) ->

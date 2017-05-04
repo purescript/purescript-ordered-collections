@@ -133,6 +133,13 @@ instance eqStrMap :: Eq a => Eq (StrMap a) where
 instance eq1StrMap :: Eq1 StrMap where
   eq1 = eq
 
+-- Internal use
+toAscArray :: forall v. StrMap v -> Array (Tuple String v)
+toAscArray = toAscUnfoldable
+
+instance ordStrMap :: Ord a => Ord (StrMap a) where
+  compare m1 m2 = compare (toAscArray m1) (toAscArray m2)
+
 instance showStrMap :: Show a => Show (StrMap a) where
   show m = "(fromFoldable " <> show (toArray m) <> ")"
 
