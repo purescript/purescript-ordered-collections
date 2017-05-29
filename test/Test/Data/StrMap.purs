@@ -16,6 +16,7 @@ import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.StrMap as M
 import Data.Tuple (Tuple(..), fst)
+import Data.Traversable (sequence)
 
 import Partial.Unsafe (unsafePartial)
 
@@ -27,6 +28,11 @@ newtype TestStrMap v = TestStrMap (M.StrMap v)
 
 instance arbTestStrMap :: (Arbitrary v) => Arbitrary (TestStrMap v) where
   arbitrary = TestStrMap <<< (M.fromFoldable :: L.List (Tuple String v) -> M.StrMap v) <$> arbitrary
+
+newtype SmallArray v = SmallArray (Array v)
+
+instance arbSmallArray :: (Arbitrary v) => Arbitrary (SmallArray v) where
+  arbitrary = SmallArray <$> Gen.resize 3 arbitrary
 
 data Instruction k v = Insert k v | Delete k
 
@@ -53,6 +59,9 @@ runInstructions instrs t0 = foldl step t0 instrs
 
 number :: Int -> Int
 number n = n
+
+toAscArray :: forall a. M.StrMap a -> Array (Tuple String a)
+toAscArray = M.toAscUnfoldable
 
 strMapTests :: forall eff. Eff (console :: CONSOLE, random :: RANDOM, exception :: EXCEPTION | eff) Unit
 strMapTests = do
@@ -166,6 +175,19 @@ strMapTests = do
     resultViaMapWithKey = m # M.mapWithKey f
     resultViaLists = m # M.toUnfoldable # map (\(Tuple k v) → Tuple k (f k v)) # (M.fromFoldable :: forall a. L.List (Tuple String a) -> M.StrMap a)
     in resultViaMapWithKey === resultViaLists
+
+  log "sequence works (for m = Array)"
+  quickCheck \(TestStrMap mOfSmallArrays :: TestStrMap (SmallArray Int)) ->
+    let m                 = (\(SmallArray a) -> a) <$> mOfSmallArrays
+        Tuple keys values = A.unzip (toAscArray m)
+        resultViaArrays   = (M.fromFoldable <<< A.zip keys) <$> sequence values
+    in  A.sort (sequence m) === A.sort (resultViaArrays)
+
+  log "sequence works (for m = Maybe)"
+  quickCheck \(TestStrMap m :: TestStrMap (Maybe Int)) ->
+    let Tuple keys values = A.unzip (toAscArray m)
+        resultViaArrays   = (M.fromFoldable <<< A.zip keys) <$> sequence values
+    in  sequence m === resultViaArrays
 
   log "Bug #63: accidental observable mutation in foldMap"
   quickCheck \(TestStrMap m) ->
