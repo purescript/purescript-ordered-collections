@@ -162,8 +162,7 @@ foreign import size :: forall a. StrMap a -> Int
 singleton :: forall a. String -> a -> StrMap a
 singleton k v = pureST do
   s <- SM.new
-  _ <- SM.poke s k v
-  pure s
+  SM.poke s k v
 
 foreign import _lookup :: forall a z. Fn4 z (a -> z) String (StrMap a) z
 
