@@ -294,21 +294,21 @@ delete k m = maybe m snd (pop k m)
 -- | Delete a key and its corresponding value from a map, returning the value
 -- | as well as the subsequent map.
 pop :: forall k v. Ord k => k -> Map k v -> Maybe (Tuple v (Map k v))
-pop = down Nil
+pop k = down Nil
   where
   comp :: k -> k -> Ordering
   comp = compare
 
-  down :: List (TreeContext k v) -> k -> Map k v -> Maybe (Tuple v (Map k v))
-  down = unsafePartial \ctx k m -> case m of
+  down :: List (TreeContext k v) -> Map k v -> Maybe (Tuple v (Map k v))
+  down = unsafePartial \ctx m -> case m of
     Leaf -> Nothing
     Two left k1 v1 right ->
       case right, comp k k1 of
         Leaf, EQ -> Just (Tuple v1 (up ctx Leaf))
         _   , EQ -> let max = maxNode left
                      in Just (Tuple v1 (removeMaxNode (Cons (TwoLeft max.key max.value right) ctx) left))
-        _   , LT -> down (Cons (TwoLeft k1 v1 right) ctx) k left
-        _   , _  -> down (Cons (TwoRight left k1 v1) ctx) k right
+        _   , LT -> down (Cons (TwoLeft k1 v1 right) ctx) left
+        _   , _  -> down (Cons (TwoRight left k1 v1) ctx) right
     Three left k1 v1 mid k2 v2 right ->
       let leaves =
             case left, mid, right of
@@ -321,9 +321,9 @@ pop = down Nil
                          in Just (Tuple v1 (removeMaxNode (Cons (ThreeLeft max.key max.value mid k2 v2 right) ctx) left))
         _   , _ , EQ -> let max = maxNode mid
                          in Just (Tuple v2 (removeMaxNode (Cons (ThreeMiddle left k1 v1 max.key max.value right) ctx) mid))
-        _   , LT, _  -> down (Cons (ThreeLeft k1 v1 mid k2 v2 right) ctx) k left
-        _   , GT, LT -> down (Cons (ThreeMiddle left k1 v1 k2 v2 right) ctx) k mid
-        _   , _ , _  -> down (Cons (ThreeRight left k1 v1 mid k2 v2) ctx) k right
+        _   , LT, _  -> down (Cons (ThreeLeft k1 v1 mid k2 v2 right) ctx) left
+        _   , GT, LT -> down (Cons (ThreeMiddle left k1 v1 k2 v2 right) ctx) mid
+        _   , _ , _  -> down (Cons (ThreeRight left k1 v1 mid k2 v2) ctx) right
 
   up :: List (TreeContext k v) -> Map k v -> Map k v
   up = unsafePartial \ctxs tree ->
@@ -351,9 +351,9 @@ pop = down Nil
 
   maxNode :: Map k v -> { key :: k, value :: v }
   maxNode = unsafePartial \m -> case m of
-    Two _ k v Leaf -> { key: k, value: v }
+    Two _ k' v Leaf -> { key: k', value: v }
     Two _ _ _ right -> maxNode right
-    Three _ _ _ _ k v Leaf -> { key: k, value: v }
+    Three _ _ _ _ k' v Leaf -> { key: k', value: v }
     Three _ _ _ _ _ _ right -> maxNode right
 
 
@@ -361,7 +361,7 @@ pop = down Nil
   removeMaxNode = unsafePartial \ctx m ->
     case m of
       Two Leaf _ _ Leaf -> up ctx Leaf
-      Two left k v right -> removeMaxNode (Cons (TwoRight left k v) ctx) right
+      Two left k' v right -> removeMaxNode (Cons (TwoRight left k' v) ctx) right
       Three Leaf k1 v1 Leaf _ _ Leaf -> up (Cons (TwoRight Leaf k1 v1) ctx) Leaf
       Three left k1 v1 mid k2 v2 right -> removeMaxNode (Cons (ThreeRight left k1 v1 mid k2 v2) ctx) right
 
