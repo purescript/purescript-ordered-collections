@@ -145,78 +145,97 @@ checkValid tree = length (nub (allHeights tree)) == one
   allHeights (Two left _ _ right) = map (\n -> n + one) (allHeights left <> allHeights right)
   allHeights (Three left _ _ mid _ _ right) = map (\n -> n + one) (allHeights left <> allHeights mid <> allHeights right)
 
--- | Lookup a value for the specified key
+-- | Look up a value for the specified key
 lookup :: forall k v. Ord k => k -> Map k v -> Maybe v
-lookup = unsafePartial \k tree ->
-  case tree of
-    Leaf -> Nothing
-    _ ->
-      let comp :: k -> k -> Ordering
-          comp = compare
-      in case tree of
-        Two left k1 v right ->
-          case comp k k1 of
-            EQ -> Just v
-            LT -> lookup k left
-            _  -> lookup k right
-        Three left k1 v1 mid k2 v2 right ->
-          case comp k k1 of
-            EQ -> Just v1
-            c1 ->
-              case c1, comp k k2 of
-                _ , EQ -> Just v2
-                LT, _  -> lookup k left
-                _ , GT -> lookup k right
-                _ , _  -> lookup k mid
+lookup k = go
+  where
+    comp :: k -> k -> Ordering
+    comp = compare
+
+    go Leaf = Nothing
+    go (Two left k1 v right) =
+      case comp k k1 of
+        EQ -> Just v
+        LT -> go left
+        _  -> go right
+    go (Three left k1 v1 mid k2 v2 right) =
+      case comp k k1 of
+        EQ -> Just v1
+        c1 ->
+          case c1, comp k k2 of
+            _ , EQ -> Just v2
+            LT, _  -> go left
+            _ , GT -> go right
+            _ , _  -> go mid
 
 
--- | Lookup a value for the specified key, or the greatest one less than it
+-- | Look up a value for the specified key, or the greatest one less than it
 lookupLE :: forall k v. Ord k => k -> Map k v -> Maybe { key :: k, value :: v }
-lookupLE _ Leaf = Nothing
-lookupLE k (Two left k1 v1 right) = case compare k k1 of
-  EQ -> Just { key: k1, value: v1 }
-  GT -> Just $ fromMaybe { key: k1, value: v1 } $ lookupLE k right
-  LT -> lookupLE k left
-lookupLE k (Three left k1 v1 mid k2 v2 right) = case compare k k2 of
-  EQ -> Just { key: k2, value: v2 }
-  GT -> Just $ fromMaybe { key: k2, value: v2 } $ lookupLE k right
-  LT -> lookupLE k $ Two left k1 v1 mid
+lookupLE k = go
+  where
+    comp :: k -> k -> Ordering
+    comp = compare
 
--- | Lookup a value for the greatest key less than the specified key
+    go Leaf = Nothing
+    go (Two left k1 v1 right) = case comp k k1 of
+      EQ -> Just { key: k1, value: v1 }
+      GT -> Just $ fromMaybe { key: k1, value: v1 } $ go right
+      LT -> go left
+    go (Three left k1 v1 mid k2 v2 right) = case comp k k2 of
+      EQ -> Just { key: k2, value: v2 }
+      GT -> Just $ fromMaybe { key: k2, value: v2 } $ go right
+      LT -> go $ Two left k1 v1 mid
+
+-- | Look up a value for the greatest key less than the specified key
 lookupLT :: forall k v. Ord k => k -> Map k v -> Maybe { key :: k, value :: v }
-lookupLT _ Leaf = Nothing
-lookupLT k (Two left k1 v1 right) = case compare k k1 of
-  EQ -> findMax left
-  GT -> Just $ fromMaybe { key: k1, value: v1 } $ lookupLT k right
-  LT -> lookupLT k left
-lookupLT k (Three left k1 v1 mid k2 v2 right) = case compare k k2 of
-  EQ -> findMax $ Two left k1 v1 mid
-  GT -> Just $ fromMaybe { key: k2, value: v2 } $ lookupLT k right
-  LT -> lookupLT k $ Two left k1 v1 mid
+lookupLT k = go
+  where
+    comp :: k -> k -> Ordering
+    comp = compare
 
--- | Lookup a value for the specified key, or the least one greater than it
+    go Leaf = Nothing
+    go (Two left k1 v1 right) = case comp k k1 of
+      EQ -> findMax left
+      GT -> Just $ fromMaybe { key: k1, value: v1 } $ go right
+      LT -> go left
+    go (Three left k1 v1 mid k2 v2 right) = case comp k k2 of
+      EQ -> findMax $ Two left k1 v1 mid
+      GT -> Just $ fromMaybe { key: k2, value: v2 } $ go right
+      LT -> go $ Two left k1 v1 mid
+
+-- | Look up a value for the specified key, or the least one greater than it
 lookupGE :: forall k v. Ord k => k -> Map k v -> Maybe { key :: k, value :: v }
-lookupGE _ Leaf = Nothing
-lookupGE k (Two left k1 v1 right) = case compare k k1 of
-  EQ -> Just { key: k1, value: v1 }
-  LT -> Just $ fromMaybe { key: k1, value: v1 } $ lookupGE k left
-  GT -> lookupGE k right
-lookupGE k (Three left k1 v1 mid k2 v2 right) = case compare k k1 of
-  EQ -> Just { key: k1, value: v1 }
-  LT -> Just $ fromMaybe { key: k1, value: v1 } $ lookupGE k left
-  GT -> lookupGE k $ Two mid k2 v2 right
+lookupGE k = go
+  where
+    comp :: k -> k -> Ordering
+    comp = compare
 
--- | Lookup a value for the least key greater than the specified key
+    go Leaf = Nothing
+    go (Two left k1 v1 right) = case comp k k1 of
+      EQ -> Just { key: k1, value: v1 }
+      LT -> Just $ fromMaybe { key: k1, value: v1 } $ go left
+      GT -> go right
+    go (Three left k1 v1 mid k2 v2 right) = case comp k k1 of
+      EQ -> Just { key: k1, value: v1 }
+      LT -> Just $ fromMaybe { key: k1, value: v1 } $ go left
+      GT -> go $ Two mid k2 v2 right
+
+-- | Look up a value for the least key greater than the specified key
 lookupGT :: forall k v. Ord k => k -> Map k v -> Maybe { key :: k, value :: v }
-lookupGT _ Leaf = Nothing
-lookupGT k (Two left k1 v1 right) = case compare k k1 of
-  EQ -> findMin right
-  LT -> Just $ fromMaybe { key: k1, value: v1 } $ lookupGT k left
-  GT -> lookupGT k right
-lookupGT k (Three left k1 v1 mid k2 v2 right) = case compare k k1 of
-  EQ -> findMin $ Two mid k2 v2 right
-  LT -> Just $ fromMaybe { key: k1, value: v1 } $ lookupGT k left
-  GT -> lookupGT k $ Two mid k2 v2 right
+lookupGT k = go
+  where
+    comp :: k -> k -> Ordering
+    comp = compare
+
+    go Leaf = Nothing
+    go (Two left k1 v1 right) = case comp k k1 of
+      EQ -> findMin right
+      LT -> Just $ fromMaybe { key: k1, value: v1 } $ go left
+      GT -> go right
+    go (Three left k1 v1 mid k2 v2 right) = case comp k k1 of
+      EQ -> findMin $ Two mid k2 v2 right
+      LT -> Just $ fromMaybe { key: k1, value: v1 } $ go left
+      GT -> go $ Two mid k2 v2 right
 
 -- | Returns the pair with the greatest key
 findMax :: forall k v. Map k v -> Maybe { key :: k, value :: v }
