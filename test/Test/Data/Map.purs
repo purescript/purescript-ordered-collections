@@ -8,12 +8,13 @@ import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (log, CONSOLE)
 import Control.Monad.Eff.Exception (EXCEPTION)
 import Control.Monad.Eff.Random (RANDOM)
+import Data.Array as A
 import Data.NonEmpty ((:|))
 import Data.Foldable (foldl, for_, all)
 import Data.Function (on)
 import Data.List (List(Cons), groupBy, length, nubBy, singleton, sort, sortBy)
 import Data.Maybe (Maybe(..), fromMaybe)
-import Data.Tuple (Tuple(..), fst)
+import Data.Tuple (Tuple(..), fst, uncurry)
 import Partial.Unsafe (unsafePartial)
 import Test.QuickCheck ((<?>), (===), quickCheck, quickCheck')
 import Test.QuickCheck.Gen (elements, oneOf)
@@ -274,3 +275,27 @@ mapTests = do
     toList = M.toUnfoldable :: forall k v. M.Map k v -> List (Tuple k v)
     resultViaLists = m # toList # map (\(Tuple k v) → Tuple k (f k v)) # M.fromFoldable
     in resultViaMapWithKey === resultViaLists
+
+  log "filterWithKey gives submap"
+  quickCheck $ \(TestMap s :: TestMap String Int) p ->
+                 M.isSubmap (M.filterWithKey p s) s
+
+  log "filterWithKey keeps those keys for which predicate is true"
+  quickCheck $ \(TestMap s :: TestMap String Int) p ->
+                 A.all (uncurry p) (M.toAscUnfoldable (M.filterWithKey p s) :: Array (Tuple String Int))
+
+  log "filterKeys gives submap"
+  quickCheck $ \(TestMap s :: TestMap String Int) p ->
+                 M.isSubmap (M.filterKeys p s) s
+
+  log "filterKeys keeps those keys for which predicate is true"
+  quickCheck $ \(TestMap s :: TestMap String Int) p ->
+                 A.all p (M.keys (M.filterKeys p s))
+
+  log "filter gives submap"
+  quickCheck $ \(TestMap s :: TestMap String Int) p ->
+                 M.isSubmap (M.filter p s) s
+
+  log "filter keeps those values for which predicate is true"
+  quickCheck $ \(TestMap s :: TestMap String Int) p ->
+                 A.all p (M.values (M.filter p s))

@@ -30,19 +30,24 @@ module Data.Map
   , union
   , unionWith
   , unions
+  , isSubmap
   , size
   , mapWithKey
+  , filterWithKey
+  , filterKeys
+  , filter
   ) where
 
 import Prelude
 import Data.Eq (class Eq1)
 import Data.Foldable (foldl, foldMap, foldr, class Foldable)
 import Data.List (List(..), (:), length, nub)
+import Data.List.Lazy as LL
 import Data.Maybe (Maybe(..), maybe, isJust, fromMaybe)
 import Data.Monoid (class Monoid)
 import Data.Ord (class Ord1)
 import Data.Traversable (traverse, class Traversable)
-import Data.Tuple (Tuple(Tuple), snd)
+import Data.Tuple (Tuple(Tuple), snd, uncurry)
 import Data.Unfoldable (class Unfoldable, unfoldr)
 import Partial.Unsafe (unsafePartial)
 
@@ -461,6 +466,11 @@ union = unionWith const
 unions :: forall k v f. Ord k => Foldable f => f (Map k v) -> Map k v
 unions = foldl union empty
 
+-- | Test whether one map contains all of the keys and values contained in another map
+isSubmap :: forall k v. Ord k => Eq v => Map k v -> Map k v -> Boolean
+isSubmap m1 m2 = LL.all f $ (toUnfoldable m1 :: LL.List (Tuple k v))
+  where f (Tuple k v) = lookup k m2 == Just v
+
 -- | Calculate the number of key/value pairs in a map
 size :: forall k v. Map k v -> Int
 size = length <<< values
@@ -470,3 +480,19 @@ mapWithKey :: forall k v v'. (k -> v -> v') -> Map k v -> Map k v'
 mapWithKey _ Leaf = Leaf
 mapWithKey f (Two left k v right) = Two (mapWithKey f left) k (f k v) (mapWithKey f right)
 mapWithKey f (Three left k1 v1 mid k2 v2 right) = Three (mapWithKey f left) k1 (f k1 v1) (mapWithKey f mid) k2 (f k2 v2) (mapWithKey f right)
+
+-- | Filter out those key/value pairs of a map for which a predicate
+-- | fails to hold.
+filterWithKey :: forall k v. Ord k => (k -> v -> Boolean) -> Map k v -> Map k v
+filterWithKey predicate =
+  fromFoldable <<< LL.filter (uncurry predicate) <<< toUnfoldable
+
+-- | Filter out those key/value pairs of a map for which a predicate
+-- | on the key fails to hold.
+filterKeys :: forall k. Ord k => (k -> Boolean) -> Map k ~> Map k
+filterKeys predicate = filterWithKey $ const <<< predicate
+
+-- | Filter out those key/value pairs of a map for which a predicate
+-- | on the value fails to hold.
+filter :: forall k v. Ord k => (v -> Boolean) -> Map k v -> Map k v
+filter predicate = filterWithKey $ const predicate
