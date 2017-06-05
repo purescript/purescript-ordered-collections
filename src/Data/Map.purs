@@ -473,7 +473,9 @@ isSubmap m1 m2 = LL.all f $ (toUnfoldable m1 :: LL.List (Tuple k v))
 
 -- | Calculate the number of key/value pairs in a map
 size :: forall k v. Map k v -> Int
-size = length <<< values
+size Leaf = 0
+size (Two m1 _ _ m2) = 1 + size m1 + size m2
+size (Three m1 _ _ m2 _ _ m3) = 2 + size m1 + size m2 + size m3
 
 -- | Apply a function of two arguments to each key/value pair, producing a new map
 mapWithKey :: forall k v v'. (k -> v -> v') -> Map k v -> Map k v'
