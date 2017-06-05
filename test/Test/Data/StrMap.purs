@@ -6,7 +6,6 @@ import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (log, CONSOLE)
 import Control.Monad.Eff.Exception (EXCEPTION)
 import Control.Monad.Eff.Random (RANDOM)
-
 import Data.Array as A
 import Data.Foldable (foldl)
 import Data.Function (on)
@@ -15,11 +14,10 @@ import Data.List.NonEmpty as NEL
 import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.StrMap as M
-import Data.Tuple (Tuple(..), fst, uncurry)
+import Data.StrMap.Gen (genStrMap)
 import Data.Traversable (sequence)
-
+import Data.Tuple (Tuple(..), fst, uncurry)
 import Partial.Unsafe (unsafePartial)
-
 import Test.QuickCheck ((<?>), quickCheck, quickCheck', (===))
 import Test.QuickCheck.Arbitrary (class Arbitrary, arbitrary)
 import Test.QuickCheck.Gen as Gen
@@ -27,7 +25,7 @@ import Test.QuickCheck.Gen as Gen
 newtype TestStrMap v = TestStrMap (M.StrMap v)
 
 instance arbTestStrMap :: (Arbitrary v) => Arbitrary (TestStrMap v) where
-  arbitrary = TestStrMap <<< (M.fromFoldable :: L.List (Tuple String v) -> M.StrMap v) <$> arbitrary
+  arbitrary = TestStrMap <$> genStrMap arbitrary arbitrary
 
 newtype SmallArray v = SmallArray (Array v)
 
