@@ -1,29 +1,30 @@
 module Test.Data.Map where
 
 import Prelude
-import Data.List.NonEmpty as NEL
-import Data.Map as M
 import Control.Alt ((<|>))
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (log, CONSOLE)
 import Control.Monad.Eff.Exception (EXCEPTION)
 import Control.Monad.Eff.Random (RANDOM)
 import Data.Array as A
-import Data.NonEmpty ((:|))
 import Data.Foldable (foldl, for_, all)
 import Data.Function (on)
 import Data.List (List(Cons), groupBy, length, nubBy, singleton, sort, sortBy)
+import Data.List.NonEmpty as NEL
+import Data.Map as M
+import Data.Map.Gen (genMap)
 import Data.Maybe (Maybe(..), fromMaybe)
+import Data.NonEmpty ((:|))
 import Data.Tuple (Tuple(..), fst, uncurry)
 import Partial.Unsafe (unsafePartial)
 import Test.QuickCheck ((<?>), (===), quickCheck, quickCheck')
-import Test.QuickCheck.Gen (elements, oneOf)
 import Test.QuickCheck.Arbitrary (class Arbitrary, arbitrary)
+import Test.QuickCheck.Gen (elements, oneOf)
 
 newtype TestMap k v = TestMap (M.Map k v)
 
 instance arbTestMap :: (Eq k, Ord k, Arbitrary k, Arbitrary v) => Arbitrary (TestMap k v) where
-  arbitrary = TestMap <<< (M.fromFoldable :: List (Tuple k v) -> M.Map k v) <$> arbitrary
+  arbitrary = TestMap <$> genMap arbitrary arbitrary
 
 data SmallKey = A | B | C | D | E | F | G | H | I | J
 derive instance eqSmallKey :: Eq SmallKey
