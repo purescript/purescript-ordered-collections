@@ -39,6 +39,7 @@ module Data.StrMap
   , freezeST
   , runST
   , pureST
+  , toArrayWithKey
   ) where
 
 import Prelude
@@ -219,27 +220,27 @@ fromFoldableWith f l = pureST (do
   for_ l (\(Tuple k v) -> runFn4 _lookupST v (f v) k s >>= SM.poke s k)
   pure s)
 
-foreign import _collect :: forall a b . (String -> a -> b) -> StrMap a -> Array b
+foreign import toArrayWithKey :: forall a b . (String -> a -> b) -> StrMap a -> Array b
 
 -- | Unfolds a map into a list of key/value pairs
 toUnfoldable :: forall f a. Unfoldable f => StrMap a -> f (Tuple String a)
-toUnfoldable = A.toUnfoldable <<< _collect Tuple
+toUnfoldable = A.toUnfoldable <<< toArrayWithKey Tuple
 
 -- | Unfolds a map into a list of key/value pairs which is guaranteed to be
 -- | sorted by key
 toAscUnfoldable :: forall f a. Unfoldable f => StrMap a -> f (Tuple String a)
-toAscUnfoldable = A.toUnfoldable <<< A.sortWith fst <<< _collect Tuple
+toAscUnfoldable = A.toUnfoldable <<< A.sortWith fst <<< toArrayWithKey Tuple
 
 -- Internal
 toArray :: forall a. StrMap a -> Array (Tuple String a)
-toArray = _collect Tuple
+toArray = toArrayWithKey Tuple
 
 -- | Get an array of the keys in a map
 foreign import keys :: forall a. StrMap a -> Array String
 
 -- | Get a list of the values in a map
 values :: forall a. StrMap a -> Array a
-values = _collect (\_ v -> v)
+values = toArrayWithKey (\_ v -> v)
 
 -- | Compute the union of two maps, preferring the first map in the case of
 -- | duplicate keys.

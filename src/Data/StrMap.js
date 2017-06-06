@@ -106,7 +106,7 @@ exports._lookupST = function (no, yes, k, m) {
   };
 };
 
-function _collect(f) {
+function toArrayWithKey(f) {
   return function (m) {
     var r = [];
     for (var k in m) {
@@ -118,8 +118,8 @@ function _collect(f) {
   };
 }
 
-exports._collect = _collect;
+exports.toArrayWithKey = toArrayWithKey;
 
-exports.keys = Object.keys || _collect(function (k) {
+exports.keys = Object.keys || toArrayWithKey(function (k) {
   return function () { return k; };
 });
