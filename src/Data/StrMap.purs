@@ -43,7 +43,7 @@ module Data.StrMap
 
 import Prelude
 
-import Control.Monad.Eff (Eff, runPure)
+import Control.Monad.Eff (Eff, runPure, foreachE)
 import Control.Monad.ST as ST
 
 import Data.Array as A
@@ -204,10 +204,10 @@ update f k m = alter (maybe Nothing f) k m
 
 -- | Create a map from a foldable collection of key/value pairs
 fromFoldable :: forall f a. Foldable f => f (Tuple String a) -> StrMap a
-fromFoldable l = pureST (do
+fromFoldable l = pureST do
   s <- SM.new
-  for_ l (\(Tuple k v) -> SM.poke s k v)
-  pure s)
+  foreachE (A.fromFoldable l) \(Tuple k v) -> void (SM.poke s k v)
+  pure s
 
 foreign import _lookupST :: forall a h r z. Fn4 z (a -> z) String (SM.STStrMap h a) (Eff (st :: ST.ST h | r) z)
 
