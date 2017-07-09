@@ -13,7 +13,7 @@ import Data.List (List(Cons), groupBy, length, nubBy, singleton, sort, sortBy)
 import Data.List.NonEmpty as NEL
 import Data.Map as M
 import Data.Map.Gen (genMap)
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.NonEmpty ((:|))
 import Data.Tuple (Tuple(..), fst, uncurry)
 import Partial.Unsafe (unsafePartial)
@@ -300,3 +300,36 @@ mapTests = do
   log "filter keeps those values for which predicate is true"
   quickCheck $ \(TestMap s :: TestMap String Int) p ->
                  A.all p (M.values (M.filter p s))
+
+  log "submap with no bounds = id"
+  quickCheck \(TestMap m :: TestMap SmallKey Int) ->
+    M.submap Nothing Nothing m === m
+
+  log "submap with lower bound"
+  quickCheck' 1 $
+    M.submap (Just B) Nothing (M.fromFoldable [Tuple A 0, Tuple B 0])
+    == M.fromFoldable [Tuple B 0]
+
+  log "submap with upper bound"
+  quickCheck' 1 $
+    M.submap Nothing (Just A) (M.fromFoldable [Tuple A 0, Tuple B 0])
+    == M.fromFoldable [Tuple A 0]
+
+  log "submap with lower & upper bound"
+  quickCheck' 1 $
+    M.submap (Just B) (Just B) (M.fromFoldable [Tuple A 0, Tuple B 0, Tuple C 0])
+    == M.fromFoldable [Tuple B 0]
+
+  log "submap"
+  quickCheck' 1000 \(TestMap m :: TestMap SmallKey Int) mmin mmax key ->
+    let
+      m' = M.submap mmin mmax m
+    in
+      (if (maybe true (\min -> min <= key) mmin &&
+          maybe true (\max -> max >= key) mmax)
+        then M.lookup key m == M.lookup key m'
+        else (not (M.member key m')))
+      <?> "m: " <> show m
+       <> ", mmin: " <> show mmin
+       <> ", mmax: " <> show mmax
+       <> ", key: " <> show key

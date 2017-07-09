@@ -16,6 +16,8 @@ module Data.Map
   , lookupGT
   , findMin
   , findMax
+  , foldSubmap
+  , submap
   , fromFoldable
   , fromFoldableWith
   , toUnfoldable
@@ -44,7 +46,7 @@ import Data.Foldable (foldl, foldMap, foldr, class Foldable)
 import Data.List (List(..), (:), length, nub)
 import Data.List.Lazy as LL
 import Data.Maybe (Maybe(..), maybe, isJust, fromMaybe)
-import Data.Monoid (class Monoid)
+import Data.Monoid (class Monoid, mempty)
 import Data.Ord (class Ord1)
 import Data.Traversable (traverse, class Traversable)
 import Data.Tuple (Tuple(Tuple), snd, uncurry)
@@ -253,6 +255,109 @@ findMin :: forall k v. Map k v -> Maybe { key :: k, value :: v }
 findMin Leaf = Nothing
 findMin (Two left k1 v1 _) = Just $ fromMaybe { key: k1, value: v1 } $ findMin left
 findMin (Three left k1 v1 _ _ _ _) = Just $ fromMaybe { key: k1, value: v1 } $ findMin left
+
+-- | Fold over the entries of a given map where the key is between a lower and
+-- | an upper bound. Passing `Nothing` as either the lower or upper bound
+-- | argument means that the fold has no lower or upper bound, i.e. the fold
+-- | starts from (or ends with) the smallest (or largest) key in the map.
+-- |
+-- | ```purescript
+-- | foldSubmap (Just 1) (Just 2) (\_ v -> [v])
+-- |  (fromFoldable [Tuple 0 "zero", Tuple 1 "one", Tuple 2 "two", Tuple 3 "three"])
+-- |  == ["one", "two"]
+-- |
+-- | foldSubmap Nothing (Just 2) (\_ v -> [v])
+-- |  (fromFoldable [Tuple 0 "zero", Tuple 1 "one", Tuple 2 "two", Tuple 3 "three"])
+-- |  == ["zero", "one", "two"]
+-- | ```
+foldSubmap :: forall k v m. Ord k => Monoid m => Maybe k -> Maybe k -> (k -> v -> m) -> Map k v -> m
+foldSubmap kmin kmax f =
+  let
+    tooSmall =
+      case kmin of
+        Just kmin' ->
+          \k -> k < kmin'
+        Nothing ->
+          const false
+
+    tooLarge =
+      case kmax of
+        Just kmax' ->
+          \k -> k > kmax'
+        Nothing ->
+          const false
+
+    inBounds =
+      case kmin, kmax of
+        Just kmin', Just kmax' ->
+          \k -> kmin' <= k && k <= kmax'
+        Just kmin', Nothing ->
+          \k -> kmin' <= k
+        Nothing, Just kmax' ->
+          \k -> k <= kmax'
+        Nothing, Nothing ->
+          const true
+
+    -- We can take advantage of the invariants of the tree structure to reduce
+    -- the amount of work we need to do. For example, in the following tree:
+    --
+    --      [2][4]
+    --      / |  \
+    --     /  |   \
+    --   [1] [3] [5]
+    --
+    -- If we are given a lower bound of 3, we do not need to inspect the left
+    -- subtree, because we know that every entry in it is less than or equal to
+    -- 2. Similarly, if we are given a lower bound of 5, we do not need to
+    -- inspect the central subtree, because we know that every entry in it must
+    -- be less than or equal to 4.
+    --
+    -- Unfortunately we cannot extract `if cond then x else mempty` into a
+    -- function because of strictness.
+    go = case _ of
+      Leaf ->
+        mempty
+      Two left k v right ->
+           (if tooSmall k then mempty else go left)
+        <> (if inBounds k then f k v else mempty)
+        <> (if tooLarge k then mempty else go right)
+      Three left k1 v1 mid k2 v2 right ->
+           (if tooSmall k1 then mempty else go left)
+        <> (if inBounds k1 then f k1 v1 else mempty)
+        <> (if tooSmall k2 || tooLarge k1 then mempty else go mid)
+        <> (if inBounds k2 then f k2 v2 else mempty)
+        <> (if tooLarge k2 then mempty else go right)
+  in
+    go
+
+-- | Returns a new map containing all entries of the given map which lie
+-- | between a given lower and upper bound, treating `Nothing` as no bound i.e.
+-- | including the smallest (or largest) key in the map, no matter how small
+-- | (or large) it is. For example:
+-- |
+-- | ```purescript
+-- | submap (Just 1) (Just 2)
+-- |   (fromFoldable [Tuple 0 "zero", Tuple 1 "one", Tuple 2 "two", Tuple 3 "three"])
+-- |   == fromFoldable [Tuple 1 "one", Tuple 2 "two"]
+-- |
+-- | submap Nothing (Just 2)
+-- |   (fromFoldable [Tuple 0 "zero", Tuple 1 "one", Tuple 2 "two", Tuple 3 "three"])
+-- |   == fromFoldable [Tuple 0 "zero", Tuple 1 "one", Tuple 2 "two"]
+-- | ```
+-- |
+-- | The function is entirely specified by the following
+-- | property:
+-- |
+-- | ```purescript
+-- | Given any m :: Map k v, mmin :: Maybe k, mmax :: Maybe k, key :: k,
+-- |   let m' = submap mmin mmax m in
+-- |     if (maybe true (\min -> min <= key) mmin &&
+-- |         maybe true (\max -> max >= key) mmax)
+-- |       then lookup key m == lookup key m'
+-- |       else not (member key m')
+-- | ```
+submap :: forall k v. Ord k => Maybe k -> Maybe k -> Map k v -> Map k v
+submap kmin kmax = foldSubmap kmin kmax singleton
 
 -- | Test if a key is a member of a map
 member :: forall k v. Ord k => k -> Map k v -> Boolean
