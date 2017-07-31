@@ -6,8 +6,10 @@ import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (log, CONSOLE)
 import Control.Monad.Eff.Exception (EXCEPTION)
 import Control.Monad.Eff.Random (RANDOM)
+import Control.Monad.Writer (runWriter, tell)
 import Data.Array as A
-import Data.Foldable (foldl)
+import Data.Foldable (foldl, foldr)
+import Data.FoldableWithIndex (foldlWithIndex, foldrWithIndex, foldMapWithIndex)
 import Data.Function (on)
 import Data.List as L
 import Data.List.NonEmpty as NEL
@@ -15,8 +17,9 @@ import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.StrMap as M
 import Data.StrMap.Gen (genStrMap)
-import Data.Traversable (sequence)
-import Data.Tuple (Tuple(..), fst, uncurry)
+import Data.Traversable (sequence, traverse)
+import Data.TraversableWithIndex (traverseWithIndex)
+import Data.Tuple (Tuple(..), fst, snd, uncurry)
 import Partial.Unsafe (unsafePartial)
 import Test.QuickCheck ((<?>), quickCheck, quickCheck', (===))
 import Test.QuickCheck.Arbitrary (class Arbitrary, arbitrary)
@@ -197,6 +200,34 @@ strMapTests = do
     resultViaMapWithKey = m # M.mapWithKey f
     resultViaLists = m # M.toUnfoldable # map (\(Tuple k v) → Tuple k (f k v)) # (M.fromFoldable :: forall a. L.List (Tuple String a) -> M.StrMap a)
     in resultViaMapWithKey === resultViaLists
+
+  log "foldl = foldlWithIndex <<< const"
+  quickCheck \(TestStrMap m :: TestStrMap String) ->
+    let f z v = z <> "," <> v
+    in foldl f "" m === foldlWithIndex (const f) "" m
+
+  log "foldr = foldrWithIndex <<< const"
+  quickCheck \(TestStrMap m :: TestStrMap String) ->
+    let f v z = v <> "," <> z
+    in foldr f "" m === foldrWithIndex (const f) "" m
+
+  log "foldlWithIndex = foldrWithIndex with flipped operation"
+  quickCheck \(TestStrMap m :: TestStrMap String) ->
+    let f k z v = z <> "," <> k <> ":" <> v
+        g k v z = k <> ":" <> v <> "," <> z
+    in foldlWithIndex f "" m <> "," === "," <> foldrWithIndex g "" m
+
+  log "foldMapWithIndex f ~ traverseWithIndex (\\k v -> tell (f k v))"
+  quickCheck \(TestStrMap m :: TestStrMap Int) ->
+    let f k v = "(" <> "k" <> "," <> show v <> ")"
+        resultA = foldMapWithIndex f m
+        resultB = snd (runWriter (traverseWithIndex (\k v -> tell (f k v)) m))
+    in resultA === resultB
+
+  log "traverse = traverseWithIndex <<< const (for m = Writer)"
+  quickCheck \(TestStrMap m :: TestStrMap String) ->
+    runWriter (traverse tell m) ===
+    runWriter (traverseWithIndex (const tell) m)
 
   log "sequence works (for m = Array)"
   quickCheck \(TestStrMap mOfSmallArrays :: TestStrMap (SmallArray Int)) ->
