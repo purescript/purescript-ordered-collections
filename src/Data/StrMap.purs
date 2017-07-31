@@ -50,12 +50,15 @@ import Control.Monad.ST as ST
 import Data.Array as A
 import Data.Eq (class Eq1)
 import Data.Foldable (class Foldable, foldl, foldr, for_)
+import Data.FoldableWithIndex (class FoldableWithIndex)
 import Data.Function.Uncurried (Fn2, runFn2, Fn4, runFn4)
+import Data.FunctorWithIndex (class FunctorWithIndex)
 import Data.Maybe (Maybe(..), maybe, fromMaybe)
 import Data.Monoid (class Monoid, mempty)
 import Data.StrMap.ST as SM
 import Data.Traversable (class Traversable, traverse)
-import Data.Tuple (Tuple(..), fst)
+import Data.TraversableWithIndex (class TraversableWithIndex, traverseWithIndex)
+import Data.Tuple (Tuple(..), fst, uncurry)
 import Data.Unfoldable (class Unfoldable)
 
 -- | `StrMap a` represents a map from `String`s to values of type `a`.
@@ -91,6 +94,9 @@ foreign import _fmapStrMap :: forall a b. Fn2 (StrMap a) (a -> b) (StrMap b)
 instance functorStrMap :: Functor StrMap where
   map f m = runFn2 _fmapStrMap m f
 
+instance functorWithIndexStrMap :: FunctorWithIndex String StrMap where
+  mapWithIndex = mapWithKey
+
 foreign import _foldM :: forall a m z. (m -> (z -> m) -> m) -> (z -> String -> a -> m) -> m -> StrMap a -> m
 
 -- | Fold the keys and values of a map
@@ -112,9 +118,18 @@ instance foldableStrMap :: Foldable StrMap where
   foldr f z m = foldr f z (values m)
   foldMap f = foldMap (const f)
 
+instance foldableWithIndexStrMap :: FoldableWithIndex String StrMap where
+  foldlWithIndex f = fold (flip f)
+  foldrWithIndex f z m = foldr (uncurry f) z (toArrayWithKey Tuple m)
+  foldMapWithIndex = foldMap
+
 instance traversableStrMap :: Traversable StrMap where
-  traverse f ms = fold (\acc k v -> insert k <$> f v <*> acc) (pure empty) ms
+  traverse = traverseWithIndex <<< const
   sequence = traverse id
+
+instance traversableWithIndexStrMap :: TraversableWithIndex String StrMap where
+  traverseWithIndex f ms =
+    fold (\acc k v -> flip (insert k) <$> acc <*> f k v) (pure empty) ms
 
 -- Unfortunately the above are not short-circuitable (consider using purescript-machines)
 -- so we need special cases:
