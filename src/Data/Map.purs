@@ -246,15 +246,19 @@ lookupGT k = go
 
 -- | Returns the pair with the greatest key
 findMax :: forall k v. Map k v -> Maybe { key :: k, value :: v }
-findMax Leaf = Nothing
-findMax (Two _ k1 v1 right) = Just $ fromMaybe { key: k1, value: v1 } $ findMax right
-findMax (Three _ _ _ _ k2 v2 right) = Just $ fromMaybe { key: k2, value: v2 } $ findMax right
+findMax = go Nothing
+  where
+    go acc Leaf = acc
+    go _   (Two _ k1 v1 right) = go (Just { key: k1, value: v1 }) right
+    go _   (Three _ _ _ _ k2 v2 right) = go (Just { key: k2, value: v2 }) right
 
 -- | Returns the pair with the least key
 findMin :: forall k v. Map k v -> Maybe { key :: k, value :: v }
-findMin Leaf = Nothing
-findMin (Two left k1 v1 _) = Just $ fromMaybe { key: k1, value: v1 } $ findMin left
-findMin (Three left k1 v1 _ _ _ _) = Just $ fromMaybe { key: k1, value: v1 } $ findMin left
+findMin = go Nothing
+  where
+    go acc Leaf = acc
+    go _   (Two left k1 v1 _) = go (Just { key: k1, value: v1 }) left
+    go _   (Three left k1 v1 _ _ _ _) = go (Just { key: k1, value: v1 }) left
 
 -- | Fold over the entries of a given map where the key is between a lower and
 -- | an upper bound. Passing `Nothing` as either the lower or upper bound
