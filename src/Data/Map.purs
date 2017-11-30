@@ -41,14 +41,18 @@ module Data.Map
   ) where
 
 import Prelude
+
 import Data.Eq (class Eq1)
 import Data.Foldable (foldl, foldMap, foldr, class Foldable)
+import Data.FoldableWithIndex (class FoldableWithIndex)
+import Data.FunctorWithIndex (class FunctorWithIndex, mapWithIndex)
 import Data.List (List(..), (:), length, nub)
 import Data.List.Lazy as LL
 import Data.Maybe (Maybe(..), maybe, isJust, fromMaybe)
 import Data.Monoid (class Monoid, mempty)
 import Data.Ord (class Ord1)
 import Data.Traversable (traverse, class Traversable)
+import Data.TraversableWithIndex (class TraversableWithIndex, traverseWithIndex)
 import Data.Tuple (Tuple(Tuple), snd, uncurry)
 import Data.Unfoldable (class Unfoldable, unfoldr)
 import Partial.Unsafe (unsafePartial)
@@ -89,10 +93,23 @@ instance functorMap :: Functor (Map k) where
   map f (Two left k v right) = Two (map f left) k (f v) (map f right)
   map f (Three left k1 v1 mid k2 v2 right) = Three (map f left) k1 (f v1) (map f mid) k2 (f v2) (map f right)
 
+instance functorWithIndexMap :: FunctorWithIndex k (Map k) where
+  mapWithIndex _ Leaf = Leaf
+  mapWithIndex f (Two left k v right) = Two (mapWithIndex f left) k (f k v) (mapWithIndex f right)
+  mapWithIndex f (Three left k1 v1 mid k2 v2 right) = Three (mapWithIndex f left) k1 (f k1 v1) (mapWithIndex f mid) k2 (f k2 v2) (mapWithIndex f right)
+
 instance foldableMap :: Foldable (Map k) where
   foldl   f z m = foldl   f z (values m)
   foldr   f z m = foldr   f z (values m)
   foldMap f   m = foldMap f   (values m)
+
+instance foldableWithIndexMap :: FoldableWithIndex k (Map k) where
+  foldlWithIndex f z m = foldl (uncurry <<< (flip f)) z $ asList $ toUnfoldable m
+  foldrWithIndex f z m = foldr (uncurry f) z $ asList $ toUnfoldable m
+  foldMapWithIndex f m = foldMap (uncurry f) $ asList $ toUnfoldable m
+
+asList :: forall k v. List (Tuple k v) -> List (Tuple k v)
+asList = id
 
 instance traversableMap :: Traversable (Map k) where
   traverse f Leaf = pure Leaf
@@ -110,6 +127,22 @@ instance traversableMap :: Traversable (Map k) where
           <*> f v2
           <*> traverse f right
   sequence = traverse id
+
+instance traversableWithIndexMap :: TraversableWithIndex k (Map k) where
+  traverseWithIndex f Leaf = pure Leaf
+  traverseWithIndex f (Two left k v right) =
+    Two <$> traverseWithIndex f left
+        <*> pure k
+        <*> f k v
+        <*> traverseWithIndex f right
+  traverseWithIndex f (Three left k1 v1 mid k2 v2 right) =
+    Three <$> traverseWithIndex f left
+          <*> pure k1
+          <*> f k1 v1
+          <*> traverseWithIndex f mid
+          <*> pure k2
+          <*> f k2 v2
+          <*> traverseWithIndex f right
 
 -- | Render a `Map` as a `String`
 showTree :: forall k v. Show k => Show v => Map k v -> String

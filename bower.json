@@ -26,7 +26,7 @@
     "purescript-lists": "^4.0.0",
     "purescript-st": "^3.0.0",
     "purescript-gen": "^1.1.0",
-    "purescript-foldable-traversable": "^3.4.0"
+    "purescript-foldable-traversable": "^3.6.1"
   },
   "devDependencies": {
     "purescript-quickcheck": "^4.0.0",
