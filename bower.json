@@ -21,12 +21,12 @@
     "package.json"
   ],
   "dependencies": {
-    "purescript-arrays": "^4.0.0",
-    "purescript-functions": "^3.0.0",
-    "purescript-lists": "^4.0.0",
-    "purescript-st": "^3.0.0",
-    "purescript-gen": "^1.1.0",
-    "purescript-foldable-traversable": "^3.6.1"
+    "purescript-arrays": "#compiler/0.12",
+    "purescript-functions": "#compiler/0.12",
+    "purescript-lists": "#compiler/0.12",
+    "purescript-st": "#compiler/0.12",
+    "purescript-gen": "#compiler/0.12",
+    "purescript-foldable-traversable": "#compiler/0.12"
   },
   "devDependencies": {
     "purescript-quickcheck": "^4.0.0",

@@ -44,9 +44,7 @@ module Data.StrMap
 
 import Prelude
 
-import Control.Monad.Eff (Eff, runPure, foreachE)
-import Control.Monad.ST as ST
-
+import Control.Monad.ST (ST)
 import Data.Array as A
 import Data.Eq (class Eq1)
 import Data.Foldable (class Foldable, foldl, foldr, for_)
@@ -54,7 +52,6 @@ import Data.FoldableWithIndex (class FoldableWithIndex)
 import Data.Function.Uncurried (Fn2, runFn2, Fn4, runFn4)
 import Data.FunctorWithIndex (class FunctorWithIndex)
 import Data.Maybe (Maybe(..), maybe, fromMaybe)
-import Data.Monoid (class Monoid, mempty)
 import Data.StrMap.ST as SM
 import Data.Traversable (class Traversable, traverse)
 import Data.TraversableWithIndex (class TraversableWithIndex, traverseWithIndex)
@@ -64,26 +61,26 @@ import Data.Unfoldable (class Unfoldable)
 -- | `StrMap a` represents a map from `String`s to values of type `a`.
 foreign import data StrMap :: Type -> Type
 
-foreign import _copyEff :: forall a b h r. a -> Eff (st :: ST.ST h | r) b
+foreign import _copyEff :: forall a b h. a -> ST h b
 
 -- | Convert an immutable map into a mutable map
-thawST :: forall a h r. StrMap a -> Eff (st :: ST.ST h | r) (SM.STStrMap h a)
+thawST :: forall a h. StrMap a -> ST h (SM.STStrMap h a)
 thawST = _copyEff
 
 -- | Convert a mutable map into an immutable map
-freezeST :: forall a h r. SM.STStrMap h a -> Eff (st :: ST.ST h | r) (StrMap a)
+freezeST :: forall a h. SM.STStrMap h a -> ST h (StrMap a)
 freezeST = _copyEff
 
 -- | Freeze a mutable map, creating an immutable map. Use this function as you would use
 -- | `Prelude.runST` to freeze a mutable reference.
 -- |
 -- | The rank-2 type prevents the map from escaping the scope of `runST`.
-foreign import runST :: forall a r. (forall h. Eff (st :: ST.ST h | r) (SM.STStrMap h a)) -> Eff r (StrMap a)
+foreign import runST :: forall a. (forall h. ST h (SM.STStrMap h a)) -> StrMap a
 
-pureST :: forall a. (forall h e. Eff (st :: ST.ST h | e) (SM.STStrMap h a)) -> StrMap a
-pureST f = runPure (runST f)
+pureST :: forall a. (forall h e. ST h (SM.STStrMap h a)) -> StrMap a
+pureST = runST
 
-mutate :: forall a b. (forall h e. SM.STStrMap h a -> Eff (st :: ST.ST h | e) b) -> StrMap a -> StrMap a
+mutate :: forall a b. (forall h. SM.STStrMap h a -> ST h b) -> StrMap a -> StrMap a
 mutate f m = pureST do
   s <- thawST m
   _ <- f s
@@ -125,7 +122,7 @@ instance foldableWithIndexStrMap :: FoldableWithIndex String StrMap where
 
 instance traversableStrMap :: Traversable StrMap where
   traverse = traverseWithIndex <<< const
-  sequence = traverse id
+  sequence = traverse identity
 
 instance traversableWithIndexStrMap :: TraversableWithIndex String StrMap where
   traverseWithIndex f ms =
@@ -222,10 +219,10 @@ update f k m = alter (maybe Nothing f) k m
 fromFoldable :: forall f a. Foldable f => f (Tuple String a) -> StrMap a
 fromFoldable l = pureST do
   s <- SM.new
-  foreachE (A.fromFoldable l) \(Tuple k v) -> void (SM.poke s k v)
+  for_ (A.fromFoldable l) \(Tuple k v) -> void (SM.poke s k v)
   pure s
 
-foreign import _lookupST :: forall a h r z. Fn4 z (a -> z) String (SM.STStrMap h a) (Eff (st :: ST.ST h | r) z)
+foreign import _lookupST :: forall a h z. Fn4 z (a -> z) String (SM.STStrMap h a) (ST h z)
 
 -- | Create a map from a foldable collection of key/value pairs, using the
 -- | specified function to combine values for duplicate keys.
@@ -283,7 +280,7 @@ instance monoidStrMap :: (Semigroup a) => Monoid (StrMap a) where
 filterWithKey :: forall a. (String -> a -> Boolean) -> StrMap a -> StrMap a
 filterWithKey predicate m = pureST go
   where
-  go :: forall h e. Eff (st :: ST.ST h | e) (SM.STStrMap h a)
+  go :: forall h. ST h (SM.STStrMap h a)
   go = do
     m' <- SM.new
     foldM step m' m

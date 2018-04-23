@@ -49,7 +49,6 @@ import Data.FunctorWithIndex (class FunctorWithIndex, mapWithIndex)
 import Data.List (List(..), (:), length, nub)
 import Data.List.Lazy as LL
 import Data.Maybe (Maybe(..), maybe, isJust, fromMaybe)
-import Data.Monoid (class Monoid, mempty)
 import Data.Ord (class Ord1)
 import Data.Traversable (traverse, class Traversable)
 import Data.TraversableWithIndex (class TraversableWithIndex, traverseWithIndex)
@@ -109,7 +108,7 @@ instance foldableWithIndexMap :: FoldableWithIndex k (Map k) where
   foldMapWithIndex f m = foldMap (uncurry f) $ asList $ toUnfoldable m
 
 asList :: forall k v. List (Tuple k v) -> List (Tuple k v)
-asList = id
+asList = identity
 
 instance traversableMap :: Traversable (Map k) where
   traverse f Leaf = pure Leaf
@@ -126,7 +125,7 @@ instance traversableMap :: Traversable (Map k) where
           <*> pure k2
           <*> f v2
           <*> traverse f right
-  sequence = traverse id
+  sequence = traverse identity
 
 instance traversableWithIndexMap :: TraversableWithIndex k (Map k) where
   traverseWithIndex f Leaf = pure Leaf
