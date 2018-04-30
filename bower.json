@@ -29,7 +29,9 @@
     "purescript-foldable-traversable": "#compiler/0.12"
   },
   "devDependencies": {
-    "purescript-quickcheck": "^4.0.0",
-    "purescript-minibench": "^1.0.0"
+    "purescript-quickcheck": "#compiler/0.12",
+    "purescript-minibench": "#compiler/0.12",
+    "purescript-console": "#compiler/0.12",
+    "purescript-assert": "#compiler/0.12"
   }
 }

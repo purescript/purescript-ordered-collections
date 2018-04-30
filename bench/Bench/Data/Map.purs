@@ -1,15 +1,15 @@
 module Bench.Data.Map where
 
 import Prelude
-import Control.Monad.Eff (Eff)
-import Control.Monad.Eff.Console (CONSOLE, log)
-import Performance.Minibench (bench, benchWith)
 
-import Data.Tuple (Tuple(..))
 import Data.List as L
 import Data.Map as M
+import Data.Tuple (Tuple(..))
+import Effect (Effect)
+import Effect.Console (log)
+import Performance.Minibench (bench, benchWith)
 
-benchMap :: Eff (console :: CONSOLE) Unit
+benchMap :: Effect Unit
 benchMap = do
   log "size"
   log "---------------"

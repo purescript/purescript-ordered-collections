@@ -2,10 +2,8 @@ module Test.Data.Map where
 
 import Prelude
 import Control.Alt ((<|>))
-import Control.Monad.Eff (Eff)
-import Control.Monad.Eff.Console (log, CONSOLE)
-import Control.Monad.Eff.Exception (EXCEPTION)
-import Control.Monad.Eff.Random (RANDOM)
+import Effect (Effect)
+import Effect.Console (log)
 import Data.Array as A
 import Data.Foldable (foldl, for_, all)
 import Data.Function (on)
@@ -69,7 +67,7 @@ number n = n
 smallKeyToNumberMap :: M.Map SmallKey Int -> M.Map SmallKey Int
 smallKeyToNumberMap m = m
 
-mapTests :: forall eff. Eff (console :: CONSOLE, random :: RANDOM, exception :: EXCEPTION | eff) Unit
+mapTests :: Effect Unit
 mapTests = do
 
   -- Data.Map
@@ -91,11 +89,11 @@ mapTests = do
     <?> ("k: " <> show k <> ", v: " <> show v)
 
   log "Pop non-existent key"
-  quickCheck $ \k1 k2 v -> k1 == k2 || M.pop (smallKey k2) (M.insert k1 (number v) M.empty) == Nothing
+  quickCheck $ \k1 k2 v -> ((k1 == k2) || M.pop (smallKey k2) (M.insert k1 (number v) M.empty) == Nothing)
     <?> ("k1: " <> show k1 <> ", k2: " <> show k2 <> ", v: " <> show v)
 
   log "Insert two, lookup first"
-  quickCheck $ \k1 v1 k2 v2 -> k1 == k2 || M.lookup k1 (M.insert (smallKey k2) (number v2) (M.insert (smallKey k1) (number v1) M.empty)) == Just v1
+  quickCheck $ \k1 v1 k2 v2 -> ((k1 == k2) || (M.lookup k1 (M.insert (smallKey k2) (number v2) (M.insert (smallKey k1) (number v1) M.empty)) == Just v1))
     <?> ("k1: " <> show k1 <> ", v1: " <> show v1 <> ", k2: " <> show k2 <> ", v2: " <> show v2)
 
   log "Insert two, lookup second"
@@ -103,7 +101,7 @@ mapTests = do
     <?> ("k1: " <> show k1 <> ", v1: " <> show v1 <> ", k2: " <> show k2 <> ", v2: " <> show v2)
 
   log "Insert two, delete one"
-  quickCheck $ \k1 v1 k2 v2 -> k1 == k2 || M.lookup k2 (M.delete k1 (M.insert (smallKey k2) (number v2) (M.insert (smallKey k1) (number v1) M.empty))) == Just v2
+  quickCheck $ \k1 v1 k2 v2 -> (k1 == k2 || M.lookup k2 (M.delete k1 (M.insert (smallKey k2) (number v2) (M.insert (smallKey k1) (number v1) M.empty))) == Just v2)
     <?> ("k1: " <> show k1 <> ", v1: " <> show v1 <> ", k2: " <> show k2 <> ", v2: " <> show v2)
 
   log "Check balance property"
