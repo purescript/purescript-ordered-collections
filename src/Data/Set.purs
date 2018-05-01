@@ -37,7 +37,7 @@ import Data.Eq (class Eq1)
 import Data.Foldable (class Foldable, foldMap, foldl, foldr)
 import Data.List (List)
 import Data.List as List
-import Data.Map as M
+import Data.Map.Internal as M
 import Data.Maybe (Maybe)
 import Data.Ord (class Ord1)
 import Data.Unfoldable (class Unfoldable)
@@ -45,7 +45,7 @@ import Partial.Unsafe (unsafePartial)
 import Prelude as Prelude
 
 -- | `Set a` represents a set of values of type `a`
-data Set a = Set (M.Map a Unit)
+newtype Set a = Set (M.Map a Unit)
 
 -- | Create a set from a foldable structure.
 fromFoldable :: forall f a. Foldable f => Ord a => f a -> Set a

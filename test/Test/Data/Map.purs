@@ -1,12 +1,12 @@
 module Test.Data.Map where
 
 import Prelude
+
 import Control.Alt ((<|>))
-import Effect (Effect)
-import Effect.Console (log)
 import Data.Array as A
 import Data.Foldable (foldl, for_, all)
 import Data.Function (on)
+import Data.FunctorWithIndex (mapWithIndex)
 import Data.List (List(Cons), groupBy, length, nubBy, singleton, sort, sortBy)
 import Data.List.NonEmpty as NEL
 import Data.Map as M
@@ -14,6 +14,8 @@ import Data.Map.Gen (genMap)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.NonEmpty ((:|))
 import Data.Tuple (Tuple(..), fst, uncurry)
+import Effect (Effect)
+import Effect.Console (log)
 import Partial.Unsafe (unsafePartial)
 import Test.QuickCheck ((<?>), (===), quickCheck, quickCheck')
 import Test.QuickCheck.Arbitrary (class Arbitrary, arbitrary)
@@ -270,7 +272,7 @@ mapTests = do
   log "mapWithKey is correct"
   quickCheck $ \(TestMap m :: TestMap String Int) -> let
     f k v = k <> show v
-    resultViaMapWithKey = m # M.mapWithKey f
+    resultViaMapWithKey = m # mapWithIndex f
     toList = M.toUnfoldable :: forall k v. M.Map k v -> List (Tuple k v)
     resultViaLists = m # toList # map (\(Tuple k v) → Tuple k (f k v)) # M.fromFoldable
     in resultViaMapWithKey === resultViaLists
