@@ -175,10 +175,10 @@ mapTests = do
             groupBy ((==) `on` fst) <<< sortBy (compare `on` fst) in
     M.fromFoldableWith (<>) arr === f (arr :: List (Tuple String String))
 
-  log "toAscUnfoldable is sorted version of toUnfoldable"
+  log "toUnfoldable is sorted"
   quickCheck $ \(TestMap m) ->
     let list = M.toUnfoldable (m :: M.Map SmallKey Int)
-        ascList = M.toAscUnfoldable m
+        ascList = M.toUnfoldable m
     in ascList === sortBy (compare `on` fst) list
 
   log "Lookup from union"
@@ -283,7 +283,7 @@ mapTests = do
 
   log "filterWithKey keeps those keys for which predicate is true"
   quickCheck $ \(TestMap s :: TestMap String Int) p ->
-                 A.all (uncurry p) (M.toAscUnfoldable (M.filterWithKey p s) :: Array (Tuple String Int))
+                 A.all (uncurry p) (M.toUnfoldable (M.filterWithKey p s) :: Array (Tuple String Int))
 
   log "filterKeys gives submap"
   quickCheck $ \(TestMap s :: TestMap String Int) p ->
