@@ -5,9 +5,10 @@ import Prelude
 import Control.Alt ((<|>))
 import Data.Array as A
 import Data.Foldable (foldl, for_, all)
+import Data.FoldableWithIndex (foldrWithIndex)
 import Data.Function (on)
 import Data.FunctorWithIndex (mapWithIndex)
-import Data.List (List(Cons), groupBy, length, nubBy, singleton, sort, sortBy)
+import Data.List (List(..), groupBy, length, nubBy, singleton, sort, sortBy, (:))
 import Data.List.NonEmpty as NEL
 import Data.Map as M
 import Data.Map.Gen (genMap)
@@ -333,3 +334,8 @@ mapTests = do
        <> ", mmin: " <> show mmin
        <> ", mmax: " <> show mmax
        <> ", key: " <> show key
+
+  log "foldrWithIndex maintains order"
+  quickCheck \(TestMap m :: TestMap Int Int) ->
+    let outList = foldrWithIndex (\i a b -> (Tuple i a) : b) Nil m
+    in outList == sort outList
