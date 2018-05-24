@@ -32,12 +32,13 @@ import Control.Monad.Rec.Class (Step(..), tailRecM2)
 import Control.Monad.ST (ST)
 import Control.Monad.ST as ST
 import Data.Array as Array
-import Data.Array.ST (STArray, emptySTArray, pushSTArray, unsafeFreeze)
+import Data.Array.ST (STArray)
+import Data.Array.ST as STArray
 import Data.Eq (class Eq1)
 import Data.Foldable (class Foldable, foldMap, foldl, foldr)
 import Data.List (List)
 import Data.List as List
-import Data.Map as M
+import Data.Map.Internal as M
 import Data.Maybe (Maybe)
 import Data.Ord (class Ord1)
 import Data.Unfoldable (class Unfoldable)
@@ -45,7 +46,7 @@ import Partial.Unsafe (unsafePartial)
 import Prelude as Prelude
 
 -- | `Set a` represents a set of values of type `a`
-data Set a = Set (M.Map a Unit)
+newtype Set a = Set (M.Map a Unit)
 
 -- | Create a set from a foldable structure.
 fromFoldable :: forall f a. Foldable f => Ord a => f a -> Set a
@@ -158,7 +159,7 @@ properSubset s1 s2 = subset s1 s2 && (s1 /= s2)
 
 -- | The set of elements which are in both the first and second set
 intersection :: forall a. Ord a => Set a -> Set a -> Set a
-intersection s1 s2 = fromFoldable (ST.run (emptySTArray >>= intersect >>= unsafeFreeze))
+intersection s1 s2 = fromFoldable (ST.run (STArray.empty >>= intersect >>= STArray.unsafeFreeze))
   where
   toArray = Array.fromFoldable <<< toList
   ls = toArray s1
@@ -172,7 +173,7 @@ intersection s1 s2 = fromFoldable (ST.run (emptySTArray >>= intersect >>= unsafe
       if l < ll && r < rl
       then case compare (ls `Array.unsafeIndex` l) (rs `Array.unsafeIndex` r) of
         EQ -> do
-          _ <- pushSTArray acc (ls `Array.unsafeIndex` l)
+          _ <- STArray.push (ls `Array.unsafeIndex` l) acc
           pure $ Loop {a: l + 1, b: r + 1}
         LT -> pure $ Loop {a: l + 1, b: r}
         GT -> pure $ Loop {a: l, b: r + 1}
