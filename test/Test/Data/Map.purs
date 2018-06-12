@@ -188,15 +188,15 @@ mapTests = do
 
   log "Lookup from union"
   quickCheck $ \(TestMap m1) (TestMap m2) k ->
-    M.lookup (smallKey k) (M.union m1 m2) == (case M.lookup k m1 of
-      Nothing -> M.lookup k m2
+    M.lookup (smallKey k) (M.union m1 m2) == (case M.lookup k m2 of
+      Nothing -> M.lookup k m1
       Just v -> Just (number v)) <?> ("m1: " <> show m1 <> ", m2: " <> show m2 <> ", k: " <> show k <> ", v1: " <> show (M.lookup k m1) <> ", v2: " <> show (M.lookup k m2) <> ", union: " <> show (M.union m1 m2))
 
   log "Union is idempotent"
   quickCheck $ \(TestMap m1) (TestMap m2) -> (m1 `M.union` m2) == ((m1 `M.union` m2) `M.union` (m2 :: M.Map SmallKey Int))
 
-  log "Union prefers left"
-  quickCheck $ \(TestMap m1) (TestMap m2) k -> M.lookup k (M.union m1 (m2 :: M.Map SmallKey Int)) == (M.lookup k m1 <|> M.lookup k m2)
+  log "Union prefers right"
+  quickCheck $ \(TestMap m1) (TestMap m2) k -> M.lookup k (M.union m1 (m2 :: M.Map SmallKey Int)) == (M.lookup k m2 <|> M.lookup k m1)
 
   log "unionWith"
   for_ [Tuple (+) 0, Tuple (*) 1] $ \(Tuple op ident) ->

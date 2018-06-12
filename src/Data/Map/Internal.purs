@@ -81,7 +81,7 @@ instance showMap :: (Show k, Show v) => Show (Map k v) where
   show m = "(fromFoldable " <> show (toAscArray m) <> ")"
 
 instance semigroupMap :: Ord k => Semigroup (Map k v) where
-  append = unionWith (\_ x -> x)
+  append = union
 
 instance monoidMap :: Ord k => Monoid (Map k v) where
   mempty = empty
@@ -603,10 +603,10 @@ unionWith f m1 m2 = foldl go m2 (toUnfoldable m1 :: List (Tuple k v))
   where
   go m (Tuple k v) = alter (Just <<< maybe v (f v)) k m
 
--- | Compute the union of two maps, preferring values from the first map in the case
+-- | Compute the union of two maps, preferring values from the second map in the case
 -- | of duplicate keys
 union :: forall k v. Ord k => Map k v -> Map k v -> Map k v
-union = unionWith const
+union = unionWith (\_ x -> x)
 
 -- | Compute the union of a collection of maps
 unions :: forall k v f. Ord k => Foldable f => f (Map k v) -> Map k v
