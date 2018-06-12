@@ -81,7 +81,7 @@ instance showMap :: (Show k, Show v) => Show (Map k v) where
   show m = "(fromFoldable " <> show (toAscArray m) <> ")"
 
 instance semigroupMap :: Ord k => Semigroup (Map k v) where
-  append = union
+  append = unionWith (\_ x -> x)
 
 instance monoidMap :: Ord k => Monoid (Map k v) where
   mempty = empty

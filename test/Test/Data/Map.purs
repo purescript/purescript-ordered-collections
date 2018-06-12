@@ -176,6 +176,10 @@ mapTests = do
             groupBy ((==) `on` fst) <<< sortBy (compare `on` fst) in
     M.fromFoldableWith (<>) arr === f (arr :: List (Tuple String String))
 
+  log "fromFoldable (a <> b) = fromFoldable a <> fromFoldable b, for arrays a, b"
+  quickCheck $ \a b ->
+    M.fromFoldable (a <> b) === M.fromFoldable a <> M.fromFoldable (b :: Array (Tuple String String))
+
   log "toUnfoldable is sorted"
   quickCheck $ \(TestMap m) ->
     let list = M.toUnfoldable (m :: M.Map SmallKey Int)
