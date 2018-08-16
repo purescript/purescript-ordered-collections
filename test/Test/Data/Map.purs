@@ -4,7 +4,7 @@ import Prelude
 
 import Control.Alt ((<|>))
 import Data.Array as A
-import Data.Foldable (foldl, for_, all)
+import Data.Foldable (foldl, for_, all, and)
 import Data.FoldableWithIndex (foldrWithIndex)
 import Data.Function (on)
 import Data.FunctorWithIndex (mapWithIndex)
@@ -214,6 +214,12 @@ mapTests = do
           Just v | in1        -> Just v == v1
           Just v              -> Just v == v2
           Nothing             -> not (in1 || in2)
+
+  log "difference"
+  quickCheck $ \(TestMap m1) (TestMap m2) ->
+    let d = M.difference m1 m2 :: M.Map SmallKey Int
+    in and (map (\k -> M.member k d) (A.fromFoldable $ M.keys d)) &&
+       and (map (\k -> not $ M.member k d) (A.fromFoldable $ M.keys m2))
 
   log "size"
   quickCheck $ \xs ->

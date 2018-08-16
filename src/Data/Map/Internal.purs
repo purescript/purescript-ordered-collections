@@ -32,6 +32,7 @@ module Data.Map.Internal
   , union
   , unionWith
   , unions
+  , difference
   , isSubmap
   , size
   , filterWithKey
@@ -611,6 +612,11 @@ union = unionWith const
 -- | Compute the union of a collection of maps
 unions :: forall k v f. Ord k => Foldable f => f (Map k v) -> Map k v
 unions = foldl union empty
+
+-- | Difference of two maps. Return elements of the first map where
+-- | the keys do not exist in the second map.
+difference :: forall k v. Ord k => Map k v -> Map k v -> Map k v
+difference m1 m2 = foldl (flip delete) m1 (keys m2)
 
 -- | Test whether one map contains all of the keys and values contained in another map
 isSubmap :: forall k v. Ord k => Eq v => Map k v -> Map k v -> Boolean
