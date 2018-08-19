@@ -20,6 +20,7 @@ module Data.Map.Internal
   , submap
   , fromFoldable
   , fromFoldableWith
+  , fromFoldableWithIndex
   , toUnfoldable
   , toUnfoldableUnordered
   , delete
@@ -46,7 +47,7 @@ import Prelude
 
 import Data.Eq (class Eq1)
 import Data.Foldable (foldl, foldMap, foldr, class Foldable)
-import Data.FoldableWithIndex (class FoldableWithIndex, foldrWithIndex)
+import Data.FoldableWithIndex (class FoldableWithIndex, foldlWithIndex, foldrWithIndex)
 import Data.FunctorWithIndex (class FunctorWithIndex, mapWithIndex)
 import Data.List (List(..), (:), length, nub)
 import Data.List.Lazy as LL
@@ -554,6 +555,10 @@ fromFoldableWith :: forall f k v. Ord k => Foldable f => (v -> v -> v) -> f (Tup
 fromFoldableWith f = foldl (\m (Tuple k v) -> alter (combine v) k m) empty where
   combine v (Just v') = Just $ f v v'
   combine v Nothing = Just v
+
+-- | Convert any indexed foldable collection into a map.
+fromFoldableWithIndex :: forall f k v. Ord k => FoldableWithIndex k f => f v -> Map k v
+fromFoldableWithIndex = foldlWithIndex (\k m v -> insert k v m) empty
 
 -- | Convert a map to an unfoldable structure of key/value pairs where the keys are in ascending order
 toUnfoldable :: forall f k v. Unfoldable f => Map k v -> f (Tuple k v)
