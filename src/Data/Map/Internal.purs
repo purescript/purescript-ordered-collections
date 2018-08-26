@@ -37,15 +37,17 @@ module Data.Map.Internal
   , filterWithKey
   , filterKeys
   , filter
+  , applyWithDefault
   ) where
 
 import Prelude
 
+import Control.Alt ((<|>))
 import Data.Eq (class Eq1)
 import Data.Foldable (foldl, foldMap, foldr, class Foldable)
 import Data.FoldableWithIndex (class FoldableWithIndex)
 import Data.FunctorWithIndex (class FunctorWithIndex, mapWithIndex)
-import Data.List (List(..), (:), length, nub)
+import Data.List (List(..), (:), length, nub, mapMaybe)
 import Data.List.Lazy as LL
 import Data.Maybe (Maybe(..), maybe, isJust, fromMaybe)
 import Data.Ord (class Ord1)
@@ -638,3 +640,17 @@ filterKeys predicate = filterWithKey $ const <<< predicate
 -- | on the value fails to hold.
 filter :: forall k v. Ord k => (v -> Boolean) -> Map k v -> Map k v
 filter predicate = filterWithKey $ const predicate
+
+-- | Apply a map of functions to a map of inputs.
+-- | If a key only exists on one side, then a default is used.
+applyWithDefault ::
+  forall k i o . Ord k =>
+  Map k (i -> o) -> Maybe (i -> o) ->
+  Map k i -> Maybe i ->
+  Map k o
+applyWithDefault fns defFn vals defVal =
+  let build k = Tuple k <$> ((lookup k fns <|> defFn) <*>
+                             (lookup k vals <|> defVal)) in
+  let allKeys = keys (void fns <> void vals) in
+  fromFoldable (mapMaybe build allKeys)
+

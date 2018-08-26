@@ -339,3 +339,41 @@ mapTests = do
   quickCheck \(TestMap m :: TestMap Int Int) ->
     let outList = foldrWithIndex (\i a b -> (Tuple i a) : b) Nil m
     in outList == sort outList
+
+  -- Identity: (pure identity) <*> v = v
+  log "applyWithDefault abides applicative laws: Identity"
+  quickCheck \(TestMap x :: TestMap Int Int) ->
+    let out = M.applyWithDefault M.empty (Just identity) x Nothing
+    in out == x
+
+  -- Composition: pure (<<<) <*> f <*> g <*> h = f <*> (g <*> h)
+  log "applyWithDefault abides applicative laws: Composition"
+  quickCheck \(TestMap f :: TestMap Int (Boolean -> String -> Int))
+              fd
+              (TestMap g :: TestMap Int Boolean)
+              gd
+              (TestMap h :: TestMap Int String)
+              hd ->
+    let left0 = M.applyWithDefault M.empty (Just identity) f fd
+        left1 = M.applyWithDefault left0 fd g gd
+        left2 = M.applyWithDefault left1 (fd <*> gd) h hd
+        right0 = M.applyWithDefault f fd g gd
+        right1 = M.applyWithDefault right0 (fd <*> gd) h hd
+    in left2 == right1
+
+  --Homomorphism: (pure f) <*> (pure x) = pure (f x)
+  log "applyWithDefault abides applicative laws: Homomorphism"
+  quickCheck \(f :: Boolean -> Int) x ->
+    -- we already know `Just f <*> Just x = Just (f x)`
+    let out = M.applyWithDefault M.empty (Just f) M.empty (Just x)
+    in out == (M.empty :: M.Map Int Int)
+
+  --Interchange: u <*> (pure y) = (pure (_ $ y)) <*> u
+  log "applyWithDefault abides applicative laws: Interchange"
+  quickCheck \(TestMap u :: TestMap Int (Boolean -> Int))
+              ud
+              y ->
+    let lhs = M.applyWithDefault u ud M.empty (Just y)
+        rhs = M.applyWithDefault M.empty (Just (_ $ y)) u ud
+    in lhs == rhs
+

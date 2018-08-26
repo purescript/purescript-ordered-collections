@@ -5,7 +5,7 @@ module Data.Map
 
 import Prelude
 
-import Data.Map.Internal (Map, alter, checkValid, delete, empty, filter, filterKeys, filterWithKey, findMax, findMin, foldSubmap, fromFoldable, fromFoldableWith, insert, isEmpty, isSubmap, lookup, lookupGE, lookupGT, lookupLE, lookupLT, member, pop, showTree, singleton, size, submap, toUnfoldable, toUnfoldableUnordered, union, unionWith, unions, update, values)
+import Data.Map.Internal (Map, alter, applyWithDefault, checkValid, delete, empty, filter, filterKeys, filterWithKey, findMax, findMin, foldSubmap, fromFoldable, fromFoldableWith, insert, isEmpty, isSubmap, lookup, lookupGE, lookupGT, lookupLE, lookupLT, member, pop, showTree, singleton, size, submap, toUnfoldable, toUnfoldableUnordered, union, unionWith, unions, update, values)
 import Data.Set (Set)
 import Unsafe.Coerce (unsafeCoerce)
 
