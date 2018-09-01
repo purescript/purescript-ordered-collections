@@ -1,21 +1,21 @@
 module Data.Set.NonEmpty
   ( NonEmptySet
+  , singleton
+  , cons
   , fromSet
-  , toSet
   , fromFoldable
   , fromFoldable1
+  , toSet
   , toUnfoldable
   , toUnfoldable1
-  , singleton
   , map
   , member
   , insert
   , delete
   , size
-  , findMin
-  , findMax
+  , min
+  , max
   , unionSet
-  , unions
   , difference
   , subset
   , properSubset
@@ -25,7 +25,7 @@ module Data.Set.NonEmpty
 import Prelude hiding (map)
 
 import Data.Eq (class Eq1)
-import Data.Foldable (class Foldable, foldl)
+import Data.Foldable (class Foldable)
 import Data.List (List, (:))
 import Data.List as List
 import Data.List.NonEmpty (NonEmptyList)
@@ -41,35 +41,6 @@ import Partial.Unsafe (unsafePartial)
 -- | `NonEmptySet a` represents a non-empty set of values of type `a`
 newtype NonEmptySet a = NonEmptySet (Set a)
 
--- | Attempts to create a non-empty set from a possibly-empty set.
-fromSet :: forall a. Set a -> Maybe (NonEmptySet a)
-fromSet s = if Set.isEmpty s then Nothing else Just (NonEmptySet s)
-
--- | Forgets the non-empty property of a set, giving a normal possibly-empty
--- | set.
-toSet :: forall a. NonEmptySet a -> Set a
-toSet (NonEmptySet s) = s
-
--- | Create a set from a foldable structure.
-fromFoldable :: forall f a. Foldable f => Ord a => f a -> Maybe (NonEmptySet a)
-fromFoldable = fromSet <<< Set.fromFoldable
-
--- | Create a set from a non-empty foldable structure.
-fromFoldable1 :: forall f a. Foldable1 f => Ord a => f a -> NonEmptySet a
-fromFoldable1 = foldMap1 singleton
-
--- | Convert a set to an unfoldable structure.
-toUnfoldable :: forall f a. Unfoldable f => NonEmptySet a -> f a
-toUnfoldable (NonEmptySet s) = Set.toUnfoldable s
-
--- | Convert a set to a non-empty unfoldable structure.
-toUnfoldable1 :: forall f a. Unfoldable1 f => NonEmptySet a -> f a
-toUnfoldable1 (NonEmptySet s) = unfoldr1 go (Set.toUnfoldable s :: List a)
-  where
-    go = unsafePartial case _ of
-      x : List.Nil -> Tuple x Nothing
-      x : tail -> Tuple x (Just tail)
-
 derive newtype instance eqNonEmptySet :: Eq a => Eq (NonEmptySet a)
 derive newtype instance eq1NonEmptySet :: Eq1 NonEmptySet
 derive newtype instance ordNonEmptySet :: Ord a => Ord (NonEmptySet a)
@@ -82,11 +53,44 @@ instance foldable1NonEmptySet :: Foldable1 NonEmptySet where
   fold1 = foldMap1 identity
 
 instance showNonEmptySet :: Show a => Show (NonEmptySet a) where
-  show s = "(fromFoldable " <> show (toUnfoldable1 s :: NonEmptyList a) <> ")"
+  show s = "(fromFoldable1 " <> show (toUnfoldable1 s :: NonEmptyList a) <> ")"
 
 -- | Create a set with one element.
 singleton :: forall a. a -> NonEmptySet a
 singleton a = NonEmptySet (Set.singleton a)
+
+-- | Creates a `NonEmptySet` from an item and a `Set`.
+cons :: forall a. Ord a => a -> Set a -> NonEmptySet a
+cons a = NonEmptySet <<< Set.insert a
+
+-- | Attempts to create a non-empty set from a possibly-empty set.
+fromSet :: forall a. Set a -> Maybe (NonEmptySet a)
+fromSet s = if Set.isEmpty s then Nothing else Just (NonEmptySet s)
+
+-- | Create a set from a foldable structure.
+fromFoldable :: forall f a. Foldable f => Ord a => f a -> Maybe (NonEmptySet a)
+fromFoldable = fromSet <<< Set.fromFoldable
+
+-- | Create a set from a non-empty foldable structure.
+fromFoldable1 :: forall f a. Foldable1 f => Ord a => f a -> NonEmptySet a
+fromFoldable1 = foldMap1 singleton
+
+-- | Forgets the non-empty property of a set, giving a normal possibly-empty
+-- | set.
+toSet :: forall a. NonEmptySet a -> Set a
+toSet (NonEmptySet s) = s
+
+-- | Convert a set to an unfoldable structure.
+toUnfoldable :: forall f a. Unfoldable f => NonEmptySet a -> f a
+toUnfoldable (NonEmptySet s) = Set.toUnfoldable s
+
+-- | Convert a set to a non-empty unfoldable structure.
+toUnfoldable1 :: forall f a. Unfoldable1 f => NonEmptySet a -> f a
+toUnfoldable1 (NonEmptySet s) = unfoldr1 go (Set.toUnfoldable s :: List a)
+  where
+    go = unsafePartial case _ of
+      x : List.Nil -> Tuple x Nothing
+      x : tail -> Tuple x (Just tail)
 
 -- | Maps over the values in a set.
 -- |
@@ -114,22 +118,18 @@ size :: forall a. NonEmptySet a -> Int
 size (NonEmptySet s) = Set.size s
 
 -- | The minimum value in the set.
-findMin :: forall a. NonEmptySet a -> a
-findMin (NonEmptySet s) = unsafePartial (fromJust (Set.findMin s))
+min :: forall a. NonEmptySet a -> a
+min (NonEmptySet s) = unsafePartial (fromJust (Set.findMin s))
 
 -- | The maximum value in the set.
-findMax :: forall a. NonEmptySet a -> a
-findMax (NonEmptySet s) = unsafePartial (fromJust (Set.findMax s))
+max :: forall a. NonEmptySet a -> a
+max (NonEmptySet s) = unsafePartial (fromJust (Set.findMax s))
 
 -- | Form the union of a set and the non-empty set.
 unionSet :: forall a. Ord a => Set.Set a -> NonEmptySet a -> NonEmptySet a
 unionSet s1 (NonEmptySet s2) = NonEmptySet (s1 <> s2)
 
--- | Form the union of a non-empty collection of non-empty sets.
-unions :: forall f a. Foldable1 f => Ord a => f (NonEmptySet a) -> NonEmptySet a
-unions = foldl append (NonEmptySet Set.empty)
-
--- | Form the set difference. `Nothing` if the sets are identical.
+-- | Form the set difference. `Nothing` if the first is a subset of the second.
 difference :: forall a. Ord a => NonEmptySet a -> NonEmptySet a -> Maybe (NonEmptySet a)
 difference (NonEmptySet s1) (NonEmptySet s2) = fromSet (Set.difference s1 s2)
 
