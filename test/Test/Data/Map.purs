@@ -342,23 +342,23 @@ mapTests = do
 
   -- Identity: (pure identity) <*> v = v
   log "applyWithDefault abides applicative laws: Identity"
-  quickCheck \(TestMap x :: TestMap Int Int) ->
-    let out = M.applyWithDefault M.empty (Just identity) x Nothing
+  quickCheck \(TestMap x :: TestMap Int Int) (d :: Maybe Int) ->
+    let out = M.applyWithDefault M.empty (Just identity) x d
     in out == x
 
   -- Composition: pure (<<<) <*> f <*> g <*> h = f <*> (g <*> h)
   log "applyWithDefault abides applicative laws: Composition"
-  quickCheck \(TestMap f :: TestMap Int (Boolean -> String -> Int))
+  quickCheck \(TestMap f :: TestMap Boolean (Int -> String))
               fd
-              (TestMap g :: TestMap Int Boolean)
+              (TestMap g :: TestMap Boolean (Boolean -> Int))
               gd
-              (TestMap h :: TestMap Int String)
+              (TestMap h :: TestMap Boolean Boolean)
               hd ->
-    let left0 = M.applyWithDefault M.empty (Just identity) f fd
-        left1 = M.applyWithDefault left0 fd g gd
-        left2 = M.applyWithDefault left1 (fd <*> gd) h hd
-        right0 = M.applyWithDefault f fd g gd
-        right1 = M.applyWithDefault right0 (fd <*> gd) h hd
+    let left0 = M.applyWithDefault M.empty (Just (<<<)) f fd
+        left1 = M.applyWithDefault left0 (Just (<<<) <*> fd) g gd
+        left2 = M.applyWithDefault left1 (Just (<<<) <*> fd <*> gd) h hd
+        right0 = M.applyWithDefault g gd h hd
+        right1 = M.applyWithDefault f fd right0 (gd <*> hd)
     in left2 == right1
 
   --Homomorphism: (pure f) <*> (pure x) = pure (f x)
