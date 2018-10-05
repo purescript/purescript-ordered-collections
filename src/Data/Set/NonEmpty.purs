@@ -20,6 +20,8 @@ module Data.Set.NonEmpty
   , subset
   , properSubset
   , intersection
+  , filter
+  , mapMaybe
   ) where
 
 import Prelude hiding (map)
@@ -147,3 +149,13 @@ properSubset (NonEmptySet s1) (NonEmptySet s2) = Set.properSubset s1 s2
 -- | if the sets are disjoint.
 intersection :: forall a. Ord a => NonEmptySet a -> NonEmptySet a -> Maybe (NonEmptySet a)
 intersection (NonEmptySet s1) (NonEmptySet s2) = fromSet (Set.intersection s1 s2)
+
+-- | Filter out those values of a set for which a predicate on the value fails
+-- | to hold.
+filter :: forall a. Ord a => (a -> Boolean) -> NonEmptySet a -> Set a
+filter f (NonEmptySet s) = Set.filter f s
+
+-- | Applies a function to each value in a set, discarding entries where the
+-- | function returns `Nothing`.
+mapMaybe :: forall a b. Ord b => (a -> Maybe b) -> NonEmptySet a -> Set b
+mapMaybe f (NonEmptySet s) = Set.mapMaybe f s
