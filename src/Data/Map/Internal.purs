@@ -38,13 +38,15 @@ module Data.Map.Internal
   , filterWithKey
   , filterKeys
   , filter
+  , mapMaybeWithKey
+  , mapMaybe
   ) where
 
 import Prelude
 
 import Data.Eq (class Eq1)
 import Data.Foldable (foldl, foldMap, foldr, class Foldable)
-import Data.FoldableWithIndex (class FoldableWithIndex)
+import Data.FoldableWithIndex (class FoldableWithIndex, foldrWithIndex)
 import Data.FunctorWithIndex (class FunctorWithIndex, mapWithIndex)
 import Data.List (List(..), (:), length, nub)
 import Data.List.Lazy as LL
@@ -644,3 +646,13 @@ filterKeys predicate = filterWithKey $ const <<< predicate
 -- | on the value fails to hold.
 filter :: forall k v. Ord k => (v -> Boolean) -> Map k v -> Map k v
 filter predicate = filterWithKey $ const predicate
+
+-- | Applies a function to each key/value pair in a map, discarding entries
+-- | where the function returns `Nothing`.
+mapMaybeWithKey :: forall k a b. Ord k => (k -> a -> Maybe b) -> Map k a -> Map k b
+mapMaybeWithKey f = foldrWithIndex (\k a acc → maybe acc (\b -> insert k b acc) (f k a)) empty
+
+-- | Applies a function to each value in a map, discarding entries where the
+-- | function returns `Nothing`.
+mapMaybe :: forall k a b. Ord k => (a -> Maybe b) -> Map k a -> Map k b
+mapMaybe = mapMaybeWithKey <<< const
