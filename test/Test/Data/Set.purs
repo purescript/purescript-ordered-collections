@@ -25,3 +25,20 @@ setTests = do
          s2 = S.fromFoldable [2,4,6,8,10]
          s3 = S.fromFoldable [2,4]
      assert $ S.intersection s1 s2 == s3
+
+  log "semiring"
+  do let s1 = S.fromFoldable ["a", "b", "c"]
+         s2 = S.fromFoldable ["d", "e"]
+         s3 = S.fromFoldable ["f", "g", "h", "i"]
+     log "- commutative monoid under addition"
+     assert $ s1 + s2 == s2 + s1
+     assert $ s1 + (s2 + s3) == (s1 + s2) + s3
+     assert $ s1 + zero == s1
+
+     log "- monoid under multiplication"
+     assert $ s1 * one == s1
+     assert $ one * s1 == s1
+     assert $ s1 * (s2 * s3) == (s1 * s2) * s3
+
+     log "- distributivity"
+     assert $ s1 * (s2 + s3) == (s1 * s2) + (s1 * s3)

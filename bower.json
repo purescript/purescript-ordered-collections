@@ -33,6 +33,7 @@
     "purescript-quickcheck": "^5.0.0",
     "purescript-minibench": "^2.0.0",
     "purescript-console": "^4.0.0",
-    "purescript-assert": "^4.0.0"
+    "purescript-assert": "^4.0.0",
+    "purescript-psci-support": "^4.0.0"
   }
 }

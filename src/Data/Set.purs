@@ -30,6 +30,7 @@ module Data.Set
 
 import Prelude hiding (map)
 
+import Control.Apply (lift2)
 import Control.Monad.Rec.Class (Step(..), tailRecM2)
 import Control.Monad.ST (ST)
 import Control.Monad.ST as ST
@@ -81,6 +82,31 @@ instance monoidSet :: Ord a => Monoid (Set a) where
 
 instance semigroupSet :: Ord a => Semigroup (Set a) where
   append = union
+
+-- | Sets of elements of a given monoid can be made into a semiring by taking
+-- | set union as the addition operation and set-wise multiplication (using the
+-- | monoid operation of the elements) as the multiplication operation. The
+-- | zero element is then the empty set, and the one element is the singleton
+-- | set containing the `mempty` element of the given monoid.  For example:
+-- |
+-- | ```
+-- | > zero :: Set String
+-- | (fromFoldable Nil)
+-- |
+-- | > one :: Set String
+-- | (fromFoldable ("" : Nil))
+-- |
+-- | > Set.fromFoldable ["a", "b"] + Set.fromFoldable ["c", "d", "e"]
+-- | (fromFoldable ("a" : "b" : "c" : "d" : "e" : Nil))
+-- |
+-- | > Set.fromFoldable ["a", "b"] * Set.fromFoldable ["c", "d", "e"]
+-- | (fromFoldable ("ac" : "ad" : "ae" : "bc" : "bd" : "be" : Nil))
+-- | ```
+instance semiringSet :: (Ord a, Monoid a) => Semiring (Set a) where
+  zero = empty
+  add = union
+  one = singleton mempty
+  mul x y = fromFoldable (lift2 (<>) (toList x) (toList y))
 
 instance foldableSet :: Foldable Set where
   foldMap f = foldMap f <<< toList
