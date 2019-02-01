@@ -42,3 +42,8 @@ setTests = do
 
      log "- distributivity"
      assert $ s1 * (s2 + s3) == (s1 * s2) + (s1 * s3)
+     assert $ (s1 + s2) * s3 == (s1 * s3) + (s2 * s3)
+
+     log "- annihilation"
+     assert $ zero * s1 == zero
+     assert $ s1 * zero == zero
