@@ -9,6 +9,7 @@ module Data.Map.Internal
   , singleton
   , checkValid
   , insert
+  , insertWith
   , lookup
   , lookupLE
   , lookupLT
@@ -454,6 +455,13 @@ insert k v = down Nil
       ThreeLeft k1 v1 c k2 v2 d, KickUp a k' v' b -> up ctx (KickUp (Two a k' v' b) k1 v1 (Two c k2 v2 d))
       ThreeMiddle a k1 v1 k2 v2 d, KickUp b k' v' c -> up ctx (KickUp (Two a k1 v1 b) k' v' (Two c k2 v2 d))
       ThreeRight a k1 v1 b k2 v2, KickUp c k' v' d -> up ctx (KickUp (Two a k1 v1 b) k2 v2 (Two c k' v' d))
+
+-- | Inserts or updates a value with the given function.
+-- |
+-- | The combining function is called with the existing value as the first
+-- | argument and the new value as the second argument.
+insertWith :: forall k v. Ord k => (v -> v -> v) -> k -> v -> Map k v -> Map k v
+insertWith f k v = alter (Just <<< maybe v (flip f v)) k
 
 -- | Delete a key and its corresponding value from a map.
 delete :: forall k v. Ord k => k -> Map k v -> Map k v

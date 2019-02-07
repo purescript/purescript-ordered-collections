@@ -83,6 +83,14 @@ mapTests = do
   quickCheck $ \k v1 v2 ->
     M.lookup (smallKey k) (M.insert k v2 (M.insert k v1 M.empty)) == Just (number v2)
 
+  log "Test insertWith combining values"
+  quickCheck $ \k v1 v2 ->
+    M.lookup (smallKey k) (M.insertWith (+) k v2 (M.insert k v1 M.empty)) == Just (number (v1 + v2))
+
+  log "Test insertWith passes the first value as the first argument to the combining function"
+  quickCheck $ \k v1 v2 ->
+    M.lookup (smallKey k) (M.insertWith const k v2 (M.insert k v1 M.empty)) == Just (number v1)
+
   log "Test delete after inserting"
   quickCheck $ \k v -> M.isEmpty (M.delete (smallKey k) (M.insert k (number v) M.empty))
     <?> ("k: " <> show k <> ", v: " <> show v)
