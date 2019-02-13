@@ -215,6 +215,23 @@ mapTests = do
           Just v              -> Just v == v2
           Nothing             -> not (in1 || in2)
 
+  log "Lookup from intersection"
+  quickCheck $ \(TestMap m1) (TestMap m2) k ->
+    M.lookup (smallKey k) (M.intersection (m1 :: M.Map SmallKey Int) (m2 :: M.Map SmallKey Int)) == (case M.lookup k m2 of
+      Nothing -> Nothing
+      Just v -> M.lookup k m1) <?> ("m1: " <> show m1 <> ", m2: " <> show m2 <> ", k: " <> show k <> ", v1: " <> show (M.lookup k m1) <> ", v2: " <> show (M.lookup k m2) <> ", intersection: " <> show (M.intersection m1 m2))
+
+  log "Intersection is idempotent"
+  quickCheck $ \(TestMap m1) (TestMap m2) -> ((m1 :: M.Map SmallKey Int) `M.intersection` m2) == ((m1 `M.intersection` m2) `M.intersection` (m2 :: M.Map SmallKey Int))
+
+  log "intersectionWith"
+  for_ [Tuple (+) 0, Tuple (*) 1] $ \(Tuple op ident) ->
+    quickCheck $ \(TestMap m1) (TestMap m2) k ->
+      let u = M.intersectionWith op m1 m2 :: M.Map SmallKey Int
+      in case M.lookup k u of
+           Nothing -> not (M.member k m1 && M.member k m2)
+           Just v -> v == op (fromMaybe ident (M.lookup k m1)) (fromMaybe ident (M.lookup k m2))
+
   log "difference"
   quickCheck $ \(TestMap m1) (TestMap m2) ->
     let d = M.difference (m1 :: M.Map SmallKey Int) (m2 :: M.Map SmallKey String)

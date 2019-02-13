@@ -33,6 +33,8 @@ module Data.Map.Internal
   , union
   , unionWith
   , unions
+  , intersection
+  , intersectionWith
   , difference
   , isSubmap
   , size
@@ -619,6 +621,24 @@ union = unionWith const
 -- | Compute the union of a collection of maps
 unions :: forall k v f. Ord k => Foldable f => f (Map k v) -> Map k v
 unions = foldl union empty
+
+-- | Compute the intersection of two maps, using the specified function
+-- | to combine values for duplicate keys.
+intersectionWith :: forall k a b c. Ord k => (a -> b -> c) -> Map k a -> Map k b -> Map k c
+intersectionWith f m1 m2 = go (toUnfoldable m1 :: List (Tuple k a)) (toUnfoldable m2 :: List (Tuple k b)) empty
+  where
+  go Nil _ m = m
+  go _ Nil m = m
+  go as@(Cons (Tuple k1 a) ass) bs@(Cons (Tuple k2 b) bss) m =
+    case compare k1 k2 of
+         LT -> go ass bs m
+         EQ -> go ass bss (insert k1 (f a b) m)
+         GT -> go as bss m
+
+-- | Compute the intersection of two maps, preferring values from the first map in the case
+-- | of duplicate keys.
+intersection :: forall k a b. Ord k => Map k a -> Map k b -> Map k a
+intersection = intersectionWith (\a b -> a)
 
 -- | Difference of two maps. Return elements of the first map where
 -- | the keys do not exist in the second map.
