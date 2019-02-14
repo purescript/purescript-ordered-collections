@@ -646,7 +646,7 @@ intersectionWith f m1 m2 = go (toUnfoldable m1 :: List (Tuple k a)) (toUnfoldabl
 -- | Compute the intersection of two maps, preferring values from the first map in the case
 -- | of duplicate keys.
 intersection :: forall k a b. Ord k => Map k a -> Map k b -> Map k a
-intersection = intersectionWith (\a b -> a)
+intersection = intersectionWith const
 
 -- | Difference of two maps. Return elements of the first map where
 -- | the keys do not exist in the second map.
