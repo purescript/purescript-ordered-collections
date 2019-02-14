@@ -233,7 +233,7 @@ mapTests = do
   quickCheck $ \(TestMap m1) (TestMap m2) -> ((m1 :: M.Map SmallKey Int) `M.intersection` m2) == ((m1 `M.intersection` m2) `M.intersection` (m2 :: M.Map SmallKey Int))
 
   log "intersectionWith"
-  for_ [Tuple (+) 0, Tuple (*) 1] $ \(Tuple op ident) ->
+  for_ [(+), (*)] $ \op ->
     quickCheck $ \(TestMap m1) (TestMap m2) k ->
       let u = M.intersectionWith op m1 m2 :: M.Map SmallKey Int
       in case M.lookup k u of
