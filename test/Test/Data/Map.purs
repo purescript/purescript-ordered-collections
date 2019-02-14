@@ -238,7 +238,7 @@ mapTests = do
       let u = M.intersectionWith op m1 m2 :: M.Map SmallKey Int
       in case M.lookup k u of
            Nothing -> not (M.member k m1 && M.member k m2)
-           Just v -> v == op (fromMaybe ident (M.lookup k m1)) (fromMaybe ident (M.lookup k m2))
+           Just v -> Just v == (op <$> M.lookup k m1 <*> M.lookup k m2)
 
   log "difference"
   quickCheck $ \(TestMap m1) (TestMap m2) ->
