@@ -586,12 +586,12 @@ toUnfoldable m = unfoldr go (m : Nil) where
       go $ left : singleton k1 v1 : mid : singleton k2 v2 : right : tl
 
 -- | Convert a map to an unfoldable structure of key/value pairs
---
--- While this traversal is up to 10% faster in benchmarks than `toUnfoldable`,
--- it leaks the underlying map stucture, making it only suitable for applications
--- where order is irrelevant.
---
--- If you are unsure, use `toUnfoldable`
+-- |
+-- | While this traversal is up to 10% faster in benchmarks than `toUnfoldable`,
+-- | it leaks the underlying map stucture, making it only suitable for applications
+-- | where order is irrelevant.
+-- |
+-- | If you are unsure, use `toUnfoldable`
 toUnfoldableUnordered :: forall f k v. Unfoldable f => Map k v -> f (Tuple k v)
 toUnfoldableUnordered m = unfoldr go (m : Nil) where
   go Nil = Nothing
