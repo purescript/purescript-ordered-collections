@@ -51,7 +51,7 @@ derive newtype instance semigroupNonEmptySet :: Ord a => Semigroup (NonEmptySet 
 derive newtype instance foldableNonEmptySet :: Foldable NonEmptySet
 
 instance foldable1NonEmptySet :: Foldable1 NonEmptySet where
-  foldMap1 f = foldMap1 f <<< toUnfoldable1 :: forall a. NonEmptySet a -> NonEmptyList a
+  foldMap1 f = foldMap1 f <<< (toUnfoldable1 :: forall a. NonEmptySet a -> NonEmptyList a)
   fold1 = foldMap1 identity
 
 instance showNonEmptySet :: Show a => Show (NonEmptySet a) where
