@@ -26,6 +26,8 @@ module Data.Set
   , intersection
   , filter
   , mapMaybe
+  , toMap
+  , fromMap
   ) where
 
 import Prelude hiding (map)
@@ -190,3 +192,12 @@ filter f (Set s) = Set (M.filterWithKey (\k _ -> f k) s)
 -- | function returns `Nothing`.
 mapMaybe :: forall a b. Ord b => (a -> Maybe b) -> Set a -> Set b
 mapMaybe f = foldr (\a acc -> maybe acc (\b -> insert b acc) (f a)) empty
+
+-- | A set is a map with no value attached to each key.
+toMap :: forall a. Set a -> M.Map a Unit
+toMap (Set s) = s
+
+-- | A map with no value attached to each key is a set.
+-- | See also `Data.Map.keys`.
+fromMap :: forall a. M.Map a Unit -> Set a
+fromMap = Set
