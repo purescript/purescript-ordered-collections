@@ -151,6 +151,12 @@ instance traversableWithIndexMap :: TraversableWithIndex k (Map k) where
           <*> f k2 v2
           <*> traverseWithIndex f right
 
+instance applyMap :: Ord k => Apply (Map k)
+  where
+  apply = applyFromLiftA2 intersectionWith
+    where
+    applyFromLiftA2 liftA2 = liftA2 identity
+
 instance altMap :: Ord k => Alt (Map k)
   where
   alt = union
