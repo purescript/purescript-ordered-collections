@@ -48,6 +48,8 @@ module Data.Map.Internal
 
 import Prelude
 
+import Control.Alt (class Alt)
+import Control.Plus (class Plus)
 import Data.Eq (class Eq1)
 import Data.Foldable (foldl, foldMap, foldr, class Foldable)
 import Data.FoldableWithIndex (class FoldableWithIndex, foldlWithIndex, foldrWithIndex)
@@ -148,6 +150,14 @@ instance traversableWithIndexMap :: TraversableWithIndex k (Map k) where
           <*> pure k2
           <*> f k2 v2
           <*> traverseWithIndex f right
+
+instance altMap :: Ord k => Alt (Map k)
+  where
+  alt = union
+
+instance plusMap :: Ord k => Plus (Map k)
+  where
+  empty = empty
 
 -- | Render a `Map` as a `String`
 showTree :: forall k v. Show k => Show v => Map k v -> String
