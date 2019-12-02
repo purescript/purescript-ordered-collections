@@ -11,7 +11,7 @@ import Test.Assert (assert)
 setTests :: Effect Unit
 setTests = do
   log "fromFoldable - empty"
-  assert $ S.fromFoldable [] == S.empty :: Set Unit
+  assert $ S.fromFoldable [] == (S.empty :: Set Unit)
 
   log "fromFoldable - non empty"
   do let set = S.fromFoldable [0, 1, 1, 2]
