@@ -26,6 +26,7 @@ module Data.Set
   , intersection
   , filter
   , mapMaybe
+  , catMaybes
   ) where
 
 import Prelude hiding (map)
@@ -190,3 +191,7 @@ filter f (Set s) = Set (M.filterWithKey (\k _ -> f k) s)
 -- | function returns `Nothing`.
 mapMaybe :: forall a b. Ord b => (a -> Maybe b) -> Set a -> Set b
 mapMaybe f = foldr (\a acc -> maybe acc (\b -> insert b acc) (f a)) empty
+
+-- | Filter a set of optional values, discarding values that contain `Nothing`
+catMaybes :: forall a. Ord a => Set (Maybe a) -> Set a
+catMaybes = mapMaybe identity
