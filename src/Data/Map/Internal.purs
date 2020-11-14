@@ -68,6 +68,8 @@ data Map k v
   | Two (Map k v) k v (Map k v)
   | Three (Map k v) k v (Map k v) k v (Map k v)
 
+type role Map nominal representational
+
 -- Internal use
 toAscArray :: forall k v. Map k v -> Array (Tuple k v)
 toAscArray = toUnfoldable
