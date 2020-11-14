@@ -44,6 +44,7 @@ module Data.Map.Internal
   , filter
   , mapMaybeWithKey
   , mapMaybe
+  , catMaybes
   ) where
 
 import Prelude
@@ -689,3 +690,8 @@ mapMaybeWithKey f = foldrWithIndex (\k a acc → maybe acc (\b -> insert k b acc
 -- | function returns `Nothing`.
 mapMaybe :: forall k a b. Ord k => (a -> Maybe b) -> Map k a -> Map k b
 mapMaybe = mapMaybeWithKey <<< const
+
+-- | Filter a map of optional values, keeping only the key/value pairs which
+-- | contain a value, creating a new map.
+catMaybes :: forall k v. Ord k => Map k (Maybe v) -> Map k v
+catMaybes = mapMaybe identity
