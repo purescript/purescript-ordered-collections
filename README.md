@@ -6,7 +6,7 @@
 
 Purely-functional map and set data structures.
 
-_If you are looking to work with "StrMap"/JavaScript Objects, see [`purescript-foreign-object`](https://github.com/purescript/purescript-foreign-object)._
+_If you are looking to work with JavaScript Objects, see [`purescript-foreign-object`](https://github.com/purescript/purescript-foreign-object)._
 
 ## Installation
 
