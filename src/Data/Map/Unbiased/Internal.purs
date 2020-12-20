@@ -97,7 +97,7 @@ instance appendMap :: (Ord k, Semigroup v) => Semigroup (Map k v) where
 instance monoidMap :: Ord k => Monoid (Map k v) where
   mempty = empty
 
-instance altMap :: Ord k => Alt (Map k v) where
+instance altMap :: Ord k => Alt (Map k) where
   alt = union
 
 instance functorMap :: Functor (Map k) where
