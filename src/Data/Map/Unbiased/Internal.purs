@@ -49,6 +49,7 @@ module Data.Map.Unbiased.Internal
 
 import Prelude
 
+import Control.Alt (class Alt)
 import Data.Eq (class Eq1)
 import Data.Foldable (foldl, foldMap, foldr, class Foldable)
 import Data.FoldableWithIndex (class FoldableWithIndex, foldlWithIndex, foldrWithIndex)
@@ -95,6 +96,9 @@ instance appendMap :: (Ord k, Semigroup v) => Semigroup (Map k v) where
 
 instance monoidMap :: Ord k => Monoid (Map k v) where
   mempty = empty
+
+instance altMap :: Ord k => Alt (Map k v) where
+  alt = union
 
 instance functorMap :: Functor (Map k) where
   map _ Leaf = Leaf
