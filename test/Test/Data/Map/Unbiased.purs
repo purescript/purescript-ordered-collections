@@ -1,4 +1,4 @@
-module Test.Data.Map where
+module Test.Data.Map.Unbiased where
 
 import Prelude
 
@@ -10,8 +10,8 @@ import Data.Function (on)
 import Data.FunctorWithIndex (mapWithIndex)
 import Data.List (List(..), groupBy, length, nubBy, singleton, sort, sortBy, (:))
 import Data.List.NonEmpty as NEL
-import Data.Map as M
-import Data.Map.Gen (genMap)
+import Data.Map.Unbiased as M
+import Data.Map.Unbiased.Gen (genMap)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.NonEmpty ((:|))
 import Data.Tuple (Tuple(..), fst, uncurry)
