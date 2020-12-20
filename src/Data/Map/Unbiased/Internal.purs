@@ -90,7 +90,7 @@ instance ordMap :: (Ord k, Ord v) => Ord (Map k v) where
 instance showMap :: (Show k, Show v) => Show (Map k v) where
   show m = "(fromFoldable " <> show (toAscArray m) <> ")"
 
-instance ap :: (Ord k, Semigroup v) => Semigroup (Map k v) where
+instance appendMap :: (Ord k, Semigroup v) => Semigroup (Map k v) where
   append = unionWith append
 
 instance monoidMap :: Ord k => Monoid (Map k v) where
