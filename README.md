@@ -5,6 +5,7 @@
 [![Pursuit](https://pursuit.purescript.org/packages/purescript-ordered-collections/badge)](https://pursuit.purescript.org/packages/purescript-ordered-collections)
 
 Purely-functional map and set data structures.
+CI TEST
 
 _If you are looking to work with JavaScript Objects, see [`purescript-foreign-object`](https://github.com/purescript/purescript-foreign-object)._
 
