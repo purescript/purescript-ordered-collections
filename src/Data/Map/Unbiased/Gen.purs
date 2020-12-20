@@ -1,10 +1,10 @@
-module Data.Map.Gen where
+module Data.Map.Unbiased.Gen where
 
 import Prelude
 
 import Control.Monad.Gen (class MonadGen, chooseInt, resize, sized, unfoldable)
 import Control.Monad.Rec.Class (class MonadRec)
-import Data.Map (Map, fromFoldable)
+import Data.Map.Unbiased (Map, fromFoldable)
 import Data.Tuple (Tuple(..))
 import Data.List (List)
 
