@@ -2,6 +2,7 @@
 -- | <http://www.cs.princeton.edu/~dpw/courses/cos326-12/ass/2-3-trees.pdf>
 -- |
 -- | Qualified import is encouraged, so as to avoid name clashes with other modules.
+-- | CI TEST
 
 module Data.Set
   ( Set
