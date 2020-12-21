@@ -1,5 +1,5 @@
 module Data.Map.Unbiased
-  ( module Data.Map.Internal
+  ( module Data.Map.Unbiased.Internal
   , keys
   ) where
 
