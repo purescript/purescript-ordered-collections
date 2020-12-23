@@ -27,6 +27,8 @@ module Data.Set
   , filter
   , mapMaybe
   , catMaybes
+  , toMap
+  , fromMap
   ) where
 
 import Prelude hiding (map)
@@ -195,3 +197,12 @@ mapMaybe f = foldr (\a acc -> maybe acc (\b -> insert b acc) (f a)) empty
 -- | Filter a set of optional values, discarding values that contain `Nothing`
 catMaybes :: forall a. Ord a => Set (Maybe a) -> Set a
 catMaybes = mapMaybe identity
+
+-- | A set is a map with no value attached to each key.
+toMap :: forall a. Set a -> M.Map a Unit
+toMap (Set s) = s
+
+-- | A map with no value attached to each key is a set.
+-- | See also `Data.Map.keys`.
+fromMap :: forall a. M.Map a Unit -> Set a
+fromMap = Set
