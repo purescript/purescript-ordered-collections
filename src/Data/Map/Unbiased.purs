@@ -8,6 +8,7 @@ import Data.Foldable (class Foldable)
 import Data.FoldableWithIndex (class FoldableWithIndex)
 import Data.FunctorWithIndex (class FunctorWithIndex)
 import Data.Map.Internal as M
+import Data.Newtype (class Newtype)
 import Data.Ord (class Ord1)
 import Data.Traversable (class Traversable)
 import Data.TraversableWithIndex (class TraversableWithIndex)
@@ -35,6 +36,7 @@ derive newtype instance eq1Map :: Eq k => Eq1 (Map k)
 derive newtype instance eqMap :: (Eq k, Eq v) => Eq (Map k v)
 derive newtype instance ord1Map :: Ord k => Ord1 (Map k)
 derive newtype instance ordMap :: (Ord k, Ord v) => Ord (Map k v)
+derive instance newtypeMap :: Newtype (Map k v) _
 
 instance showMap :: (Show k, Show v) => Show (Map k v) where
   show m = "(fromFoldable " <> show (toAscArray m) <> ")" where
