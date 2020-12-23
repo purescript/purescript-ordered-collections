@@ -397,7 +397,7 @@ foldSubmapBy appendFn memptyValue kmin kmax f =
 -- |   == fromFoldable [Tuple 0 "zero", Tuple 1 "one", Tuple 2 "two"]
 -- | ```
 -- |
--- | The function is entirely specified by the following\
+-- | The function is entirely specified by the following
 -- | property:
 -- |
 -- | ```purescript
