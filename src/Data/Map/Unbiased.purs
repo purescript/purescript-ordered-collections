@@ -52,6 +52,8 @@ instance altMap :: Ord k => Alt (Map k) where
 
 derive newtype instance functorMap :: Functor (Map k)
 derive newtype instance functorWithIndexMap :: FunctorWithIndex k (Map k)
+derive newtype instance applyMap :: Ord k => Apply (Map k)
+derive newtype instance bindMap :: Ord k => Bind (Map k)
 derive newtype instance foldableMap :: Foldable (Map k)
 derive newtype instance foldableWithIndexMap :: FoldableWithIndex k (Map k)
 derive newtype instance traversableMap :: Traversable (Map k)
