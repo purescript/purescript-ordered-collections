@@ -27,8 +27,7 @@
     "purescript-safe-coerce": "master",
     "purescript-tailrec": "master",
     "purescript-tuples": "master",
-    "purescript-unfoldable": "master",
-    "purescript-unsafe-coerce": "master"
+    "purescript-unfoldable": "master"
   },
   "devDependencies": {
     "purescript-quickcheck": "master",
