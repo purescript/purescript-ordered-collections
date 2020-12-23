@@ -15,6 +15,8 @@ import Data.Map as M
 import Data.Map.Gen (genMap)
 import Data.Maybe (Maybe(..), fromMaybe, maybe, fromJust)
 import Data.NonEmpty ((:|))
+import Data.Semigroup.First (First(..))
+import Data.Semigroup.Last (Last(..))
 import Data.Tuple (Tuple(..), fst, uncurry)
 import Effect (Effect)
 import Effect.Console (log)
@@ -387,3 +389,24 @@ mapTests = do
     let result = M.catMaybes maybeMap
     let expected = M.delete 1 m
     result === expected
+
+  log "Semigroup instance keeps left map's value when same key appears in both"
+  quickCheck \(Tuple leftStr rightStr :: Tuple String String) -> do
+    let key = "foo"
+    let left = M.singleton key leftStr
+    let right = M.singleton key rightStr
+    let result = left <> right
+    let expected = M.singleton key $ leftStr <> rightStr
+    result == left
+  quickCheck \(Tuple leftStr rightStr :: Tuple String String) -> do
+    let key = "foo"
+    let left = M.singleton key $ First leftStr
+    let right = M.singleton key $ First rightStr
+    let result = left <> right
+    result == left
+  quickCheck \(Tuple leftStr rightStr :: Tuple String String) -> do
+    let key = "foo"
+    let left = M.singleton key $ Last leftStr
+    let right = M.singleton key $ Last rightStr
+    let result = left <> right
+    result == left
