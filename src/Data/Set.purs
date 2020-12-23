@@ -162,7 +162,7 @@ properSubset s1 s2 = subset s1 s2 && (s1 /= s2)
 
 -- | The set of elements which are in both the first and second set
 intersection :: forall a. Ord a => Set a -> Set a -> Set a
-intersection s1 s2 = fromFoldable (ST.run (STArray.empty >>= intersect >>= STArray.unsafeFreeze))
+intersection s1 s2 = fromFoldable (ST.run (STArray.new >>= intersect >>= STArray.unsafeFreeze))
   where
   toArray = Array.fromFoldable <<< toList
   ls = toArray s1
