@@ -320,7 +320,10 @@ findMin = go Nothing
 -- |  == ["zero", "one", "two"]
 -- | ```
 foldSubmap :: forall k v m. Ord k => Monoid m => Maybe k -> Maybe k -> (k -> v -> m) -> Map k v -> m
-foldSubmap kmin kmax f =
+foldSubmap = foldSubmapBy (<>) mempty
+
+foldSubmapBy :: forall k v m. Ord k => (m -> m -> m) -> m -> Maybe k -> Maybe k -> (k -> v -> m) -> Map k v -> m
+foldSubmapBy appendFn memptyValue kmin kmax f =
   let
     tooSmall =
       case kmin of
@@ -365,17 +368,17 @@ foldSubmap kmin kmax f =
     -- function because of strictness.
     go = case _ of
       Leaf ->
-        mempty
+        memptyValue
       Two left k v right ->
-           (if tooSmall k then mempty else go left)
-        <> (if inBounds k then f k v else mempty)
-        <> (if tooLarge k then mempty else go right)
+                   (if tooSmall k then memptyValue else go left)
+        `appendFn` (if inBounds k then f k v else memptyValue)
+        `appendFn` (if tooLarge k then memptyValue else go right)
       Three left k1 v1 mid k2 v2 right ->
-           (if tooSmall k1 then mempty else go left)
-        <> (if inBounds k1 then f k1 v1 else mempty)
-        <> (if tooSmall k2 || tooLarge k1 then mempty else go mid)
-        <> (if inBounds k2 then f k2 v2 else mempty)
-        <> (if tooLarge k2 then mempty else go right)
+                   (if tooSmall k1 then memptyValue else go left)
+        `appendFn` (if inBounds k1 then f k1 v1 else memptyValue)
+        `appendFn` (if tooSmall k2 || tooLarge k1 then memptyValue else go mid)
+        `appendFn` (if inBounds k2 then f k2 v2 else memptyValue)
+        `appendFn` (if tooLarge k2 then memptyValue else go right)
   in
     go
 
@@ -394,7 +397,7 @@ foldSubmap kmin kmax f =
 -- |   == fromFoldable [Tuple 0 "zero", Tuple 1 "one", Tuple 2 "two"]
 -- | ```
 -- |
--- | The function is entirely specified by the following
+-- | The function is entirely specified by the following\
 -- | property:
 -- |
 -- | ```purescript
@@ -406,7 +409,7 @@ foldSubmap kmin kmax f =
 -- |       else not (member key m')
 -- | ```
 submap :: forall k v. Ord k => Maybe k -> Maybe k -> Map k v -> Map k v
-submap kmin kmax = foldSubmap kmin kmax singleton
+submap kmin kmax = foldSubmapBy union empty kmin kmax singleton
 
 -- | Test if a key is a member of a map
 member :: forall k v. Ord k => k -> Map k v -> Boolean
