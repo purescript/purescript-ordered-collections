@@ -49,6 +49,7 @@ module Data.Map.Internal
 
 import Prelude
 
+import Control.Alt (class Alt)
 import Data.Eq (class Eq1)
 import Data.Foldable (foldl, foldMap, foldr, class Foldable)
 import Data.FoldableWithIndex (class FoldableWithIndex, foldlWithIndex, foldrWithIndex)
@@ -89,6 +90,9 @@ instance ordMap :: (Ord k, Ord v) => Ord (Map k v) where
 
 instance showMap :: (Show k, Show v) => Show (Map k v) where
   show m = "(fromFoldable " <> show (toAscArray m) <> ")"
+
+instance altMap :: Ord k => Alt (Map k) where
+  alt = union
 
 instance functorMap :: Functor (Map k) where
   map _ Leaf = Leaf
