@@ -43,7 +43,7 @@ instance showMap :: (Show k, Show v) => Show (Map k v) where
     toAscArray :: Map k v -> Array (Tuple k v)
     toAscArray (Map m') = M.toUnfoldable m'
 
-instance appendMap :: (Ord k, Semigroup v) => Semigroup (Map k v) where
+instance semigroupMap :: (Ord k, Semigroup v) => Semigroup (Map k v) where
   append (Map l) (Map r) = Map (M.unionWith append l r)
 
 instance monoidMap :: (Ord k, Semigroup v) => Monoid (Map k v) where
