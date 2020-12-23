@@ -4,7 +4,7 @@ import Prelude
 
 import Control.Alt ((<|>))
 import Data.Array as A
-import Data.Array.NonEmpty as NEA
+import Data.Array.NonEmpty (cons')
 import Data.Foldable (foldl, for_, all, and)
 import Data.FoldableWithIndex (foldrWithIndex)
 import Data.Function (on)
@@ -14,7 +14,6 @@ import Data.List.NonEmpty as NEL
 import Data.Map as M
 import Data.Map.Gen (genMap)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
-import Data.NonEmpty ((:|))
 import Data.Tuple (Tuple(..), fst, uncurry)
 import Effect (Effect)
 import Effect.Console (log)
@@ -45,7 +44,7 @@ instance showSmallKey :: Show SmallKey where
   show J = "J"
 
 instance arbSmallKey :: Arbitrary SmallKey where
-  arbitrary = elements $ NEA.fromNonEmpty $ A :| [B, C, D, E, F, G, H, I, J]
+  arbitrary = elements $ cons' A [B, C, D, E, F, G, H, I, J]
 
 data Instruction k v = Insert k v | Delete k
 
@@ -54,7 +53,7 @@ instance showInstruction :: (Show k, Show v) => Show (Instruction k v) where
   show (Delete k) = "Delete (" <> show k <> ")"
 
 instance arbInstruction :: (Arbitrary k, Arbitrary v) => Arbitrary (Instruction k v) where
-  arbitrary = oneOf $ NEA.fromNonEmpty $ (Insert <$> arbitrary <*> arbitrary) :| [Delete <$> arbitrary]
+  arbitrary = oneOf $ cons' (Insert <$> arbitrary <*> arbitrary) [Delete <$> arbitrary]
 
 runInstructions :: forall k v. Ord k => List (Instruction k v) -> M.Map k v -> M.Map k v
 runInstructions instrs t0 = foldl step t0 instrs
