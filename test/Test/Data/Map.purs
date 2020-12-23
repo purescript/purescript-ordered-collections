@@ -240,6 +240,12 @@ mapTests = do
            Nothing -> not (M.member k m1 && M.member k m2)
            Just v -> Just v == (op <$> M.lookup k m1 <*> M.lookup k m2)
 
+  log "map-apply is equivalent to intersectionWith"
+  for_ [(+), (*)] $ \op ->
+    quickCheck $ \(TestMap m1) (TestMap m2) ->
+      let u = M.intersectionWith op m1 m2 :: M.Map SmallKey Int
+      in u == (op <$> m1 <*> m2)
+
   log "difference"
   quickCheck $ \(TestMap m1) (TestMap m2) ->
     let d = M.difference (m1 :: M.Map SmallKey Int) (m2 :: M.Map SmallKey String)
@@ -315,7 +321,7 @@ mapTests = do
 
   log "filterWithKey keeps those keys for which predicate is true"
   quickCheck $ \(TestMap s :: TestMap String Int) p ->
-                 A.all (uncurry p) (M.toUnfoldable (M.filterWithKey p s) :: Array (Tuple String Int))
+                 all (uncurry p) (M.toUnfoldable (M.filterWithKey p s) :: Array (Tuple String Int))
 
   log "filterKeys gives submap"
   quickCheck $ \(TestMap s :: TestMap String Int) p ->
@@ -323,7 +329,7 @@ mapTests = do
 
   log "filterKeys keeps those keys for which predicate is true"
   quickCheck $ \(TestMap s :: TestMap String Int) p ->
-                 A.all p (M.keys (M.filterKeys p s))
+                 all p (M.keys (M.filterKeys p s))
 
   log "filter gives submap"
   quickCheck $ \(TestMap s :: TestMap String Int) p ->
@@ -331,7 +337,7 @@ mapTests = do
 
   log "filter keeps those values for which predicate is true"
   quickCheck $ \(TestMap s :: TestMap String Int) p ->
-                 A.all p (M.values (M.filter p s))
+                 all p (M.values (M.filter p s))
 
   log "submap with no bounds = id"
   quickCheck \(TestMap m :: TestMap SmallKey Int) ->
@@ -370,6 +376,17 @@ mapTests = do
   quickCheck \(TestMap m :: TestMap Int Int) ->
     let outList = foldrWithIndex (\i a b -> (Tuple i a) : b) Nil m
     in outList == sort outList
+
+  log "bind"
+  quickCheck $ \(TestMap m1) (TestMap m2 :: TestMap SmallKey Int) (TestMap m3) k ->
+    let
+      u = do
+        v <- m1
+        if v then m2 else m3
+    in case M.lookup k m1 of
+      Just true -> M.lookup k m2 == M.lookup k u
+      Just false -> M.lookup k m3 == M.lookup k u
+      Nothing -> not $ M.member k u
 
   log "catMaybes creates a new map of size less than or equal to the original"
   quickCheck \(TestMap m :: TestMap Int (Maybe Int)) -> do
