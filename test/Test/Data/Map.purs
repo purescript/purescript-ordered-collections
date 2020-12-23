@@ -4,6 +4,7 @@ import Prelude
 
 import Control.Alt ((<|>))
 import Data.Array as A
+import Data.Array.NonEmpty as NEA
 import Data.Foldable (foldl, for_, all, and)
 import Data.FoldableWithIndex (foldrWithIndex)
 import Data.Function (on)
@@ -44,7 +45,7 @@ instance showSmallKey :: Show SmallKey where
   show J = "J"
 
 instance arbSmallKey :: Arbitrary SmallKey where
-  arbitrary = elements $ A :| [B, C, D, E, F, G, H, I, J]
+  arbitrary = elements $ NEA.fromNonEmpty $ A :| [B, C, D, E, F, G, H, I, J]
 
 data Instruction k v = Insert k v | Delete k
 
@@ -53,7 +54,7 @@ instance showInstruction :: (Show k, Show v) => Show (Instruction k v) where
   show (Delete k) = "Delete (" <> show k <> ")"
 
 instance arbInstruction :: (Arbitrary k, Arbitrary v) => Arbitrary (Instruction k v) where
-  arbitrary = oneOf $ (Insert <$> arbitrary <*> arbitrary) :| [Delete <$> arbitrary]
+  arbitrary = oneOf $ NEA.fromNonEmpty $ (Insert <$> arbitrary <*> arbitrary) :| [Delete <$> arbitrary]
 
 runInstructions :: forall k v. Ord k => List (Instruction k v) -> M.Map k v -> M.Map k v
 runInstructions instrs t0 = foldl step t0 instrs
@@ -321,7 +322,7 @@ mapTests = do
 
   log "filterWithKey keeps those keys for which predicate is true"
   quickCheck $ \(TestMap s :: TestMap String Int) p ->
-                 A.all (uncurry p) (M.toUnfoldable (M.filterWithKey p s) :: Array (Tuple String Int))
+                 all (uncurry p) (M.toUnfoldable (M.filterWithKey p s) :: Array (Tuple String Int))
 
   log "filterKeys gives submap"
   quickCheck $ \(TestMap s :: TestMap String Int) p ->
@@ -329,7 +330,7 @@ mapTests = do
 
   log "filterKeys keeps those keys for which predicate is true"
   quickCheck $ \(TestMap s :: TestMap String Int) p ->
-                 A.all p (M.keys (M.filterKeys p s))
+                 all p (M.keys (M.filterKeys p s))
 
   log "filter gives submap"
   quickCheck $ \(TestMap s :: TestMap String Int) p ->
@@ -337,7 +338,7 @@ mapTests = do
 
   log "filter keeps those values for which predicate is true"
   quickCheck $ \(TestMap s :: TestMap String Int) p ->
-                 A.all p (M.values (M.filter p s))
+                 all p (M.values (M.filter p s))
 
   log "submap with no bounds = id"
   quickCheck \(TestMap m :: TestMap SmallKey Int) ->
