@@ -120,9 +120,6 @@ instance foldableWithIndexMap :: FoldableWithIndex k (Map k) where
   foldrWithIndex f z m = foldr (uncurry f) z $ asList $ toUnfoldable m
   foldMapWithIndex f m = foldMap (uncurry f) $ asList $ toUnfoldable m
 
-asList :: forall k v. List (Tuple k v) -> List (Tuple k v)
-asList = identity
-
 instance traversableMap :: Traversable (Map k) where
   traverse f Leaf = pure Leaf
   traverse f (Two left k v right) =
@@ -155,6 +152,9 @@ instance traversableWithIndexMap :: TraversableWithIndex k (Map k) where
           <*> pure k2
           <*> f k2 v2
           <*> traverseWithIndex f right
+
+asList :: forall k v. List (Tuple k v) -> List (Tuple k v)
+asList = identity
 
 -- | Render a `Map` as a `String`
 showTree :: forall k v. Show k => Show v => Map k v -> String
