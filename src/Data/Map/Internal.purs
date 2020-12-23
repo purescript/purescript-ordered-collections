@@ -106,6 +106,12 @@ instance functorWithIndexMap :: FunctorWithIndex k (Map k) where
   mapWithIndex f (Two left k v right) = Two (mapWithIndex f left) k (f k v) (mapWithIndex f right)
   mapWithIndex f (Three left k1 v1 mid k2 v2 right) = Three (mapWithIndex f left) k1 (f k1 v1) (mapWithIndex f mid) k2 (f k2 v2) (mapWithIndex f right)
 
+instance applyMap :: Ord k => Apply (Map k) where
+  apply = intersectionWith identity
+
+instance bindMap :: Ord k => Bind (Map k) where
+  bind m f = mapMaybeWithKey (\k -> lookup k <<< f) m
+
 instance foldableMap :: Foldable (Map k) where
   foldl   f z m = foldl   f z (values m)
   foldr   f z m = foldr   f z (values m)

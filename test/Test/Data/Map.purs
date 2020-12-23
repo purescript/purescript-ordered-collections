@@ -4,7 +4,7 @@ import Prelude
 
 import Control.Alt ((<|>))
 import Data.Array as A
-import Data.Array.NonEmpty as NEA
+import Data.Array.NonEmpty (cons')
 import Data.Foldable (foldl, for_, all, and)
 import Data.FoldableWithIndex (foldrWithIndex)
 import Data.Function (on)
@@ -13,11 +13,10 @@ import Data.List (List(..), groupBy, length, nubBy, singleton, sort, sortBy, (:)
 import Data.List.NonEmpty as NEL
 import Data.Map as M
 import Data.Map.Gen (genMap)
-import Data.Maybe (Maybe(..), fromMaybe, maybe, fromJust)
-import Data.NonEmpty ((:|))
+import Data.Maybe (Maybe(..), fromMaybe, maybe)
+import Data.Tuple (Tuple(..), fst, uncurry)
 import Data.Semigroup.First (First(..))
 import Data.Semigroup.Last (Last(..))
-import Data.Tuple (Tuple(..), fst, uncurry)
 import Effect (Effect)
 import Effect.Console (log)
 import Partial.Unsafe (unsafePartial)
@@ -47,8 +46,7 @@ instance showSmallKey :: Show SmallKey where
   show J = "J"
 
 instance arbSmallKey :: Arbitrary SmallKey where
-  arbitrary = elements $ unsafePartial fromJust $ NEA.fromArray
-    [A, B, C, D, E, F, G, H, I, J]
+  arbitrary = elements $ cons' A [B, C, D, E, F, G, H, I, J]
 
 data Instruction k v = Insert k v | Delete k
 
@@ -57,8 +55,7 @@ instance showInstruction :: (Show k, Show v) => Show (Instruction k v) where
   show (Delete k) = "Delete (" <> show k <> ")"
 
 instance arbInstruction :: (Arbitrary k, Arbitrary v) => Arbitrary (Instruction k v) where
-  arbitrary = oneOf $ unsafePartial fromJust $ NEA.fromArray
-    [ Insert <$> arbitrary <*> arbitrary, Delete <$> arbitrary ]
+  arbitrary = oneOf $ cons' (Insert <$> arbitrary <*> arbitrary) [Delete <$> arbitrary]
 
 runInstructions :: forall k v. Ord k => List (Instruction k v) -> M.Map k v -> M.Map k v
 runInstructions instrs t0 = foldl step t0 instrs
@@ -245,6 +242,12 @@ mapTests = do
            Nothing -> not (M.member k m1 && M.member k m2)
            Just v -> Just v == (op <$> M.lookup k m1 <*> M.lookup k m2)
 
+  log "map-apply is equivalent to intersectionWith"
+  for_ [(+), (*)] $ \op ->
+    quickCheck $ \(TestMap m1) (TestMap m2) ->
+      let u = M.intersectionWith op m1 m2 :: M.Map SmallKey Int
+      in u == (op <$> m1 <*> m2)
+
   log "difference"
   quickCheck $ \(TestMap m1) (TestMap m2) ->
     let d = M.difference (m1 :: M.Map SmallKey Int) (m2 :: M.Map SmallKey String)
@@ -330,8 +333,6 @@ mapTests = do
   quickCheck $ \(TestMap s :: TestMap String Int) p ->
                  all p (M.keys (M.filterKeys p s))
 
-                 ----
-
   log "filter gives submap"
   quickCheck $ \(TestMap s :: TestMap String Int) p ->
                  M.isSubmap (M.filter p s) s
@@ -377,6 +378,17 @@ mapTests = do
   quickCheck \(TestMap m :: TestMap Int Int) ->
     let outList = foldrWithIndex (\i a b -> (Tuple i a) : b) Nil m
     in outList == sort outList
+
+  log "bind"
+  quickCheck $ \(TestMap m1) (TestMap m2 :: TestMap SmallKey Int) (TestMap m3) k ->
+    let
+      u = do
+        v <- m1
+        if v then m2 else m3
+    in case M.lookup k m1 of
+      Just true -> M.lookup k m2 == M.lookup k u
+      Just false -> M.lookup k m3 == M.lookup k u
+      Nothing -> not $ M.member k u
 
   log "catMaybes creates a new map of size less than or equal to the original"
   quickCheck \(TestMap m :: TestMap Int (Maybe Int)) -> do
