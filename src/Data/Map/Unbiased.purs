@@ -46,7 +46,8 @@ instance showMap :: (Show k, Show v) => Show (Map k v) where
 instance appendMap :: (Ord k, Semigroup v) => Semigroup (Map k v) where
   append (Map l) (Map r) = Map (M.unionWith append l r)
 
-derive newtype instance monoidMap :: Ord k => Monoid (Map k v)
+instance monoidMap :: (Ord k, Semigroup v) => Monoid (Map k v) where
+  mempty = Map M.empty
 derive newtype instance altMap :: Ord k => Alt (Map k)
 derive newtype instance functorMap :: Functor (Map k)
 derive newtype instance functorWithIndexMap :: FunctorWithIndex k (Map k)
