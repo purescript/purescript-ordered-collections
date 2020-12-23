@@ -318,7 +318,7 @@ mapTests = do
 
   log "filterWithKey keeps those keys for which predicate is true"
   quickCheck $ \(TestMap s :: TestMap String Int) p ->
-                 A.all (uncurry p) (M.toUnfoldable (M.filterWithKey p s) :: Array (Tuple String Int))
+                 all (uncurry p) (M.toUnfoldable (M.filterWithKey p s) :: Array (Tuple String Int))
 
   log "filterKeys gives submap"
   quickCheck $ \(TestMap s :: TestMap String Int) p ->
@@ -326,7 +326,9 @@ mapTests = do
 
   log "filterKeys keeps those keys for which predicate is true"
   quickCheck $ \(TestMap s :: TestMap String Int) p ->
-                 A.all p (M.keys (M.filterKeys p s))
+                 all p (M.keys (M.filterKeys p s))
+
+                 ----
 
   log "filter gives submap"
   quickCheck $ \(TestMap s :: TestMap String Int) p ->
@@ -334,7 +336,7 @@ mapTests = do
 
   log "filter keeps those values for which predicate is true"
   quickCheck $ \(TestMap s :: TestMap String Int) p ->
-                 A.all p (M.values (M.filter p s))
+                 all p (M.values (M.filter p s))
 
   log "submap with no bounds = id"
   quickCheck \(TestMap m :: TestMap SmallKey Int) ->
