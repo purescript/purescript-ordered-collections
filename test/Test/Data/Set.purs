@@ -2,6 +2,7 @@ module Test.Data.Set where
 
 import Prelude
 
+import Data.Maybe (Maybe(..))
 import Data.Set (Set)
 import Data.Set as S
 import Effect (Effect)
@@ -11,7 +12,7 @@ import Test.Assert (assert)
 setTests :: Effect Unit
 setTests = do
   log "fromFoldable - empty"
-  assert $ S.fromFoldable [] == S.empty :: Set Unit
+  assert $ S.fromFoldable [] == (S.empty :: Set Unit)
 
   log "fromFoldable - non empty"
   do let set = S.fromFoldable [0, 1, 1, 2]
@@ -25,3 +26,8 @@ setTests = do
          s2 = S.fromFoldable [2,4,6,8,10]
          s3 = S.fromFoldable [2,4]
      assert $ S.intersection s1 s2 == s3
+
+  log "catMaybes - drops Nothing values"
+  do let s1 = S.fromFoldable [Just 1,Just 2,Just 3,Nothing]
+         s2 = S.fromFoldable [1,2,3]
+     assert $ S.catMaybes s1 == s2

@@ -44,6 +44,7 @@ module Data.Map.Internal
   , filter
   , mapMaybeWithKey
   , mapMaybe
+  , catMaybes
   ) where
 
 import Prelude
@@ -67,6 +68,8 @@ data Map k v
   = Leaf
   | Two (Map k v) k v (Map k v)
   | Three (Map k v) k v (Map k v) k v (Map k v)
+
+type role Map nominal representational
 
 -- Internal use
 toAscArray :: forall k v. Map k v -> Array (Tuple k v)
@@ -592,12 +595,12 @@ toUnfoldable m = unfoldr go (m : Nil) where
       go $ left : singleton k1 v1 : mid : singleton k2 v2 : right : tl
 
 -- | Convert a map to an unfoldable structure of key/value pairs
---
--- While this traversal is up to 10% faster in benchmarks than `toUnfoldable`,
--- it leaks the underlying map stucture, making it only suitable for applications
--- where order is irrelevant.
---
--- If you are unsure, use `toUnfoldable`
+-- |
+-- | While this traversal is up to 10% faster in benchmarks than `toUnfoldable`,
+-- | it leaks the underlying map stucture, making it only suitable for applications
+-- | where order is irrelevant.
+-- |
+-- | If you are unsure, use `toUnfoldable`
 toUnfoldableUnordered :: forall f k v. Unfoldable f => Map k v -> f (Tuple k v)
 toUnfoldableUnordered m = unfoldr go (m : Nil) where
   go Nil = Nothing
@@ -695,3 +698,8 @@ mapMaybeWithKey f = foldrWithIndex (\k a acc → maybe acc (\b -> insert k b acc
 -- | function returns `Nothing`.
 mapMaybe :: forall k a b. Ord k => (a -> Maybe b) -> Map k a -> Map k b
 mapMaybe = mapMaybeWithKey <<< const
+
+-- | Filter a map of optional values, keeping only the key/value pairs which
+-- | contain a value, creating a new map.
+catMaybes :: forall k v. Ord k => Map k (Maybe v) -> Map k v
+catMaybes = mapMaybe identity

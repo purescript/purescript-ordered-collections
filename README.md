@@ -1,18 +1,17 @@
 # purescript-ordered-collections
 
 [![Latest release](http://img.shields.io/github/release/purescript/purescript-ordered-collections.svg)](https://github.com/purescript/purescript-ordered-collections/releases)
-[![Build status](https://travis-ci.org/purescript/purescript-ordered-collections.svg?branch=master)](https://travis-ci.org/purescript/purescript-ordered-collections)
+[![Build status](https://github.com/purescript/purescript-ordered-collections/workflows/CI/badge.svg?branch=master)](https://github.com/purescript/purescript-ordered-collections/actions?query=workflow%3ACI+branch%3Amaster)
+[![Pursuit](https://pursuit.purescript.org/packages/purescript-ordered-collections/badge)](https://pursuit.purescript.org/packages/purescript-ordered-collections)
 
 Purely-functional map and set data structures.
 
-*If you are looking to work with "StrMap"/JavaScript Objects, see <https://github.com/purescript/purescript-foreign-object>*
+_If you are looking to work with JavaScript Objects, see [`purescript-foreign-object`](https://github.com/purescript/purescript-foreign-object)._
 
 ## Installation
 
 ```
-bower install purescript-ordered-collections
-# or
-psc-package install ordered-collections
+spago install ordered-collections
 ```
 
 ## Documentation

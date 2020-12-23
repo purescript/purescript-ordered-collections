@@ -18,7 +18,7 @@ import Data.Tuple (Tuple(..), fst, uncurry)
 import Effect (Effect)
 import Effect.Console (log)
 import Partial.Unsafe (unsafePartial)
-import Test.QuickCheck ((<?>), (===), quickCheck, quickCheck')
+import Test.QuickCheck ((<?>), (<=?), (===), quickCheck, quickCheck')
 import Test.QuickCheck.Arbitrary (class Arbitrary, arbitrary)
 import Test.QuickCheck.Gen (elements, oneOf)
 
@@ -387,3 +387,15 @@ mapTests = do
       Just true -> M.lookup k m2 == M.lookup k u
       Just false -> M.lookup k m3 == M.lookup k u
       Nothing -> not $ M.member k u
+
+  log "catMaybes creates a new map of size less than or equal to the original"
+  quickCheck \(TestMap m :: TestMap Int (Maybe Int)) -> do
+    let result = M.catMaybes m
+    M.size result <=? M.size m
+
+  log "catMaybes drops key/value pairs with Nothing values"
+  quickCheck \(TestMap m :: TestMap Int Int) -> do
+    let maybeMap = M.alter (const $ Just Nothing) 1 $ map Just m
+    let result = M.catMaybes maybeMap
+    let expected = M.delete 1 m
+    result === expected
