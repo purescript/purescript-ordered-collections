@@ -9,7 +9,7 @@ import Data.Semigroup.Last (Last(..))
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Console (log)
-import Test.QuickCheck ((===), quickCheck)
+import Test.QuickCheck (quickCheck)
 
 singleton :: forall key value. key -> value -> Unbiased.Map key value
 singleton k v = Unbiased.Map (M.singleton k v)
