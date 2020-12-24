@@ -175,8 +175,6 @@ instance traversableWithIndexMap :: TraversableWithIndex k (Map k) where
 -- | ```
 newtype SemigroupMap k v = SemigroupMap (Map k v)
 
-type role SemigroupMap nominal representational
-
 derive newtype instance eq1SemigroupMap :: Eq k => Eq1 (SemigroupMap k)
 derive newtype instance eqSemigroupMap :: (Eq k, Eq v) => Eq (SemigroupMap k v)
 derive newtype instance ord1SemigroupMap :: Ord k => Ord1 (SemigroupMap k)
