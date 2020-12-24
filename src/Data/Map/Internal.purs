@@ -159,8 +159,8 @@ instance traversableWithIndexMap :: TraversableWithIndex k (Map k) where
           <*> f k2 v2
           <*> traverseWithIndex f right
 
--- | `SemigroupMap key value` provides a `Semigroup` instance for `Map` whose
--- | definition depends on the underlying `value` type's `Semigroup` instance.
+-- | `SemigroupMap k v` provides a `Semigroup` instance for `Map k v` whose
+-- | definition depends on the `Semigroup` instance for the `v` type.
 -- | You should only use this type when you need `Data.Map` to have
 -- | a `Semigroup` instance.
 -- |
