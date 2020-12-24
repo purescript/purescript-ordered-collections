@@ -167,7 +167,7 @@ instance traversableWithIndexMap :: TraversableWithIndex k (Map k) where
 -- | ```purescript
 -- | let
 -- |   s :: forall key value. key -> value -> SemigroupMap key value
--- |   s k v = Unbiased.SemigroupMap (Data.Map.singleton k v)
+-- |   s k v = SemigroupMap (singleton k v)
 -- |
 -- | (s 1     "foo") <> (s 1     "bar") == (s 1  "foobar")
 -- | (s 1 (First 1)) <> (s 1 (First 2)) == (s 1 (First 1))
