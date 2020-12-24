@@ -51,6 +51,7 @@ module Data.Map.Internal
 import Prelude
 
 import Control.Alt (class Alt)
+import Control.Plus (class Plus)
 import Data.Eq (class Eq1)
 import Data.Foldable (foldl, foldMap, foldr, class Foldable)
 import Data.FoldableWithIndex (class FoldableWithIndex, foldlWithIndex, foldrWithIndex)
@@ -95,6 +96,9 @@ instance showMap :: (Show k, Show v) => Show (Map k v) where
 
 instance altMap :: Ord k => Alt (Map k) where
   alt = union
+
+instance plusMap :: Ord k => Plus (Map k) where
+  empty = empty
 
 instance functorMap :: Functor (Map k) where
   map _ Leaf = Leaf
@@ -189,6 +193,7 @@ instance monoidSemigroupMap :: (Ord k, Semigroup v) => Monoid (SemigroupMap k v)
   mempty = SemigroupMap empty
 
 derive newtype instance altSemigroupMap :: Ord k => Alt (SemigroupMap k)
+derive newtype instance plusSemigroupMap :: Ord k => Plus (SemigroupMap k)
 derive newtype instance functorSemigroupMap :: Functor (SemigroupMap k)
 derive newtype instance functorWithIndexSemigroupMap :: FunctorWithIndex k (SemigroupMap k)
 derive newtype instance applySemigroupMap :: Ord k => Apply (SemigroupMap k)
