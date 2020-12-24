@@ -171,7 +171,7 @@ instance traversableWithIndexMap :: TraversableWithIndex k (Map k) where
 -- |
 -- | (s 1     "foo") <> (s 1     "bar") == (s 1  "foobar")
 -- | (s 1 (First 1)) <> (s 1 (First 2)) == (s 1 (First 1))
--- | (s 1  (Last 1)) <> (s 1  (Last 2)) == (s 1  (Last 1))
+-- | (s 1  (Last 1)) <> (s 1  (Last 2)) == (s 1  (Last 2))
 -- | ```
 newtype SemigroupMap k v = SemigroupMap (Map k v)
 
