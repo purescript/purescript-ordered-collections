@@ -24,7 +24,6 @@
     "purescript-partial": "master",
     "purescript-prelude": "master",
     "purescript-st": "master",
-    "purescript-safe-coerce": "master",
     "purescript-tailrec": "master",
     "purescript-tuples": "master",
     "purescript-unfoldable": "master"
