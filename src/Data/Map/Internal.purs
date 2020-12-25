@@ -180,9 +180,7 @@ derive newtype instance eqSemigroupMap :: (Eq k, Eq v) => Eq (SemigroupMap k v)
 derive newtype instance ord1SemigroupMap :: Ord k => Ord1 (SemigroupMap k)
 derive newtype instance ordSemigroupMap :: (Ord k, Ord v) => Ord (SemigroupMap k v)
 derive instance newtypeSemigroupMap :: Newtype (SemigroupMap k v) _
-
-instance showSemigroupMap :: (Show k, Show v) => Show (SemigroupMap k v) where
-  show (SemigroupMap m) = "(fromFoldable " <> show (toAscArray m) <> ")"
+derive newtype instance showSemigroupMap :: (Show k, Show v) => Show (SemigroupMap k v)
 
 instance semigroupSemigroupMap :: (Ord k, Semigroup v) => Semigroup (SemigroupMap k v) where
   append (SemigroupMap l) (SemigroupMap r) = SemigroupMap (unionWith append l r)
