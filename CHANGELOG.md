@@ -5,25 +5,33 @@ Notable changes to this project are documented in this file. The format is based
 ## [Unreleased]
 
 Breaking changes:
+- Added support for PureScript 0.14 and dropped support for all previous versions (#35, #43)
 
 New features:
+- Added `Apply` instance for `Map` (#16)
+- Added `catMaybes` for maps and sets (#25)
+- Added `toMap` and `fromMap` to `Data.Set` (#31)
 
 Bugfixes:
 
 Other improvements:
+- Migrated CI to GitHub Actions and updated installation instructions to use Spago (#37)
+- Tests: Add parens to account for changed precedence of `::` in PureScript 0.13 (#23)
+- Tests: Converted from `NonEmpty Array` to `NonEmptyArray` to accommodate QuickCheck changes (#42)
+- Added a changelog and pull request template (#44)
 
 ## [v1.6.1](https://github.com/purescript/purescript-ordered-collections/releases/tag/v1.6.1) - 2019-04-12
 
-* Fix doc comments for `Data.Map.toUnfoldableUnordered` (@bernhard-herzog)
-* Fix a syntax issue in preparation for upcoming parser changes in PureScript v0.13.0 (@natefaubion)
+- Fixed doc comments for `Data.Map.toUnfoldableUnordered` (@bernhard-herzog)
+- Fixed a syntax issue in preparation for upcoming parser changes in PureScript v0.13.0 (@natefaubion)
 
 ## [v1.6.0](https://github.com/purescript/purescript-ordered-collections/releases/tag/v1.6.0) - 2019-02-14
 
-Added `intersection` and `intersectionWith` for `Map` (@karshan)
+- Added `intersection` and `intersectionWith` for `Map` (@karshan)
 
 ## [v1.5.0](https://github.com/purescript/purescript-ordered-collections/releases/tag/v1.5.0) - 2019-02-07
 
-Added `insertWith` for `Map`
+- Added `insertWith` for `Map`
 
 ## [v1.4.0](https://github.com/purescript/purescript-ordered-collections/releases/tag/v1.4.0) - 2018-10-05
 
@@ -44,5 +52,4 @@ Added `insertWith` for `Map`
 
 ## [v1.0.0](https://github.com/purescript/purescript-ordered-collections/releases/tag/v1.0.0) - 2018-05-24
 
-Initial release
-
+- Initial release
