@@ -10,6 +10,7 @@ Breaking changes:
 
 New features:
 - Added `Apply` instance for `Map` (#16)
+- Added `Alt` and `Plus` instances for `Map` (#38)
 - Added `catMaybes` for maps and sets (#25)
 - Added `toMap` and `fromMap` to `Data.Set` (#31)
 
