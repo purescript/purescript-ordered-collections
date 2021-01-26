@@ -6,9 +6,11 @@ Notable changes to this project are documented in this file. The format is based
 
 Breaking changes:
 - Added support for PureScript 0.14 and dropped support for all previous versions (#35, #43)
+- Drop `Map`'s `Semigroup` and `Monoid` instances and provide unbiased instances via `SemigroupMap` newtype (#38)
 
 New features:
 - Added `Apply` instance for `Map` (#16)
+- Added `Alt` and `Plus` instances for `Map` (#38)
 - Added `catMaybes` for maps and sets (#25)
 - Added `toMap` and `fromMap` to `Data.Set` (#31)
 

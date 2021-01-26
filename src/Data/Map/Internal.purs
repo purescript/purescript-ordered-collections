@@ -49,6 +49,8 @@ module Data.Map.Internal
 
 import Prelude
 
+import Control.Alt (class Alt)
+import Control.Plus (class Plus)
 import Data.Eq (class Eq1)
 import Data.Foldable (foldl, foldMap, foldr, class Foldable)
 import Data.FoldableWithIndex (class FoldableWithIndex, foldlWithIndex, foldrWithIndex)
@@ -90,11 +92,11 @@ instance ordMap :: (Ord k, Ord v) => Ord (Map k v) where
 instance showMap :: (Show k, Show v) => Show (Map k v) where
   show m = "(fromFoldable " <> show (toAscArray m) <> ")"
 
-instance semigroupMap :: Ord k => Semigroup (Map k v) where
-  append = union
+instance altMap :: Ord k => Alt (Map k) where
+  alt = union
 
-instance monoidMap :: Ord k => Monoid (Map k v) where
-  mempty = empty
+instance plusMap :: Ord k => Plus (Map k) where
+  empty = empty
 
 instance functorMap :: Functor (Map k) where
   map _ Leaf = Leaf
@@ -121,9 +123,6 @@ instance foldableWithIndexMap :: FoldableWithIndex k (Map k) where
   foldlWithIndex f z m = foldl (uncurry <<< (flip f)) z $ asList $ toUnfoldable m
   foldrWithIndex f z m = foldr (uncurry f) z $ asList $ toUnfoldable m
   foldMapWithIndex f m = foldMap (uncurry f) $ asList $ toUnfoldable m
-
-asList :: forall k v. List (Tuple k v) -> List (Tuple k v)
-asList = identity
 
 instance traversableMap :: Traversable (Map k) where
   traverse f Leaf = pure Leaf
@@ -157,6 +156,9 @@ instance traversableWithIndexMap :: TraversableWithIndex k (Map k) where
           <*> pure k2
           <*> f k2 v2
           <*> traverseWithIndex f right
+
+asList :: forall k v. List (Tuple k v) -> List (Tuple k v)
+asList = identity
 
 -- | Render a `Map` as a `String`
 showTree :: forall k v. Show k => Show v => Map k v -> String
@@ -322,7 +324,10 @@ findMin = go Nothing
 -- |  == ["zero", "one", "two"]
 -- | ```
 foldSubmap :: forall k v m. Ord k => Monoid m => Maybe k -> Maybe k -> (k -> v -> m) -> Map k v -> m
-foldSubmap kmin kmax f =
+foldSubmap = foldSubmapBy (<>) mempty
+
+foldSubmapBy :: forall k v m. Ord k => (m -> m -> m) -> m -> Maybe k -> Maybe k -> (k -> v -> m) -> Map k v -> m
+foldSubmapBy appendFn memptyValue kmin kmax f =
   let
     tooSmall =
       case kmin of
@@ -367,17 +372,17 @@ foldSubmap kmin kmax f =
     -- function because of strictness.
     go = case _ of
       Leaf ->
-        mempty
+        memptyValue
       Two left k v right ->
-           (if tooSmall k then mempty else go left)
-        <> (if inBounds k then f k v else mempty)
-        <> (if tooLarge k then mempty else go right)
+                   (if tooSmall k then memptyValue else go left)
+        `appendFn` (if inBounds k then f k v else memptyValue)
+        `appendFn` (if tooLarge k then memptyValue else go right)
       Three left k1 v1 mid k2 v2 right ->
-           (if tooSmall k1 then mempty else go left)
-        <> (if inBounds k1 then f k1 v1 else mempty)
-        <> (if tooSmall k2 || tooLarge k1 then mempty else go mid)
-        <> (if inBounds k2 then f k2 v2 else mempty)
-        <> (if tooLarge k2 then mempty else go right)
+                   (if tooSmall k1 then memptyValue else go left)
+        `appendFn` (if inBounds k1 then f k1 v1 else memptyValue)
+        `appendFn` (if tooSmall k2 || tooLarge k1 then memptyValue else go mid)
+        `appendFn` (if inBounds k2 then f k2 v2 else memptyValue)
+        `appendFn` (if tooLarge k2 then memptyValue else go right)
   in
     go
 
@@ -408,7 +413,7 @@ foldSubmap kmin kmax f =
 -- |       else not (member key m')
 -- | ```
 submap :: forall k v. Ord k => Maybe k -> Maybe k -> Map k v -> Map k v
-submap kmin kmax = foldSubmap kmin kmax singleton
+submap kmin kmax = foldSubmapBy union empty kmin kmax singleton
 
 -- | Test if a key is a member of a map
 member :: forall k v. Ord k => k -> Map k v -> Boolean
