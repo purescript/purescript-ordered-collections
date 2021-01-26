@@ -58,7 +58,6 @@ import Data.FunctorWithIndex (class FunctorWithIndex, mapWithIndex)
 import Data.List (List(..), (:), length, nub)
 import Data.List.Lazy as LL
 import Data.Maybe (Maybe(..), maybe, isJust, fromMaybe)
-import Data.Newtype (class Newtype)
 import Data.Ord (class Ord1)
 import Data.Traversable (traverse, class Traversable)
 import Data.TraversableWithIndex (class TraversableWithIndex, traverseWithIndex)
