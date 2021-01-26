@@ -164,7 +164,7 @@ mapTests = do
 
   log "sort . toUnfoldable . fromFoldable = sort (on lists without key-duplicates)"
   quickCheck $ \(list :: List (Tuple SmallKey Int)) ->
-    let nubbedList = nubBy ((==) `on` fst) list
+    let nubbedList = nubBy (compare `on` fst) list
         f x = M.toUnfoldable (M.fromFoldable x)
     in sort (f nubbedList) == sort nubbedList <?> show nubbedList
 
@@ -256,7 +256,7 @@ mapTests = do
 
   log "size"
   quickCheck $ \xs ->
-    let xs' = nubBy ((==) `on` fst) xs
+    let xs' = nubBy (compare `on` fst) xs
     in  M.size (M.fromFoldable xs') == length (xs' :: List (Tuple SmallKey Int))
 
   log "lookupLE result is correct"
