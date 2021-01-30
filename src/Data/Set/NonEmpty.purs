@@ -26,6 +26,7 @@ module Data.Set.NonEmpty
 
 import Prelude hiding (map)
 
+import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Eq (class Eq1)
 import Data.Foldable (class Foldable)
 import Data.List (List, (:))
@@ -56,7 +57,7 @@ instance foldable1NonEmptySet :: Foldable1 NonEmptySet where
   foldl1 f = foldl1 f <<< (toUnfoldable1 :: forall a. NonEmptySet a -> NonEmptyList a)
 
 instance showNonEmptySet :: Show a => Show (NonEmptySet a) where
-  show s = "(fromFoldable1 " <> show (toUnfoldable1 s :: NonEmptyList a) <> ")"
+  show s = "(fromFoldable1 " <> show (toUnfoldable1 s :: NonEmptyArray a) <> ")"
 
 -- | Create a set with one element.
 singleton :: forall a. a -> NonEmptySet a
