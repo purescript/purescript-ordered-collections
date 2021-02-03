@@ -71,7 +71,7 @@ instance eq1Set :: Eq1 Set where
   eq1 = eq
 
 instance showSet :: Show a => Show (Set a) where
-  show s = "(fromFoldable " <> show (toList s) <> ")"
+  show s = "(fromFoldable " <> show (toUnfoldable s :: Array a) <> ")"
 
 instance ordSet :: Ord a => Ord (Set a) where
   compare s1 s2 = compare (toList s1) (toList s2)
