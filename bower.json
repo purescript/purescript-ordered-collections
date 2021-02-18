@@ -3,7 +3,7 @@
   "homepage": "https://github.com/purescript/purescript-ordered-collections",
   "repository": {
     "type": "git",
-    "url": "git://github.com/purescript/purescript-ordered-collections.git"
+    "url": "https://github.com/purescript/purescript-ordered-collections.git"
   },
   "license": "BSD-3-Clause",
   "ignore": [
