@@ -3,7 +3,7 @@
   "homepage": "https://github.com/purescript/purescript-ordered-collections",
   "repository": {
     "type": "git",
-    "url": "git://github.com/purescript/purescript-ordered-collections.git"
+    "url": "https://github.com/purescript/purescript-ordered-collections.git"
   },
   "license": "BSD-3-Clause",
   "ignore": [
@@ -16,22 +16,22 @@
     "package.json"
   ],
   "dependencies": {
-    "purescript-arrays": "master",
-    "purescript-foldable-traversable": "master",
-    "purescript-gen": "master",
-    "purescript-lists": "master",
-    "purescript-maybe": "master",
-    "purescript-partial": "master",
-    "purescript-prelude": "master",
-    "purescript-st": "master",
-    "purescript-tailrec": "master",
-    "purescript-tuples": "master",
-    "purescript-unfoldable": "master"
+    "purescript-arrays": "^6.0.0",
+    "purescript-foldable-traversable": "^5.0.0",
+    "purescript-gen": "^3.0.0",
+    "purescript-lists": "^6.0.0",
+    "purescript-maybe": "^5.0.0",
+    "purescript-partial": "^3.0.0",
+    "purescript-prelude": "^5.0.0",
+    "purescript-st": "^5.0.0",
+    "purescript-tailrec": "^5.0.0",
+    "purescript-tuples": "^6.0.0",
+    "purescript-unfoldable": "^5.0.0"
   },
   "devDependencies": {
-    "purescript-quickcheck": "master",
-    "purescript-minibench": "master",
-    "purescript-console": "master",
-    "purescript-assert": "master"
+    "purescript-assert": "^5.0.0",
+    "purescript-console": "^5.0.0",
+    "purescript-minibench": "^3.0.0",
+    "purescript-quickcheck": "^7.0.0"
   }
 }

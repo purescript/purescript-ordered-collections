@@ -5,6 +5,16 @@ Notable changes to this project are documented in this file. The format is based
 ## [Unreleased]
 
 Breaking changes:
+
+New features:
+
+Bugfixes:
+
+Other improvements:
+
+## [v2.0.0](https://github.com/purescript/purescript-ordered-collections/releases/tag/v2.0.0) - 2021-02-26
+
+Breaking changes:
 - Added support for PureScript 0.14 and dropped support for all previous versions (#35, #43)
 - Dropped `Map`'s `Semigroup` and `Monoid` instances and provide unbiased instances via a `SemigroupMap` newtype instead (#38)
 - Updated the `Show` instances for (non empty) sets (#46)
