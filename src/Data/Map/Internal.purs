@@ -125,7 +125,7 @@ instance foldableWithIndexMap :: FoldableWithIndex k (Map k) where
   foldMapWithIndex f m = foldMap (uncurry f) $ asList $ toUnfoldable m
 
 instance traversableMap :: Traversable (Map k) where
-  traverse f Leaf = pure Leaf
+  traverse _ Leaf = pure Leaf
   traverse f (Two left k v right) =
     Two <$> traverse f left
         <*> pure k
@@ -142,7 +142,7 @@ instance traversableMap :: Traversable (Map k) where
   sequence = traverse identity
 
 instance traversableWithIndexMap :: TraversableWithIndex k (Map k) where
-  traverseWithIndex f Leaf = pure Leaf
+  traverseWithIndex _ Leaf = pure Leaf
   traverseWithIndex f (Two left k v right) =
     Two <$> traverseWithIndex f left
         <*> pure k
