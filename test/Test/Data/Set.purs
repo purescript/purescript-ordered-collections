@@ -31,3 +31,9 @@ setTests = do
   do let s1 = S.fromFoldable [Just 1,Just 2,Just 3,Nothing]
          s2 = S.fromFoldable [1,2,3]
      assert $ S.catMaybes s1 == s2
+
+  log "toggle - inserts item"
+  assert $ S.toggle 1 S.empty == S.fromFoldable [1]
+
+  log "toggle - deletes item"
+  assert $ S.toggle 1 (S.fromFoldable [1]) == S.empty
