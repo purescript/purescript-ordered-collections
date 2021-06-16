@@ -15,6 +15,7 @@ module Data.Set
   , insert
   , member
   , delete
+  , toggle
   , size
   , findMin
   , findMax
@@ -44,7 +45,7 @@ import Data.Foldable (class Foldable, foldMap, foldl, foldr)
 import Data.List (List)
 import Data.List as List
 import Data.Map.Internal as M
-import Data.Maybe (Maybe, maybe)
+import Data.Maybe (Maybe(..), maybe)
 import Data.Ord (class Ord1)
 import Data.Unfoldable (class Unfoldable)
 import Partial.Unsafe (unsafePartial)
@@ -127,6 +128,10 @@ insert a (Set m) = Set (M.insert a unit m)
 -- | Delete a value from a set
 delete :: forall a. Ord a => a -> Set a -> Set a
 delete a (Set m) = Set (a `M.delete` m)
+
+-- | Insert a value into a set if it is not already present, if it is present, delete it.
+toggle :: forall a. Ord a => a -> Set a -> Set a
+toggle a (Set m) = Set (M.alter (maybe (Just unit) (\_ -> Nothing)) a m)
 
 -- | Find the size of a set
 size :: forall a. Set a -> Int
