@@ -7,11 +7,13 @@ Notable changes to this project are documented in this file. The format is based
 Breaking changes:
 
 New features:
-- Added `toggle` for `Set`
 
 Bugfixes:
 
-Other improvements:
+## [v2.0.2](https://github.com/purescript/purescript-ordered-collections/releases/tag/v2.0.2) - 2021-08-27
+
+New features:
+- Added `toggle` for `Set`
 
 ## [v2.0.1](https://github.com/purescript/purescript-ordered-collections/releases/tag/v2.0.1) - 2021-04-20
 
