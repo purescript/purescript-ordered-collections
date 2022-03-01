@@ -2,7 +2,7 @@
 -- | <http://www.cs.princeton.edu/~dpw/courses/cos326-12/ass/2-3-trees.pdf>
 
 module Data.Map.Internal
-  ( Map
+  ( Map(..)
   , showTree
   , empty
   , isEmpty
