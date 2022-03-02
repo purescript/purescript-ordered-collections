@@ -7,6 +7,7 @@ Notable changes to this project are documented in this file. The format is based
 Breaking changes:
 
 New features:
+- Exported `Data.Map.Internal` data constructors (#52 by @natefaubion)
 
 Bugfixes:
 
