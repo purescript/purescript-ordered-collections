@@ -180,7 +180,7 @@ mapTests = do
 
   log "fromFoldableWith (<>) = fromFoldable . collapse with (<>) . group on fst"
   quickCheck $ \arr ->
-    let combine (Tuple s a) (Tuple t b) = (Tuple s $ b <> a)
+    let combine (Tuple s a) (Tuple _ b) = (Tuple s $ b <> a)
         foldl1 g = unsafePartial \(Cons x xs) -> foldl g x xs
         f = M.fromFoldable <<< map (foldl1 combine <<< NEL.toList) <<<
             groupBy ((==) `on` fst) <<< sortBy (compare `on` fst) in
@@ -229,7 +229,7 @@ mapTests = do
   quickCheck $ \(TestMap m1) (TestMap m2) k ->
     M.lookup (smallKey k) (M.intersection (m1 :: M.Map SmallKey Int) (m2 :: M.Map SmallKey Int)) == (case M.lookup k m2 of
       Nothing -> Nothing
-      Just v -> M.lookup k m1) <?> ("m1: " <> show m1 <> ", m2: " <> show m2 <> ", k: " <> show k <> ", v1: " <> show (M.lookup k m1) <> ", v2: " <> show (M.lookup k m2) <> ", intersection: " <> show (M.intersection m1 m2))
+      Just _ -> M.lookup k m1) <?> ("m1: " <> show m1 <> ", m2: " <> show m2 <> ", k: " <> show k <> ", v1: " <> show (M.lookup k m1) <> ", v2: " <> show (M.lookup k m2) <> ", intersection: " <> show (M.intersection m1 m2))
 
   log "Intersection is idempotent"
   quickCheck $ \(TestMap m1) (TestMap m2) -> ((m1 :: M.Map SmallKey Int) `M.intersection` m2) == ((m1 `M.intersection` m2) `M.intersection` (m2 :: M.Map SmallKey Int))
