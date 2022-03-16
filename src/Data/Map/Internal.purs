@@ -64,6 +64,7 @@ import Data.TraversableWithIndex (class TraversableWithIndex, traverseWithIndex)
 import Data.Tuple (Tuple(Tuple), snd, uncurry)
 import Data.Unfoldable (class Unfoldable, unfoldr)
 import Partial.Unsafe (unsafePartial)
+import Prim.TypeError (class Warn, Text)
 
 -- | `Map k v` represents maps from keys of type `k` to values of type `v`.
 data Map k v
@@ -91,6 +92,20 @@ instance ordMap :: (Ord k, Ord v) => Ord (Map k v) where
 
 instance showMap :: (Show k, Show v) => Show (Map k v) where
   show m = "(fromFoldable " <> show (toAscArray m) <> ")"
+
+instance semigroupMap ::
+  ( Warn (Text "Data.Map's `Semigroup` instance is now unbiased and differs from the left-biased instance defined in PureScript releases <= 0.13.x.")
+  , Ord k
+  , Semigroup v
+  ) => Semigroup (Map k v) where
+  append l r = unionWith append l r
+
+instance monoidSemigroupMap ::
+  ( Warn (Text "Data.Map's `Semigroup` instance is now unbiased and differs from the left-biased instance defined in PureScript releases <= 0.13.x.")
+  , Ord k
+  , Semigroup v
+  ) => Monoid (Map k v) where
+  mempty = empty
 
 instance altMap :: Ord k => Alt (Map k) where
   alt = union
