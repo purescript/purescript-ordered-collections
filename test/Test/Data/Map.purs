@@ -405,6 +405,27 @@ mapTests = do
   log "SemigroupMap's Semigroup instance is based on value's Semigroup instance"
   quickCheck \(Tuple leftStr rightStr :: Tuple String String) -> do
     let key = "foo"
+    let left = M.singleton key leftStr
+    let right = M.singleton key rightStr
+    let result = left <> right
+    let expected = M.singleton key $ leftStr <> rightStr
+    result == expected
+  quickCheck \(Tuple leftStr rightStr :: Tuple String String) -> do
+    let key = "foo"
+    let left = M.singleton key $ First leftStr
+    let right = M.singleton key $ First rightStr
+    let result = left <> right
+    result == left
+  quickCheck \(Tuple leftStr rightStr :: Tuple String String) -> do
+    let key = "foo"
+    let left = M.singleton key $ Last leftStr
+    let right = M.singleton key $ Last rightStr
+    let result = left <> right
+    result == right
+
+  log "SemigroupMap's Semigroup instance is based on value's Semigroup instance"
+  quickCheck \(Tuple leftStr rightStr :: Tuple String String) -> do
+    let key = "foo"
     let left = smSingleton key leftStr
     let right = smSingleton key rightStr
     let result = left <> right
