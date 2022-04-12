@@ -63,7 +63,7 @@ import Data.Traversable (traverse, class Traversable)
 import Data.TraversableWithIndex (class TraversableWithIndex, traverseWithIndex)
 import Data.Tuple (Tuple(Tuple), snd, uncurry)
 import Data.Unfoldable (class Unfoldable, unfoldr)
-import Partial.Unsafe (unsafePartial)
+import Partial.Unsafe (unsafeCrashWith)
 import Prim.TypeError (class Warn, Text)
 
 -- | `Map k v` represents maps from keys of type `k` to values of type `v`.
@@ -507,7 +507,7 @@ pop k = down Nil
   comp = compare
 
   down :: List (TreeContext k v) -> Map k v -> Maybe (Tuple v (Map k v))
-  down = unsafePartial \ctx m -> case m of
+  down ctx m = case m of
     Leaf -> Nothing
     Two left k1 v1 right ->
       case right, comp k k1 of
@@ -533,7 +533,7 @@ pop k = down Nil
         _   , _ , _  -> down (Cons (ThreeRight left k1 v1 mid k2 v2) ctx) right
 
   up :: List (TreeContext k v) -> Map k v -> Map k v
-  up = unsafePartial \ctxs tree ->
+  up ctxs tree =
     case ctxs of
       Nil -> tree
       Cons x ctx ->
@@ -555,22 +555,25 @@ pop k = down Nil
           ThreeMiddle (Three a k1 v1 b k2 v2 c) k3 v3 k4 v4 e, d -> fromZipper ctx (Three (Two a k1 v1 b) k2 v2 (Two c k3 v3 d) k4 v4 e)
           ThreeMiddle a k1 v1 k2 v2 (Three c k3 v3 d k4 v4 e), b -> fromZipper ctx (Three a k1 v1 (Two b k2 v2 c) k3 v3 (Two d k4 v4 e))
           ThreeRight a k1 v1 (Three b k2 v2 c k3 v3 d) k4 v4, e -> fromZipper ctx (Three a k1 v1 (Two b k2 v2 c) k3 v3 (Two d k4 v4 e))
+          _, _ -> unsafeCrashWith "The impossible happened in partial function `up`."
 
   maxNode :: Map k v -> { key :: k, value :: v }
-  maxNode = unsafePartial \m -> case m of
+  maxNode m = case m of
     Two _ k' v Leaf -> { key: k', value: v }
     Two _ _ _ right -> maxNode right
     Three _ _ _ _ k' v Leaf -> { key: k', value: v }
     Three _ _ _ _ _ _ right -> maxNode right
+    _ -> unsafeCrashWith "The impossible happened in partial function `maxNode`."
 
 
   removeMaxNode :: List (TreeContext k v) -> Map k v -> Map k v
-  removeMaxNode = unsafePartial \ctx m ->
+  removeMaxNode ctx m =
     case m of
       Two Leaf _ _ Leaf -> up ctx Leaf
       Two left k' v right -> removeMaxNode (Cons (TwoRight left k' v) ctx) right
       Three Leaf k1 v1 Leaf _ _ Leaf -> up (Cons (TwoRight Leaf k1 v1) ctx) Leaf
       Three left k1 v1 mid k2 v2 right -> removeMaxNode (Cons (ThreeRight left k1 v1 mid k2 v2) ctx) right
+      _ -> unsafeCrashWith "The impossible happened in partial function `removeMaxNode`."
 
 
 -- | Insert the value, delete a value, or update a value for a key in a map
