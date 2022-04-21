@@ -136,8 +136,8 @@ instance foldableMap :: Foldable (Map k) where
     Three ml _ v1 mm _ v2 mr -> foldr f (f v1 (foldr f (f v2 (foldr f z mr)) mm)) ml
   foldl f z m = case m of
     Leaf -> z
-    Two ml _ v mr -> foldl f (foldl f (f z v) ml) mr
-    Three ml _ v1 mm _ v2 mr -> foldl f (foldl f (f (foldl f (f z v1) ml) v2) mm) mr
+    Two ml _ v mr -> foldl f (f (foldl f z ml) v) mr
+    Three ml _ v1 mm _ v2 mr -> foldl f (f (foldl f (f (foldl f z ml) v1) mm) v2) mr
   foldMap f m = case m of
     Leaf -> mempty
     Two ml _ v mr -> foldMap f ml <> f v <> foldMap f mr
@@ -150,8 +150,8 @@ instance foldableWithIndexMap :: FoldableWithIndex k (Map k) where
     Three ml k1 v1 mm k2 v2 mr -> foldrWithIndex f (f k1 v1 (foldrWithIndex f (f k2 v2 (foldrWithIndex f z mr)) mm)) ml
   foldlWithIndex f z m = case m of
     Leaf -> z
-    Two ml k v mr -> foldlWithIndex f (foldlWithIndex f (f k z v) ml) mr
-    Three ml k1 v1 mm k2 v2 mr -> foldlWithIndex f (foldlWithIndex f (f k2 (foldlWithIndex f (f k1 z v1) ml) v2) mm) mr
+    Two ml k v mr -> foldlWithIndex f (f k (foldlWithIndex f z ml) v) mr
+    Three ml k1 v1 mm k2 v2 mr -> foldlWithIndex f (f k2 (foldlWithIndex f (f k1 (foldlWithIndex f z ml) v1) mm) v2) mr
   foldMapWithIndex f m = case m of
     Leaf -> mempty
     Two ml k v mr -> foldMapWithIndex f ml <> f k v <> foldMapWithIndex f mr
