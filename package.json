@@ -5,7 +5,7 @@
     "build": "pulp build -- --censor-lib --strict",
     "test": "pulp test",
     "bench:build": "purs compile \"bench/**/*.purs\" \"src/**/*.purs\" \"bower_components/*/src/**/*.purs\"",
-    "bench:run": "node -e \"require('./output/Bench.Main/index.js').main()\"",
+    "bench:run": "node --input-type=module --eval \"import * as Bench_Main from './output/Bench.Main/index.js';Bench_Main.main()\"",
     "bench": "npm run bench:build && npm run bench:run"
   },
   "devDependencies": {
