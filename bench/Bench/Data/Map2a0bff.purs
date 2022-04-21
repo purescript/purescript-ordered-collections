@@ -1,7 +1,7 @@
 -- | This module defines a type of maps as balanced 2-3 trees, based on
 -- | <http://www.cs.princeton.edu/~dpw/courses/cos326-12/ass/2-3-trees.pdf>
 
-module Bench.OldMap
+module Bench.Data.Map2a0bff
   ( Map(..)
   , showTree
   , empty
