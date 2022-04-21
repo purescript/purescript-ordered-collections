@@ -1,7 +1,7 @@
 -- | This module defines a type of maps as balanced 2-3 trees, based on
 -- | <http://www.cs.princeton.edu/~dpw/courses/cos326-12/ass/2-3-trees.pdf>
 
-module Data.Map.Internal
+module Bench.OldMap
   ( Map(..)
   , showTree
   , empty
@@ -53,7 +53,7 @@ import Control.Alt (class Alt)
 import Control.Plus (class Plus)
 import Data.Eq (class Eq1)
 import Data.Foldable (foldl, foldMap, foldr, class Foldable)
-import Data.FoldableWithIndex (class FoldableWithIndex, foldlWithIndex, foldrWithIndex, foldMapWithIndex)
+import Data.FoldableWithIndex (class FoldableWithIndex, foldlWithIndex, foldrWithIndex)
 import Data.FunctorWithIndex (class FunctorWithIndex, mapWithIndex)
 import Data.List (List(..), (:), length, nub)
 import Data.List.Lazy as LL
@@ -130,32 +130,14 @@ instance bindMap :: Ord k => Bind (Map k) where
   bind m f = mapMaybeWithKey (\k -> lookup k <<< f) m
 
 instance foldableMap :: Foldable (Map k) where
-  foldr f z m = case m of
-    Leaf -> z
-    Two ml _ v mr -> foldr f (f v (foldr f z mr)) ml
-    Three ml _ v1 mm _ v2 mr -> foldr f (f v1 (foldr f (f v2 (foldr f z mr)) mm)) ml
-  foldl f z m = case m of
-    Leaf -> z
-    Two ml _ v mr -> foldl f (foldl f (f z v) ml) mr
-    Three ml _ v1 mm _ v2 mr -> foldl f (foldl f (f (foldl f (f z v1) ml) v2) mm) mr
-  foldMap f m = case m of
-    Leaf -> mempty
-    Two ml _ v mr -> foldMap f ml <> f v <> foldMap f mr
-    Three ml _ v1 mm _ v2 mr -> foldMap f ml <> f v1 <> foldMap f mm <> f v2 <> foldMap f mr
+  foldl   f z m = foldl   f z (values m)
+  foldr   f z m = foldr   f z (values m)
+  foldMap f   m = foldMap f   (values m)
 
 instance foldableWithIndexMap :: FoldableWithIndex k (Map k) where
-  foldrWithIndex f z m = case m of
-    Leaf -> z
-    Two ml k v mr -> foldrWithIndex f (f k v (foldrWithIndex f z mr)) ml
-    Three ml k1 v1 mm k2 v2 mr -> foldrWithIndex f (f k1 v1 (foldrWithIndex f (f k2 v2 (foldrWithIndex f z mr)) mm)) ml
-  foldlWithIndex f z m = case m of
-    Leaf -> z
-    Two ml k v mr -> foldlWithIndex f (foldlWithIndex f (f k z v) ml) mr
-    Three ml k1 v1 mm k2 v2 mr -> foldlWithIndex f (foldlWithIndex f (f k2 (foldlWithIndex f (f k1 z v1) ml) v2) mm) mr
-  foldMapWithIndex f m = case m of
-    Leaf -> mempty
-    Two ml k v mr -> foldMapWithIndex f ml <> f k v <> foldMapWithIndex f mr
-    Three ml k1 v1 mm k2 v2 mr -> foldMapWithIndex f ml <> f k1 v1 <> foldMapWithIndex f mm <> f k2 v2 <> foldMapWithIndex f mr
+  foldlWithIndex f z m = foldl (uncurry <<< (flip f)) z $ asList $ toUnfoldable m
+  foldrWithIndex f z m = foldr (uncurry f) z $ asList $ toUnfoldable m
+  foldMapWithIndex f m = foldMap (uncurry f) $ asList $ toUnfoldable m
 
 instance traversableMap :: Traversable (Map k) where
   traverse _ Leaf = pure Leaf
@@ -189,6 +171,9 @@ instance traversableWithIndexMap :: TraversableWithIndex k (Map k) where
           <*> pure k2
           <*> f k2 v2
           <*> traverseWithIndex f right
+
+asList :: forall k v. List (Tuple k v) -> List (Tuple k v)
+asList = identity
 
 -- | Render a `Map` as a `String`
 showTree :: forall k v. Show k => Show v => Map k v -> String
@@ -664,9 +649,9 @@ values (Three left _ v1 mid _ v2 right) = values left <> pure v1 <> values mid <
 -- | Compute the union of two maps, using the specified function
 -- | to combine values for duplicate keys.
 unionWith :: forall k v. Ord k => (v -> v -> v) -> Map k v -> Map k v -> Map k v
-unionWith f m1 m2 = foldlWithIndex go m2 m1
+unionWith f m1 m2 = foldl go m2 (toUnfoldable m1 :: List (Tuple k v))
   where
-  go k m v = alter (Just <<< maybe v (f v)) k m
+  go m (Tuple k v) = alter (Just <<< maybe v (f v)) k m
 
 -- | Compute the union of two maps, preferring values from the first map in the case
 -- | of duplicate keys
