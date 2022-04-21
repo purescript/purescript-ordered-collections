@@ -80,41 +80,43 @@ benchMap = do
         natPairs = (\x -> Tuple x x) <$> nats
         bigMap = OldMap.fromFoldable $ natPairs
         bigMap' = M.fromFoldable $ natPairs
+        size = OldMap.size bigMap
+        size' = M.size bigMap'
 
-    log $ "OldMap.foldr big map (" <> show (OldMap.size bigMap) <> ")"
+    log $ "OldMap.foldr big map (" <> show size <> ")"
     benchWith 10 \_ -> F.foldr (+) 0 bigMap
 
-    log $ "M.foldr big map (" <> show (M.size bigMap') <> ")"
+    log $ "M.foldr big map (" <> show size' <> ")"
     benchWith 10 \_ -> F.foldr (+) 0 bigMap'
 
-    log $ "OldMap.foldl big map (" <> show (OldMap.size bigMap) <> ")"
+    log $ "OldMap.foldl big map (" <> show size <> ")"
     benchWith 10 \_ -> F.foldl (+) 0 bigMap
 
-    log $ "M.foldl big map (" <> show (M.size bigMap') <> ")"
+    log $ "M.foldl big map (" <> show size' <> ")"
     benchWith 10 \_ -> F.foldl (+) 0 bigMap'
 
-    log $ "OldMap.foldMap big map (" <> show (OldMap.size bigMap) <> ")"
+    log $ "OldMap.foldMap big map (" <> show size <> ")"
     benchWith 10 \_ -> F.foldMap Additive bigMap
 
-    log $ "M.foldMap big map (" <> show (M.size bigMap') <> ")"
+    log $ "M.foldMap big map (" <> show size' <> ")"
     benchWith 10 \_ -> F.foldMap Additive bigMap'
 
-    log $ "OldMap.foldrWithIndex big map (" <> show (OldMap.size bigMap) <> ")"
+    log $ "OldMap.foldrWithIndex big map (" <> show size <> ")"
     benchWith 10 \_ -> FI.foldrWithIndex (\k v a -> k + a + v) 0 bigMap
 
-    log $ "M.foldrWithIndex big map (" <> show (M.size bigMap') <> ")"
+    log $ "M.foldrWithIndex big map (" <> show size' <> ")"
     benchWith 10 \_ -> FI.foldrWithIndex (\k v a -> k + a + v) 0 bigMap'
 
-    log $ "OldMap.foldlWithIndex big map (" <> show (OldMap.size bigMap) <> ")"
+    log $ "OldMap.foldlWithIndex big map (" <> show size <> ")"
     benchWith 10 \_ -> FI.foldlWithIndex (\k a v -> k + a + v) 0 bigMap
 
-    log $ "M.foldlWithIndex big map (" <> show (M.size bigMap') <> ")"
+    log $ "M.foldlWithIndex big map (" <> show size' <> ")"
     benchWith 10 \_ -> FI.foldlWithIndex (\k a v -> k + a + v) 0 bigMap'
 
-    log $ "OldMap.foldMapWithIndex big map (" <> show (OldMap.size bigMap) <> ")"
+    log $ "OldMap.foldMapWithIndex big map (" <> show size <> ")"
     benchWith 10 \_ -> FI.foldMapWithIndex (\i v -> Additive i <> Additive v) bigMap
 
-    log $ "M.foldMapWithIndex big map (" <> show (M.size bigMap') <> ")"
+    log $ "M.foldMapWithIndex big map (" <> show size' <> ")"
     benchWith 10 \_ -> FI.foldMapWithIndex (\i v -> Additive i <> Additive v) bigMap'
 
   benchFromFoldable = do
