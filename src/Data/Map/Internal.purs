@@ -657,9 +657,7 @@ keys (Three left k1 _ mid k2 _ right) = keys left <> pure k1 <> keys mid <> pure
 
 -- | Get a list of the values contained in a map
 values :: forall k v. Map k v -> List v
-values Leaf = Nil
-values (Two left _ v right) = values left <> pure v <> values right
-values (Three left _ v1 mid _ v2 right) = values left <> pure v1 <> values mid <> pure v2 <> values right
+values = foldr Cons Nil
 
 -- | Compute the union of two maps, using the specified function
 -- | to combine values for duplicate keys.

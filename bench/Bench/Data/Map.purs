@@ -36,6 +36,12 @@ benchMap = do
   log "---------------"
   benchUnion
 
+  log ""
+
+  log "values"
+  log "---------------"
+  benchValues
+
   where
 
   benchUnion = do
@@ -55,6 +61,20 @@ benchMap = do
 
     log $ "M.union: big map (" <> show size' <> ")"
     benchWith 10 \_ -> M.union bigMap' bigMap2'
+
+  benchValues = do
+    let nats = L.range 0 999999
+        natPairs = (flip Tuple) unit <$> nats
+        bigMap = Map2a0bff.fromFoldable $ natPairs
+        bigMap' = M.fromFoldable $ natPairs
+        size = Map2a0bff.size bigMap
+        size' = M.size bigMap'
+
+    log $ "Map2a0bff.values: big map (" <> show size <> ")"
+    benchWith 10 \_ -> Map2a0bff.values bigMap
+
+    log $ "M.values: big map (" <> show size' <> ")"
+    benchWith 10 \_ -> M.values bigMap'
 
   benchSize = do
     let nats = L.range 0 999999
