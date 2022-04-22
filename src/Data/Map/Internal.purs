@@ -651,9 +651,7 @@ toUnfoldableUnordered m = unfoldr go (m : Nil) where
 
 -- | Get a list of the keys contained in a map
 keys :: forall k v. Map k v -> List k
-keys Leaf = Nil
-keys (Two left k _ right) = keys left <> pure k <> keys right
-keys (Three left k1 _ mid k2 _ right) = keys left <> pure k1 <> keys mid <> pure k2 <> keys right
+keys = foldrWithIndex (\k _ acc -> k : acc) Nil
 
 -- | Get a list of the values contained in a map
 values :: forall k v. Map k v -> List v

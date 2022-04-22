@@ -10,7 +10,7 @@ Breaking changes:
 New features:
 - Exported `Data.Map.Internal` data constructors (#52 by @natefaubion)
 - Add unbiased `Semigroup`/`Monoid` instances to `Map` with `Warn` (#54 by @JordanMartinez)
-- Improved speed of `foldr`, `foldl`, `foldMap`, `foldlWithIndex`, `foldrWithIndex`, `foldMapWithIndex`, `unionWith`, and `values` (#60 by @xgrommx, #61 by @JordanMartinez)
+- Improved speed of `foldr`, `foldl`, `foldMap`, `foldlWithIndex`, `foldrWithIndex`, `foldMapWithIndex`, `unionWith`, `keys` and `values` (#60 by @xgrommx, #61 and #62 by @JordanMartinez)
 
 Bugfixes:
 
