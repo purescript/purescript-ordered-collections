@@ -46,7 +46,7 @@ benchMap = do
 
   log "keys"
   log "---------------"
-  benchValues
+  benchKeys
 
   where
 
