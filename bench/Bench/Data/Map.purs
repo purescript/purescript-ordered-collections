@@ -11,7 +11,6 @@ import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Console (log)
 import Performance.Minibench (bench, benchWith)
-import Data.Monoid.Additive (Additive(..))
 
 benchMap :: Effect Unit
 benchMap = do
@@ -79,47 +78,47 @@ benchMap = do
 
   benchFoldable = do
     let nats = L.range 0 999999
-        natPairs = (\x -> Tuple x x) <$> nats
+        natPairs = (flip Tuple) unit <$> nats
         bigMap = Map2a0bff.fromFoldable $ natPairs
         bigMap' = M.fromFoldable $ natPairs
         size = Map2a0bff.size bigMap
         size' = M.size bigMap'
 
     log $ "Map2a0bff.foldr big map (" <> show size <> ")"
-    benchWith 10 \_ -> F.foldr (+) 0 bigMap
+    benchWith 10 \_ -> F.foldr (\_ _ -> unit) unit bigMap
 
     log $ "M.foldr big map (" <> show size' <> ")"
-    benchWith 10 \_ -> F.foldr (+) 0 bigMap'
+    benchWith 10 \_ -> F.foldr (\_ _ -> unit) unit bigMap'
 
     log $ "Map2a0bff.foldl big map (" <> show size <> ")"
-    benchWith 10 \_ -> F.foldl (+) 0 bigMap
+    benchWith 10 \_ -> F.foldl (\_ _ -> unit) unit bigMap
 
     log $ "M.foldl big map (" <> show size' <> ")"
-    benchWith 10 \_ -> F.foldl (+) 0 bigMap'
+    benchWith 10 \_ -> F.foldl (\_ _ -> unit) unit bigMap'
 
     log $ "Map2a0bff.foldMap big map (" <> show size <> ")"
-    benchWith 10 \_ -> F.foldMap Additive bigMap
+    benchWith 10 \_ -> F.foldMap (\_ -> unit) bigMap
 
     log $ "M.foldMap big map (" <> show size' <> ")"
-    benchWith 10 \_ -> F.foldMap Additive bigMap'
+    benchWith 10 \_ -> F.foldMap (\_ -> unit) bigMap'
 
     log $ "Map2a0bff.foldrWithIndex big map (" <> show size <> ")"
-    benchWith 10 \_ -> FI.foldrWithIndex (\k v a -> k + a + v) 0 bigMap
+    benchWith 10 \_ -> FI.foldrWithIndex (\_ _ _ -> unit) unit bigMap
 
     log $ "M.foldrWithIndex big map (" <> show size' <> ")"
-    benchWith 10 \_ -> FI.foldrWithIndex (\k v a -> k + a + v) 0 bigMap'
+    benchWith 10 \_ -> FI.foldrWithIndex (\_ _ _ -> unit) unit bigMap'
 
     log $ "Map2a0bff.foldlWithIndex big map (" <> show size <> ")"
-    benchWith 10 \_ -> FI.foldlWithIndex (\k a v -> k + a + v) 0 bigMap
+    benchWith 10 \_ -> FI.foldlWithIndex (\_ _ _ -> unit) unit bigMap
 
     log $ "M.foldlWithIndex big map (" <> show size' <> ")"
-    benchWith 10 \_ -> FI.foldlWithIndex (\k a v -> k + a + v) 0 bigMap'
+    benchWith 10 \_ -> FI.foldlWithIndex (\_ _ _ -> unit) unit bigMap'
 
     log $ "Map2a0bff.foldMapWithIndex big map (" <> show size <> ")"
-    benchWith 10 \_ -> FI.foldMapWithIndex (\i v -> Additive i <> Additive v) bigMap
+    benchWith 10 \_ -> FI.foldMapWithIndex (\_ _ -> unit) bigMap
 
     log $ "M.foldMapWithIndex big map (" <> show size' <> ")"
-    benchWith 10 \_ -> FI.foldMapWithIndex (\i v -> Additive i <> Additive v) bigMap'
+    benchWith 10 \_ -> FI.foldMapWithIndex (\_ _ -> unit) bigMap'
 
   benchFromFoldable = do
     let natStrs = show <$> L.range 0 99999
