@@ -40,6 +40,8 @@ import Control.Monad.ST as ST
 import Data.Array as Array
 import Data.Array.ST (STArray)
 import Data.Array.ST as STArray
+import Data.Debug (class Debug, debug)
+import Data.Debug.Type as D
 import Data.Eq (class Eq1)
 import Data.Foldable (class Foldable, foldMap, foldl, foldr)
 import Data.List (List)
@@ -79,6 +81,9 @@ instance ordSet :: Ord a => Ord (Set a) where
 
 instance ord1Set :: Ord1 Set where
   compare1 = compare
+
+instance debugSet :: Debug a => Debug (Set a) where
+  debug s = D.collection "Set" (map debug $ toUnfoldable s)
 
 instance monoidSet :: Ord a => Monoid (Set a) where
   mempty = empty

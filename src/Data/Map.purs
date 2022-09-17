@@ -8,6 +8,8 @@ import Prelude
 
 import Control.Alt (class Alt)
 import Control.Plus (class Plus)
+import Data.Debug (class Debug, debug)
+import Data.Debug.Type as D
 import Data.Eq (class Eq1)
 import Data.Foldable (class Foldable)
 import Data.FoldableWithIndex (class FoldableWithIndex)
@@ -44,6 +46,9 @@ derive newtype instance eq1SemigroupMap :: Eq k => Eq1 (SemigroupMap k)
 derive newtype instance eqSemigroupMap :: (Eq k, Eq v) => Eq (SemigroupMap k v)
 derive newtype instance ord1SemigroupMap :: Ord k => Ord1 (SemigroupMap k)
 derive newtype instance ordSemigroupMap :: (Ord k, Ord v) => Ord (SemigroupMap k v)
+instance (Debug k, Debug v) => Debug (SemigroupMap k v) where
+  debug (SemigroupMap m) = D.assoc "SemigroupMap"
+    $ map (\(Tuple k v) -> Tuple (debug k) (debug v)) $ toUnfoldable m
 derive instance newtypeSemigroupMap :: Newtype (SemigroupMap k v) _
 derive newtype instance showSemigroupMap :: (Show k, Show v) => Show (SemigroupMap k v)
 

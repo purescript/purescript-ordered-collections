@@ -27,6 +27,8 @@ module Data.Set.NonEmpty
 import Prelude hiding (map)
 
 import Data.Array.NonEmpty (NonEmptyArray)
+import Data.Debug (class Debug, debug)
+import Data.Debug.Type as D
 import Data.Eq (class Eq1)
 import Data.Foldable (class Foldable)
 import Data.List (List, (:))
@@ -48,6 +50,8 @@ derive newtype instance eqNonEmptySet :: Eq a => Eq (NonEmptySet a)
 derive newtype instance eq1NonEmptySet :: Eq1 NonEmptySet
 derive newtype instance ordNonEmptySet :: Ord a => Ord (NonEmptySet a)
 derive newtype instance ord1NonEmptySet :: Ord1 NonEmptySet
+instance Debug a => Debug (NonEmptySet a) where
+  debug (NonEmptySet s) = D.collection "NonEmptySet" (map debug $ toUnfoldable s)
 derive newtype instance semigroupNonEmptySet :: Ord a => Semigroup (NonEmptySet a)
 derive newtype instance foldableNonEmptySet :: Foldable NonEmptySet
 

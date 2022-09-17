@@ -51,6 +51,8 @@ import Prelude
 
 import Control.Alt (class Alt)
 import Control.Plus (class Plus)
+import Data.Debug (class Debug, debug)
+import Data.Debug.Type as D
 import Data.Eq (class Eq1)
 import Data.Foldable (foldl, foldMap, foldr, class Foldable)
 import Data.FoldableWithIndex (class FoldableWithIndex, foldlWithIndex, foldrWithIndex, foldMapWithIndex)
@@ -92,6 +94,11 @@ instance ordMap :: (Ord k, Ord v) => Ord (Map k v) where
 
 instance showMap :: (Show k, Show v) => Show (Map k v) where
   show m = "(fromFoldable " <> show (toAscArray m) <> ")"
+
+instance debugMap :: (Debug k, Debug v) => Debug (Map k v) where
+  debug m =
+    D.assoc "Map"
+      $ map (\(Tuple a b) -> Tuple (debug a) (debug b)) $ toUnfoldable m
 
 instance semigroupMap ::
   ( Warn (Text "Data.Map's `Semigroup` instance is now unbiased and differs from the left-biased instance defined in PureScript releases <= 0.13.x.")
