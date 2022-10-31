@@ -694,7 +694,7 @@ intersection = intersectionWith const
 -- | Difference of two maps. Return elements of the first map where
 -- | the keys do not exist in the second map.
 difference :: forall k v w. Ord k => Map k v -> Map k w -> Map k v
-difference m1 m2 = foldl (flip delete) m1 (keys m2)
+difference m1 m2 = foldlWithIndex (\k m _ -> delete k m) m1 m2
 
 -- | Test whether one map contains all of the keys and values contained in another map
 isSubmap :: forall k v. Ord k => Eq v => Map k v -> Map k v -> Boolean

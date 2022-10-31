@@ -48,6 +48,10 @@ benchMap = do
   log "---------------"
   benchKeys
 
+  log "difference"
+  log "---------------"
+  benchDifference
+
   where
 
   benchUnion = do
@@ -61,7 +65,7 @@ benchMap = do
         bigMap2' = M.fromFoldable $ natPairs2
         size = Map2a0bff.size bigMap
         size' = M.size bigMap'
-    
+
     log $ "Map2a0bff.union: big map (" <> show size <> ")"
     benchWith 10 \_ -> Map2a0bff.union bigMap bigMap2
 
@@ -170,3 +174,32 @@ benchMap = do
 
     log $ "fromFoldable (" <> show (L.length natPairs) <> ")"
     benchWith 10 \_ -> M.fromFoldable natPairs
+
+  benchDifference = do
+    let nats = L.range 0 999999
+        natPairs = (flip Tuple) unit <$> nats
+        singletonMap = M.singleton 0 unit
+        smallMap = Map2a0bff.fromFoldable $ L.take 100 natPairs
+        smallMap' = M.fromFoldable $ L.take 100 natPairs
+        midMap = Map2a0bff.fromFoldable $ L.take 10000 natPairs
+        midMap' = M.fromFoldable $ L.take 10000 natPairs
+        bigMap = Map2a0bff.fromFoldable $ natPairs
+        bigMap' = M.fromFoldable $ natPairs
+
+    log $ "Map2a0bff.difference: small map (" <> show (Map2a0bff.size smallMap) <> ")"
+    bench \_ -> Map2a0bff.difference smallMap midMap
+
+    log $ "M.difference: small map (" <> show (M.size smallMap') <> ")"
+    bench \_ -> M.difference smallMap' midMap'
+
+    log $ "Map2a0bff.difference: midsize map (" <> show (Map2a0bff.size midMap) <> ")"
+    benchWith 100 \_ -> Map2a0bff.difference midMap midMap
+
+    log $ "M.difference: midsize map (" <> show (M.size midMap') <> ")"
+    benchWith 100 \_ -> M.difference midMap' midMap'
+
+    log $ "Map2a0bff.difference: big map (" <> show (Map2a0bff.size bigMap) <> ")"
+    benchWith 10  \_ -> Map2a0bff.difference bigMap midMap
+
+    log $ "M.difference: big map (" <> show (M.size bigMap') <> ")"
+    benchWith 10  \_ -> M.difference bigMap' midMap'
