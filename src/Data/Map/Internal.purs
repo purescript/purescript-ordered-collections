@@ -348,22 +348,20 @@ lookupGT k = go
 -- | Returns the pair with the greatest key
 findMax :: forall k v. Map k v -> Maybe { key :: k, value :: v }
 findMax = case _ of
-  Leaf ->
-    Nothing
-  Node _ _ k v _ Leaf ->
-    Just { key: k, value: v }
-  Node _ _ _ _ _ r ->
-    findMax r
+  Leaf -> Nothing
+  Node _ _ k v  _ r ->
+    case r of
+      Leaf -> Just { key: k, value: v }
+      _ -> findMax r
 
 -- | Returns the pair with the least key
 findMin :: forall k v. Map k v -> Maybe { key :: k, value :: v }
 findMin = case _ of
-  Leaf ->
-    Nothing
-  Node _ _ k v Leaf _ ->
-    Just { key: k, value: v }
-  Node _ _ _ _ l _ ->
-    findMin l
+  Leaf -> Nothing
+  Node _ _ k v l _ ->
+    case l of
+      Leaf -> Just { key: k, value: v }
+      _ -> findMin l
 
 -- | Fold over the entries of a given map where the key is between a lower and
 -- | an upper bound. Passing `Nothing` as either the lower or upper bound
@@ -410,22 +408,6 @@ foldSubmapBy appendFn memptyValue kmin kmax f =
         Nothing, Nothing ->
           const true
 
-    -- We can take advantage of the invariants of the tree structure to reduce
-    -- the amount of work we need to do. For example, in the following tree:
-    --
-    --      [2][4]
-    --      / |  \
-    --     /  |   \
-    --   [1] [3] [5]
-    --
-    -- If we are given a lower bound of 3, we do not need to inspect the left
-    -- subtree, because we know that every entry in it is less than or equal to
-    -- 2. Similarly, if we are given a lower bound of 5, we do not need to
-    -- inspect the central subtree, because we know that every entry in it must
-    -- be less than or equal to 4.
-    --
-    -- Unfortunately we cannot extract `if cond then x else mempty` into a
-    -- function because of strictness.
     go = case _ of
       Leaf ->
         memptyValue
@@ -852,7 +834,7 @@ data MapIter k v
 instance (Eq k, Eq v) => Eq (MapIter k v) where
   eq = go
     where
-    go a b =case stepAsc a of
+    go a b = case stepAsc a of
       IterDone ->
         true
       IterNext k1 v1 a' ->
