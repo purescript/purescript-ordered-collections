@@ -12,6 +12,7 @@ Bugfixes:
 
 Other improvements:
 - Speed up `difference` by using 1 fold instead of 2 (#64 by @JordanMartinez)
+- Rewrite internals for performance improvements (#66 by @natefaubion)
 
 ## [v3.0.0](https://github.com/purescript/purescript-ordered-collections/releases/tag/v3.0.0) - 2022-04-27
 
