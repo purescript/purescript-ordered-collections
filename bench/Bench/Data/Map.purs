@@ -48,24 +48,30 @@ benchMap = do
   log "---------------"
   benchKeys
 
+  log ""
+
   log "difference"
   log "---------------"
   benchDifference
 
   where
+  nats = L.range 0 999999
+  nats2 = L.range 999999 1999999
+  natPairs = (flip Tuple) unit <$> nats
+  natPairs2 = (flip Tuple) unit <$> nats2
+  bigMap = Mapf149d5.fromFoldable $ natPairs
+  bigMap2 = Mapf149d5.fromFoldable $ natPairs2
+  bigMap' = M.fromFoldable $ natPairs
+  bigMap2' = M.fromFoldable $ natPairs2
+  singletonMap = M.singleton 0 unit
+  smallMap = Mapf149d5.fromFoldable $ L.take 100 natPairs
+  smallMap' = M.fromFoldable $ L.take 100 natPairs
+  midMap = Mapf149d5.fromFoldable $ L.take 10000 natPairs
+  midMap' = M.fromFoldable $ L.take 10000 natPairs
+  size = Mapf149d5.size bigMap
+  size' = M.size bigMap'
 
   benchUnion = do
-    let nats = L.range 0 999999
-        nats2 = L.range 999999 1999999
-        natPairs = (flip Tuple) unit <$> nats
-        natPairs2 = (flip Tuple) unit <$> nats2
-        bigMap = Mapf149d5.fromFoldable $ natPairs
-        bigMap2 = Mapf149d5.fromFoldable $ natPairs2
-        bigMap' = M.fromFoldable $ natPairs
-        bigMap2' = M.fromFoldable $ natPairs2
-        size = Mapf149d5.size bigMap
-        size' = M.size bigMap'
-
     log $ "Mapf149d5.union: big map (" <> show size <> ")"
     benchWith 10 \_ -> Mapf149d5.union bigMap bigMap2
 
@@ -73,13 +79,6 @@ benchMap = do
     benchWith 10 \_ -> M.union bigMap' bigMap2'
 
   benchValues = do
-    let nats = L.range 0 999999
-        natPairs = (flip Tuple) unit <$> nats
-        bigMap = Mapf149d5.fromFoldable $ natPairs
-        bigMap' = M.fromFoldable $ natPairs
-        size = Mapf149d5.size bigMap
-        size' = M.size bigMap'
-
     log $ "Mapf149d5.values: big map (" <> show size <> ")"
     benchWith 10 \_ -> Mapf149d5.values bigMap
 
@@ -87,13 +86,6 @@ benchMap = do
     benchWith 10 \_ -> M.values bigMap'
 
   benchKeys = do
-    let nats = L.range 0 999999
-        natPairs = (flip Tuple) unit <$> nats
-        bigMap = Mapf149d5.fromFoldable $ natPairs
-        bigMap' = M.fromFoldable $ natPairs
-        size = Mapf149d5.size bigMap
-        size' = M.size bigMap'
-
     log $ "Mapf149d5.keys: big map (" <> show size <> ")"
     benchWith 10 \_ -> Mapf149d5.keys bigMap
 
@@ -101,33 +93,19 @@ benchMap = do
     benchWith 10 \_ -> M.keys bigMap'
 
   benchSize = do
-    let nats = L.range 0 999999
-        natPairs = (flip Tuple) unit <$> nats
-        singletonMap = M.singleton 0 unit
-        smallMap = M.fromFoldable $ L.take 100 natPairs
-        midMap = M.fromFoldable $ L.take 10000 natPairs
-        bigMap = M.fromFoldable $ natPairs
-
     log "size: singleton map"
     bench \_ -> M.size singletonMap
 
-    log $ "size: small map (" <> show (M.size smallMap) <> ")"
-    bench \_ -> M.size smallMap
+    log $ "size: small map (" <> show (M.size smallMap') <> ")"
+    bench \_ -> M.size smallMap'
 
-    log $ "size: midsize map (" <> show (M.size midMap) <> ")"
-    benchWith 100 \_ -> M.size midMap
+    log $ "size: midsize map (" <> show (M.size midMap') <> ")"
+    benchWith 100 \_ -> M.size midMap'
 
-    log $ "size: big map (" <> show (M.size bigMap) <> ")"
-    benchWith 10  \_ -> M.size bigMap
+    log $ "size: big map (" <> show (M.size bigMap') <> ")"
+    benchWith 10  \_ -> M.size bigMap'
 
   benchFoldable = do
-    let nats = L.range 0 999999
-        natPairs = (flip Tuple) unit <$> nats
-        bigMap = Mapf149d5.fromFoldable $ natPairs
-        bigMap' = M.fromFoldable $ natPairs
-        size = Mapf149d5.size bigMap
-        size' = M.size bigMap'
-
     log $ "Mapf149d5.foldr big map (" <> show size <> ")"
     benchWith 10 \_ -> F.foldr (\_ _ -> unit) unit bigMap
 
@@ -165,9 +143,9 @@ benchMap = do
     benchWith 10 \_ -> FI.foldMapWithIndex (\_ _ -> unit) bigMap'
 
   benchFromFoldable = do
-    let natStrs = show <$> L.range 0 99999
-        natPairs = (flip Tuple) unit <$> natStrs
-        shortPairList = L.take 10000 natPairs
+    let natStrs = show <$> nats
+        natStrsPairs = (flip Tuple) unit <$> natStrs
+        shortPairList = L.take 10000 natStrsPairs
 
     log $ "fromFoldable (" <> show (L.length shortPairList) <> ")"
     benchWith 100 \_ -> M.fromFoldable shortPairList
@@ -176,15 +154,6 @@ benchMap = do
     benchWith 10 \_ -> M.fromFoldable natPairs
 
   benchDifference = do
-    let nats = L.range 0 999999
-        natPairs = (flip Tuple) unit <$> nats
-        smallMap = Mapf149d5.fromFoldable $ L.take 100 natPairs
-        smallMap' = M.fromFoldable $ L.take 100 natPairs
-        midMap = Mapf149d5.fromFoldable $ L.take 10000 natPairs
-        midMap' = M.fromFoldable $ L.take 10000 natPairs
-        bigMap = Mapf149d5.fromFoldable $ natPairs
-        bigMap' = M.fromFoldable $ natPairs
-
     log $ "Mapf149d5.difference: small map (" <> show (Mapf149d5.size smallMap) <> ")"
     bench \_ -> Mapf149d5.difference smallMap midMap
 
