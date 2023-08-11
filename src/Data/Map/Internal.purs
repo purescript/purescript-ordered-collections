@@ -859,12 +859,14 @@ instance (Ord k, Ord v) => Ord (MapIter k v) where
                 other
           other ->
             other
-      IterDone, _ ->
-        LT
+      IterDone, b'->
+        case b' of
+          IterDone ->
+            EQ
+          _ ->
+            LT
       _, IterDone ->
         GT
-      IterDone, IterDone ->
-        EQ
 
 -- | Converts a Map to a MapIter for iteration using a MapStepper.
 toMapIter :: forall k v. Map k v -> MapIter k v
