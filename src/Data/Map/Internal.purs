@@ -835,8 +835,6 @@ instance (Eq k, Eq v) => Eq (MapIter k v) where
   eq = go
     where
     go a b = case stepAsc a of
-      IterDone ->
-        true
       IterNext k1 v1 a' ->
         case stepAsc b of
           IterNext k2 v2 b'
@@ -844,17 +842,13 @@ instance (Eq k, Eq v) => Eq (MapIter k v) where
                 go a' b'
           _ ->
             false
+      IterDone ->
+        true
 
 instance (Ord k, Ord v) => Ord (MapIter k v) where
   compare = go
     where
     go a b = case stepAsc a, stepAsc b of
-      IterDone, IterDone ->
-        EQ
-      IterDone, _ ->
-        LT
-      _, IterDone ->
-        GT
       IterNext k1 v1 a', IterNext k2 v2 b' ->
         case compare k1 k2 of
           EQ ->
@@ -865,6 +859,12 @@ instance (Ord k, Ord v) => Ord (MapIter k v) where
                 other
           other ->
             other
+      IterDone, _ ->
+        LT
+      _, IterDone ->
+        GT
+      IterDone, IterDone ->
+        EQ
 
 -- | Converts a Map to a MapIter for iteration using a MapStepper.
 toMapIter :: forall k v. Map k v -> MapIter k v

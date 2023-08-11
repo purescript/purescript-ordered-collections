@@ -20,6 +20,12 @@ benchMap = do
 
   log ""
 
+  log "eq"
+  log "------------"
+  benchEq
+
+  log ""
+
   log "fromFoldable"
   log "------------"
   benchFromFoldable
@@ -171,3 +177,22 @@ benchMap = do
 
     log $ "M.difference: big map (" <> show (M.size bigMap') <> ")"
     benchWith 10  \_ -> M.difference bigMap' midMap'
+
+  benchEq = do
+    log $ "Mapf149d5.eq: small map (" <> show (Mapf149d5.size smallMap) <> ")"
+    bench \_ -> smallMap == smallMap
+
+    log $ "M.eq: small map (" <> show (M.size smallMap') <> ")"
+    bench \_ -> smallMap' == smallMap'
+
+    log $ "Mapf149d5.eq: midsize map (" <> show (Mapf149d5.size midMap) <> ")"
+    benchWith 100 \_ -> midMap == midMap
+
+    log $ "M.eq: midsize map (" <> show (M.size midMap') <> ")"
+    benchWith 100 \_ -> midMap' == midMap'
+
+    log $ "Mapf149d5.eq: big map (" <> show (Mapf149d5.size bigMap) <> ")"
+    benchWith 10  \_ -> bigMap == bigMap
+
+    log $ "M.eq: big map (" <> show (M.size bigMap') <> ")"
+    benchWith 10  \_ -> bigMap' == bigMap'
