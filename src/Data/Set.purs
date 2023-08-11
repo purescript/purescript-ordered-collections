@@ -1,7 +1,6 @@
--- | This module defines a type of sets as balanced 2-3 trees, based on
--- | <http://www.cs.princeton.edu/~dpw/courses/cos326-12/ass/2-3-trees.pdf>
--- |
--- | Qualified import is encouraged, so as to avoid name clashes with other modules.
+-- | This module defines a type of sets as height-balanced (AVL) binary trees.
+-- | Efficient set operations are implemented in terms of
+-- | <https://www.cs.cmu.edu/~guyb/papers/BFS16.pdf>
 
 module Data.Set
   ( Set
@@ -34,12 +33,6 @@ module Data.Set
 
 import Prelude hiding (map)
 
-import Control.Monad.Rec.Class (Step(..), tailRecM2)
-import Control.Monad.ST (ST)
-import Control.Monad.ST as ST
-import Data.Array as Array
-import Data.Array.ST (STArray)
-import Data.Array.ST as STArray
 import Data.Eq (class Eq1)
 import Data.Foldable (class Foldable, foldMap, foldl, foldr)
 import Data.List (List)
@@ -48,8 +41,8 @@ import Data.Map.Internal as M
 import Data.Maybe (Maybe(..), maybe)
 import Data.Ord (class Ord1)
 import Data.Unfoldable (class Unfoldable)
-import Partial.Unsafe (unsafePartial)
 import Prelude as Prelude
+import Safe.Coerce (coerce)
 
 -- | `Set a` represents a set of values of type `a`
 newtype Set a = Set (M.Map a Unit)
@@ -97,7 +90,7 @@ empty = Set M.empty
 
 -- | Test if a set is empty
 isEmpty :: forall a. Set a -> Boolean
-isEmpty (Set m) = M.isEmpty m
+isEmpty = coerce (M.isEmpty :: M.Map a Unit -> _)
 
 -- | Create a set with one element
 singleton :: forall a. a -> Set a
@@ -111,15 +104,15 @@ singleton a = Set (M.singleton a unit)
 map :: forall a b. Ord b => (a -> b) -> Set a -> Set b
 map f = foldl (\m a -> insert (f a) m) empty
 
--- | Check whether the underlying tree satisfies the 2-3 invariant
+-- | Check whether the underlying tree satisfies the height, size, and ordering invariants.
 -- |
 -- | This function is provided for internal use.
-checkValid :: forall a. Set a -> Boolean
-checkValid (Set m) = M.checkValid m
+checkValid :: forall a. Ord a => Set a -> Boolean
+checkValid = coerce (M.checkValid :: M.Map a Unit -> _)
 
 -- | Test if a value is a member of a set
 member :: forall a. Ord a => a -> Set a -> Boolean
-member a (Set m) = a `M.member` m
+member = coerce (M.member :: _ -> M.Map a Unit -> _)
 
 -- | Insert a value into a set
 insert :: forall a. Ord a => a -> Set a -> Set a
@@ -127,7 +120,7 @@ insert a (Set m) = Set (M.insert a unit m)
 
 -- | Delete a value from a set
 delete :: forall a. Ord a => a -> Set a -> Set a
-delete a (Set m) = Set (a `M.delete` m)
+delete = coerce (M.delete :: _ -> M.Map a Unit -> _)
 
 -- | Insert a value into a set if it is not already present, if it is present, delete it.
 toggle :: forall a. Ord a => a -> Set a -> Set a
@@ -135,7 +128,7 @@ toggle a (Set m) = Set (M.alter (maybe (Just unit) (\_ -> Nothing)) a m)
 
 -- | Find the size of a set
 size :: forall a. Set a -> Int
-size (Set m) = M.size m
+size = coerce (M.size :: M.Map a Unit -> _)
 
 findMin :: forall a. Set a -> Maybe a
 findMin (Set m) = Prelude.map _.key (M.findMin m)
@@ -145,9 +138,9 @@ findMax (Set m) = Prelude.map _.key (M.findMax m)
 
 -- | Form the union of two sets
 -- |
--- | Running time: `O(n * log(m))`
+-- | Running time: `O(n + m)`
 union :: forall a. Ord a => Set a -> Set a -> Set a
-union (Set m1) (Set m2) = Set (m1 `M.union` m2)
+union = coerce (M.union :: M.Map a Unit -> _ -> _)
 
 -- | Form the union of a collection of sets
 unions :: forall f a. Foldable f => Ord a => f (Set a) -> Set a
@@ -155,7 +148,7 @@ unions = foldl union empty
 
 -- | Form the set difference
 difference :: forall a. Ord a => Set a -> Set a -> Set a
-difference s1 s2 = foldl (flip delete) s1 (toList s2)
+difference = coerce (M.difference :: M.Map a Unit -> M.Map a Unit -> _)
 
 -- | True if and only if every element in the first set
 -- | is an element of the second set
@@ -165,34 +158,16 @@ subset s1 s2 = isEmpty $ s1 `difference` s2
 -- | True if and only if the first set is a subset of the second set
 -- | and the sets are not equal
 properSubset :: forall a. Ord a => Set a -> Set a -> Boolean
-properSubset s1 s2 = subset s1 s2 && (s1 /= s2)
+properSubset s1 s2 = size s1 /= size s2 && subset s1 s2
 
 -- | The set of elements which are in both the first and second set
 intersection :: forall a. Ord a => Set a -> Set a -> Set a
-intersection s1 s2 = fromFoldable (ST.run (STArray.new >>= intersect >>= STArray.unsafeFreeze))
-  where
-  toArray = Array.fromFoldable <<< toList
-  ls = toArray s1
-  rs = toArray s2
-  ll = Array.length ls
-  rl = Array.length rs
-  intersect :: forall r. STArray r a -> ST r (STArray r a)
-  intersect acc = tailRecM2 go 0 0
-    where
-    go = unsafePartial \l r ->
-      if l < ll && r < rl
-      then case compare (ls `Array.unsafeIndex` l) (rs `Array.unsafeIndex` r) of
-        EQ -> do
-          _ <- STArray.push (ls `Array.unsafeIndex` l) acc
-          pure $ Loop {a: l + 1, b: r + 1}
-        LT -> pure $ Loop {a: l + 1, b: r}
-        GT -> pure $ Loop {a: l, b: r + 1}
-      else pure $ Done acc
+intersection = coerce (M.intersection :: M.Map a Unit -> M.Map a Unit -> _)
 
 -- | Filter out those values of a set for which a predicate on the value fails
 -- | to hold.
 filter :: forall a. Ord a => (a -> Boolean) -> Set a -> Set a
-filter f (Set s) = Set (M.filterWithKey (\k _ -> f k) s)
+filter = coerce (M.filterKeys :: _ -> M.Map a Unit -> _)
 
 -- | Applies a function to each value in a set, discarding entries where the
 -- | function returns `Nothing`.

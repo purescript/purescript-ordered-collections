@@ -1,5 +1,6 @@
--- | This module defines a type of maps as balanced 2-3 trees, based on
--- | <http://www.cs.princeton.edu/~dpw/courses/cos326-12/ass/2-3-trees.pdf>
+-- | This module defines a type of maps as height-balanced (AVL) binary trees.
+-- | Efficient set operations are implemented in terms of
+-- | <https://www.cs.cmu.edu/~guyb/papers/BFS16.pdf>
 
 module Data.Map.Internal
   ( Map(..)
@@ -45,6 +46,20 @@ module Data.Map.Internal
   , mapMaybeWithKey
   , mapMaybe
   , catMaybes
+  , MapIter
+  , MapIterStep(..)
+  , toMapIter
+  , stepAsc
+  , stepAscCps
+  , stepDesc
+  , stepDescCps
+  , stepUnordered
+  , stepUnorderedCps
+  , unsafeNode
+  , unsafeBalancedNode
+  , unsafeJoinNodes
+  , unsafeSplit
+  , Split(..)
   ) where
 
 import Prelude
@@ -52,53 +67,64 @@ import Prelude
 import Control.Alt (class Alt)
 import Control.Plus (class Plus)
 import Data.Eq (class Eq1)
-import Data.Foldable (foldl, foldMap, foldr, class Foldable)
-import Data.FoldableWithIndex (class FoldableWithIndex, foldlWithIndex, foldrWithIndex, foldMapWithIndex)
-import Data.FunctorWithIndex (class FunctorWithIndex, mapWithIndex)
-import Data.List (List(..), (:), length, nub)
-import Data.List.Lazy as LL
-import Data.Maybe (Maybe(..), maybe, isJust, fromMaybe)
-import Data.Ord (class Ord1)
+import Data.Foldable (class Foldable, foldl, foldr)
+import Data.FoldableWithIndex (class FoldableWithIndex, foldlWithIndex, foldrWithIndex)
+import Data.Function.Uncurried (Fn2, Fn3, Fn4, Fn7, mkFn2, mkFn3, mkFn4, mkFn7, runFn2, runFn3, runFn4, runFn7)
+import Data.FunctorWithIndex (class FunctorWithIndex)
+import Data.List (List(..), (:))
+import Data.Maybe (Maybe(..))
+import Data.Ord (class Ord1, abs)
 import Data.Traversable (traverse, class Traversable)
-import Data.TraversableWithIndex (class TraversableWithIndex, traverseWithIndex)
-import Data.Tuple (Tuple(Tuple), snd, uncurry)
+import Data.TraversableWithIndex (class TraversableWithIndex)
+import Data.Tuple (Tuple(Tuple))
 import Data.Unfoldable (class Unfoldable, unfoldr)
-import Partial.Unsafe (unsafeCrashWith)
 import Prim.TypeError (class Warn, Text)
 
 -- | `Map k v` represents maps from keys of type `k` to values of type `v`.
-data Map k v
-  = Leaf
-  | Two (Map k v) k v (Map k v)
-  | Three (Map k v) k v (Map k v) k v (Map k v)
+data Map k v = Leaf | Node Int Int k v (Map k v) (Map k v)
 
 type role Map nominal representational
-
--- Internal use
-toAscArray :: forall k v. Map k v -> Array (Tuple k v)
-toAscArray = toUnfoldable
 
 instance eq1Map :: Eq k => Eq1 (Map k) where
   eq1 = eq
 
 instance eqMap :: (Eq k, Eq v) => Eq (Map k v) where
-  eq m1 m2 = toAscArray m1 == toAscArray m2
+  eq xs ys = case xs of
+    Leaf ->
+      case ys of
+        Leaf -> true
+        _ -> false
+    Node _ s1 _ _ _ _ ->
+      case ys of
+        Node _ s2 _ _ _ _
+          | s1 == s2 ->
+              toMapIter xs == toMapIter ys
+        _ ->
+          false
 
 instance ord1Map :: Ord k => Ord1 (Map k) where
   compare1 = compare
 
 instance ordMap :: (Ord k, Ord v) => Ord (Map k v) where
-  compare m1 m2 = compare (toAscArray m1) (toAscArray m2)
+  compare xs ys = case xs of
+    Leaf ->
+      case ys of
+        Leaf -> EQ
+        _ -> LT
+    _ ->
+      case ys of
+        Leaf -> GT
+        _ -> compare (toMapIter xs) (toMapIter ys)
 
 instance showMap :: (Show k, Show v) => Show (Map k v) where
-  show m = "(fromFoldable " <> show (toAscArray m) <> ")"
+  show as = "(fromFoldable " <> show (toUnfoldable as :: Array _) <> ")"
 
 instance semigroupMap ::
   ( Warn (Text "Data.Map's `Semigroup` instance is now unbiased and differs from the left-biased instance defined in PureScript releases <= 0.13.x.")
   , Ord k
   , Semigroup v
   ) => Semigroup (Map k v) where
-  append l r = unionWith append l r
+  append = unionWith append
 
 instance monoidSemigroupMap ::
   ( Warn (Text "Data.Map's `Semigroup` instance is now unbiased and differs from the left-biased instance defined in PureScript releases <= 0.13.x.")
@@ -114,14 +140,20 @@ instance plusMap :: Ord k => Plus (Map k) where
   empty = empty
 
 instance functorMap :: Functor (Map k) where
-  map _ Leaf = Leaf
-  map f (Two left k v right) = Two (map f left) k (f v) (map f right)
-  map f (Three left k1 v1 mid k2 v2 right) = Three (map f left) k1 (f v1) (map f mid) k2 (f v2) (map f right)
+  map f = go
+    where
+    go = case _ of
+      Leaf -> Leaf
+      Node h s k v l r ->
+        Node h s k (f v) (go l) (go r)
 
 instance functorWithIndexMap :: FunctorWithIndex k (Map k) where
-  mapWithIndex _ Leaf = Leaf
-  mapWithIndex f (Two left k v right) = Two (mapWithIndex f left) k (f k v) (mapWithIndex f right)
-  mapWithIndex f (Three left k1 v1 mid k2 v2 right) = Three (mapWithIndex f left) k1 (f k1 v1) (mapWithIndex f mid) k2 (f k2 v2) (mapWithIndex f right)
+  mapWithIndex f = go
+    where
+    go = case _ of
+      Leaf -> Leaf
+      Node h s k v l r ->
+        Node h s k (f k v) (go l) (go r)
 
 instance applyMap :: Ord k => Apply (Map k) where
   apply = intersectionWith identity
@@ -130,82 +162,78 @@ instance bindMap :: Ord k => Bind (Map k) where
   bind m f = mapMaybeWithKey (\k -> lookup k <<< f) m
 
 instance foldableMap :: Foldable (Map k) where
-  foldr f z m = case m of
-    Leaf -> z
-    Two ml _ v mr -> foldr f (f v (foldr f z mr)) ml
-    Three ml _ v1 mm _ v2 mr -> foldr f (f v1 (foldr f (f v2 (foldr f z mr)) mm)) ml
-  foldl f z m = case m of
-    Leaf -> z
-    Two ml _ v mr -> foldl f (f (foldl f z ml) v) mr
-    Three ml _ v1 mm _ v2 mr -> foldl f (f (foldl f (f (foldl f z ml) v1) mm) v2) mr
-  foldMap f m = case m of
-    Leaf -> mempty
-    Two ml _ v mr -> foldMap f ml <> f v <> foldMap f mr
-    Three ml _ v1 mm _ v2 mr -> foldMap f ml <> f v1 <> foldMap f mm <> f v2 <> foldMap f mr
+  foldr f z = \m -> runFn2 go m z
+    where
+    go = mkFn2 \m' z' -> case m' of
+      Leaf -> z'
+      Node _ _ _ v l r ->
+        runFn2 go l (f v (runFn2 go r z'))
+  foldl f z = \m -> runFn2 go z m
+    where
+    go = mkFn2 \z' m' -> case m' of
+      Leaf -> z'
+      Node _ _ _ v l r ->
+        runFn2 go (f (runFn2 go z' l) v) r
+  foldMap f = go
+    where
+    go = case _ of
+      Leaf -> mempty
+      Node _ _ _ v l r ->
+        go l <> f v <> go r
 
 instance foldableWithIndexMap :: FoldableWithIndex k (Map k) where
-  foldrWithIndex f z m = case m of
-    Leaf -> z
-    Two ml k v mr -> foldrWithIndex f (f k v (foldrWithIndex f z mr)) ml
-    Three ml k1 v1 mm k2 v2 mr -> foldrWithIndex f (f k1 v1 (foldrWithIndex f (f k2 v2 (foldrWithIndex f z mr)) mm)) ml
-  foldlWithIndex f z m = case m of
-    Leaf -> z
-    Two ml k v mr -> foldlWithIndex f (f k (foldlWithIndex f z ml) v) mr
-    Three ml k1 v1 mm k2 v2 mr -> foldlWithIndex f (f k2 (foldlWithIndex f (f k1 (foldlWithIndex f z ml) v1) mm) v2) mr
-  foldMapWithIndex f m = case m of
-    Leaf -> mempty
-    Two ml k v mr -> foldMapWithIndex f ml <> f k v <> foldMapWithIndex f mr
-    Three ml k1 v1 mm k2 v2 mr -> foldMapWithIndex f ml <> f k1 v1 <> foldMapWithIndex f mm <> f k2 v2 <> foldMapWithIndex f mr
+  foldrWithIndex f z = \m -> runFn2 go m z
+    where
+    go = mkFn2 \m' z' -> case m' of
+      Leaf -> z'
+      Node _ _ k v l r ->
+        runFn2 go l (f k v (runFn2 go r z'))
+  foldlWithIndex f z = \m -> runFn2 go z m
+    where
+    go = mkFn2 \z' m' -> case m' of
+      Leaf -> z'
+      Node _ _ k v l r ->
+        runFn2 go (f k (runFn2 go z' l) v) r
+  foldMapWithIndex f = go
+    where
+    go = case _ of
+      Leaf -> mempty
+      Node _ _ k v l r ->
+        go l <> f k v <> go r
 
 instance traversableMap :: Traversable (Map k) where
-  traverse _ Leaf = pure Leaf
-  traverse f (Two left k v right) =
-    Two <$> traverse f left
-        <*> pure k
-        <*> f v
-        <*> traverse f right
-  traverse f (Three left k1 v1 mid k2 v2 right) =
-    Three <$> traverse f left
-          <*> pure k1
-          <*> f v1
-          <*> traverse f mid
-          <*> pure k2
-          <*> f v2
-          <*> traverse f right
+  traverse f = go
+    where
+    go = case _ of
+      Leaf -> pure Leaf
+      Node h s k v l r ->
+        (\l' v' r' -> Node h s k v' l' r')
+          <$> go l
+          <*> f v
+          <*> go r
   sequence = traverse identity
 
 instance traversableWithIndexMap :: TraversableWithIndex k (Map k) where
-  traverseWithIndex _ Leaf = pure Leaf
-  traverseWithIndex f (Two left k v right) =
-    Two <$> traverseWithIndex f left
-        <*> pure k
-        <*> f k v
-        <*> traverseWithIndex f right
-  traverseWithIndex f (Three left k1 v1 mid k2 v2 right) =
-    Three <$> traverseWithIndex f left
-          <*> pure k1
-          <*> f k1 v1
-          <*> traverseWithIndex f mid
-          <*> pure k2
-          <*> f k2 v2
-          <*> traverseWithIndex f right
+  traverseWithIndex f = go
+    where
+    go = case _ of
+      Leaf -> pure Leaf
+      Node h s k v l r ->
+        (\l' v' r' -> Node h s k v' l' r')
+          <$> go l
+          <*> f k v
+          <*> go r
 
 -- | Render a `Map` as a `String`
 showTree :: forall k v. Show k => Show v => Map k v -> String
-showTree Leaf = "Leaf"
-showTree (Two left k v right) =
-  "Two (" <> showTree left <>
-  ") (" <> show k <>
-  ") (" <> show v <>
-  ") (" <> showTree right <> ")"
-showTree (Three left k1 v1 mid k2 v2 right) =
-  "Three (" <> showTree left <>
-  ") (" <> show k1 <>
-  ") (" <> show v1 <>
-  ") (" <> showTree mid <>
-  ") (" <> show k2 <>
-  ") (" <> show v2 <>
-  ") (" <> showTree right <> ")"
+showTree = go ""
+  where
+  go ind = case _ of
+    Leaf -> ind <> "Leaf"
+    Node h _ k v l r ->
+      (ind <> "[" <> show h  <> "] " <> show k <> " => " <> show v <> "\n")
+        <> (go (ind <> "    ") l <> "\n")
+        <> (go (ind <> "    ") r)
 
 -- | An empty map
 empty :: forall k v. Map k v
@@ -218,126 +246,122 @@ isEmpty _ = false
 
 -- | Create a map with one key/value pair
 singleton :: forall k v. k -> v -> Map k v
-singleton k v = Two Leaf k v Leaf
+singleton k v = Node 1 1 k v Leaf Leaf
 
--- | Check whether the underlying tree satisfies the 2-3 invariant
+-- | Check whether the underlying tree satisfies the height, size, and ordering invariants.
 -- |
 -- | This function is provided for internal use.
-checkValid :: forall k v. Map k v -> Boolean
-checkValid tree = length (nub (allHeights tree)) == one
+checkValid :: forall k v. Ord k => Map k v -> Boolean
+checkValid = go
   where
-  allHeights :: Map k v -> List Int
-  allHeights Leaf = pure zero
-  allHeights (Two left _ _ right) = map (\n -> n + one) (allHeights left <> allHeights right)
-  allHeights (Three left _ _ mid _ _ right) = map (\n -> n + one) (allHeights left <> allHeights mid <> allHeights right)
+  go = case _ of
+    Leaf -> true
+    Node h s k _ l r ->
+      case l of
+        Leaf ->
+          case r of
+            Leaf ->
+              true
+            Node rh rs rk _ _ _ ->
+              h == 2 && rh == 1 && s > rs && rk > k && go r
+        Node lh ls lk _ _ _ ->
+          case r of
+            Leaf ->
+              h == 2 && lh == 1 && s > ls && lk < k && go l
+            Node rh rs rk _ _ _ ->
+              h > rh && rk > k && h > lh && lk < k && abs (rh - lh) < 2 && rs + ls + 1 == s && go l && go r
 
 -- | Look up a value for the specified key
 lookup :: forall k v. Ord k => k -> Map k v -> Maybe v
 lookup k = go
   where
-    comp :: k -> k -> Ordering
-    comp = compare
-
-    go Leaf = Nothing
-    go (Two left k1 v right) =
-      case comp k k1 of
-        EQ -> Just v
-        LT -> go left
-        _  -> go right
-    go (Three left k1 v1 mid k2 v2 right) =
-      case comp k k1 of
-        EQ -> Just v1
-        c1 ->
-          case c1, comp k k2 of
-            _ , EQ -> Just v2
-            LT, _  -> go left
-            _ , GT -> go right
-            _ , _  -> go mid
-
+  go = case _ of
+    Leaf -> Nothing
+    Node _ _ mk mv ml mr ->
+      case compare k mk of
+        LT -> go ml
+        GT -> go mr
+        EQ -> Just mv
 
 -- | Look up a value for the specified key, or the greatest one less than it
 lookupLE :: forall k v. Ord k => k -> Map k v -> Maybe { key :: k, value :: v }
 lookupLE k = go
   where
-    comp :: k -> k -> Ordering
-    comp = compare
-
-    go Leaf = Nothing
-    go (Two left k1 v1 right) = case comp k k1 of
-      EQ -> Just { key: k1, value: v1 }
-      GT -> Just $ fromMaybe { key: k1, value: v1 } $ go right
-      LT -> go left
-    go (Three left k1 v1 mid k2 v2 right) = case comp k k2 of
-      EQ -> Just { key: k2, value: v2 }
-      GT -> Just $ fromMaybe { key: k2, value: v2 } $ go right
-      LT -> go $ Two left k1 v1 mid
+  go = case _ of
+    Leaf -> Nothing
+    Node _ _ mk mv ml mr ->
+      case compare k mk of
+        LT -> go ml
+        GT ->
+          case go mr of
+            Nothing -> Just { key: mk, value: mv }
+            other -> other
+        EQ ->
+          Just { key: mk, value: mv }
 
 -- | Look up a value for the greatest key less than the specified key
 lookupLT :: forall k v. Ord k => k -> Map k v -> Maybe { key :: k, value :: v }
 lookupLT k = go
   where
-    comp :: k -> k -> Ordering
-    comp = compare
-
-    go Leaf = Nothing
-    go (Two left k1 v1 right) = case comp k k1 of
-      EQ -> findMax left
-      GT -> Just $ fromMaybe { key: k1, value: v1 } $ go right
-      LT -> go left
-    go (Three left k1 v1 mid k2 v2 right) = case comp k k2 of
-      EQ -> findMax $ Two left k1 v1 mid
-      GT -> Just $ fromMaybe { key: k2, value: v2 } $ go right
-      LT -> go $ Two left k1 v1 mid
+  go = case _ of
+    Leaf -> Nothing
+    Node _ _ mk mv ml mr ->
+      case compare k mk of
+        LT -> go ml
+        GT ->
+          case go mr of
+            Nothing -> Just { key: mk, value: mv }
+            other -> other
+        EQ ->
+          findMax ml
 
 -- | Look up a value for the specified key, or the least one greater than it
 lookupGE :: forall k v. Ord k => k -> Map k v -> Maybe { key :: k, value :: v }
 lookupGE k = go
   where
-    comp :: k -> k -> Ordering
-    comp = compare
-
-    go Leaf = Nothing
-    go (Two left k1 v1 right) = case comp k k1 of
-      EQ -> Just { key: k1, value: v1 }
-      LT -> Just $ fromMaybe { key: k1, value: v1 } $ go left
-      GT -> go right
-    go (Three left k1 v1 mid k2 v2 right) = case comp k k1 of
-      EQ -> Just { key: k1, value: v1 }
-      LT -> Just $ fromMaybe { key: k1, value: v1 } $ go left
-      GT -> go $ Two mid k2 v2 right
+  go = case _ of
+    Leaf -> Nothing
+    Node _ _ mk mv ml mr ->
+      case compare k mk of
+        LT ->
+          case go ml of
+            Nothing -> Just { key: mk, value: mv }
+            other -> other
+        GT -> go mr
+        EQ -> Just { key: mk, value: mv }
 
 -- | Look up a value for the least key greater than the specified key
 lookupGT :: forall k v. Ord k => k -> Map k v -> Maybe { key :: k, value :: v }
 lookupGT k = go
   where
-    comp :: k -> k -> Ordering
-    comp = compare
-
-    go Leaf = Nothing
-    go (Two left k1 v1 right) = case comp k k1 of
-      EQ -> findMin right
-      LT -> Just $ fromMaybe { key: k1, value: v1 } $ go left
-      GT -> go right
-    go (Three left k1 v1 mid k2 v2 right) = case comp k k1 of
-      EQ -> findMin $ Two mid k2 v2 right
-      LT -> Just $ fromMaybe { key: k1, value: v1 } $ go left
-      GT -> go $ Two mid k2 v2 right
+  go = case _ of
+    Leaf -> Nothing
+    Node _ _ mk mv ml mr ->
+      case compare k mk of
+        LT ->
+          case go ml of
+            Nothing -> Just { key: mk, value: mv }
+            other -> other
+        GT -> go mr
+        EQ -> findMin mr
 
 -- | Returns the pair with the greatest key
 findMax :: forall k v. Map k v -> Maybe { key :: k, value :: v }
-findMax = go Nothing
-  where
-    go acc Leaf = acc
-    go _   (Two _ k1 v1 right) = go (Just { key: k1, value: v1 }) right
-    go _   (Three _ _ _ _ k2 v2 right) = go (Just { key: k2, value: v2 }) right
+findMax = case _ of
+  Leaf -> Nothing
+  Node _ _ k v  _ r ->
+    case r of
+      Leaf -> Just { key: k, value: v }
+      _ -> findMax r
 
 -- | Returns the pair with the least key
 findMin :: forall k v. Map k v -> Maybe { key :: k, value :: v }
-findMin = go Nothing
-  where
-    go acc Leaf = acc
-    go _   (Two left k1 v1 _) = go (Just { key: k1, value: v1 }) left
-    go _   (Three left k1 v1 _ _ _ _) = go (Just { key: k1, value: v1 }) left
+findMin = case _ of
+  Leaf -> Nothing
+  Node _ _ k v l _ ->
+    case l of
+      Leaf -> Just { key: k, value: v }
+      _ -> findMin l
 
 -- | Fold over the entries of a given map where the key is between a lower and
 -- | an upper bound. Passing `Nothing` as either the lower or upper bound
@@ -384,35 +408,13 @@ foldSubmapBy appendFn memptyValue kmin kmax f =
         Nothing, Nothing ->
           const true
 
-    -- We can take advantage of the invariants of the tree structure to reduce
-    -- the amount of work we need to do. For example, in the following tree:
-    --
-    --      [2][4]
-    --      / |  \
-    --     /  |   \
-    --   [1] [3] [5]
-    --
-    -- If we are given a lower bound of 3, we do not need to inspect the left
-    -- subtree, because we know that every entry in it is less than or equal to
-    -- 2. Similarly, if we are given a lower bound of 5, we do not need to
-    -- inspect the central subtree, because we know that every entry in it must
-    -- be less than or equal to 4.
-    --
-    -- Unfortunately we cannot extract `if cond then x else mempty` into a
-    -- function because of strictness.
     go = case _ of
       Leaf ->
         memptyValue
-      Two left k v right ->
-                   (if tooSmall k then memptyValue else go left)
+      Node _ _ k v left right ->
+                    (if tooSmall k then memptyValue else go left)
         `appendFn` (if inBounds k then f k v else memptyValue)
         `appendFn` (if tooLarge k then memptyValue else go right)
-      Three left k1 v1 mid k2 v2 right ->
-                   (if tooSmall k1 then memptyValue else go left)
-        `appendFn` (if inBounds k1 then f k1 v1 else memptyValue)
-        `appendFn` (if tooSmall k2 || tooLarge k1 then memptyValue else go mid)
-        `appendFn` (if inBounds k2 then f k2 v2 else memptyValue)
-        `appendFn` (if tooLarge k2 then memptyValue else go right)
   in
     go
 
@@ -447,159 +449,88 @@ submap kmin kmax = foldSubmapBy union empty kmin kmax singleton
 
 -- | Test if a key is a member of a map
 member :: forall k v. Ord k => k -> Map k v -> Boolean
-member k m = isJust (k `lookup` m)
-
-data TreeContext k v
-  = TwoLeft k v (Map k v)
-  | TwoRight (Map k v) k v
-  | ThreeLeft k v (Map k v) k v (Map k v)
-  | ThreeMiddle (Map k v) k v k v (Map k v)
-  | ThreeRight (Map k v) k v (Map k v) k v
-
-fromZipper :: forall k v. Ord k => List (TreeContext k v) -> Map k v -> Map k v
-fromZipper Nil tree = tree
-fromZipper (Cons x ctx) tree =
-  case x of
-    TwoLeft k1 v1 right -> fromZipper ctx (Two tree k1 v1 right)
-    TwoRight left k1 v1 -> fromZipper ctx (Two left k1 v1 tree)
-    ThreeLeft k1 v1 mid k2 v2 right -> fromZipper ctx (Three tree k1 v1 mid k2 v2 right)
-    ThreeMiddle left k1 v1 k2 v2 right -> fromZipper ctx (Three left k1 v1 tree k2 v2 right)
-    ThreeRight left k1 v1 mid k2 v2 -> fromZipper ctx (Three left k1 v1 mid k2 v2 tree)
-
-data KickUp k v = KickUp (Map k v) k v (Map k v)
+member k = go
+  where
+  go = case _ of
+    Leaf -> false
+    Node _ _ mk _ ml mr ->
+      case compare k mk of
+        LT -> go ml
+        GT -> go mr
+        EQ -> true
 
 -- | Insert or replace a key/value pair in a map
 insert :: forall k v. Ord k => k -> v -> Map k v -> Map k v
-insert k v = down Nil
+insert k v = go
   where
-  comp :: k -> k -> Ordering
-  comp = compare
-
-  down :: List (TreeContext k v) -> Map k v -> Map k v
-  down ctx Leaf = up ctx (KickUp Leaf k v Leaf)
-  down ctx (Two left k1 v1 right) =
-    case comp k k1 of
-      EQ -> fromZipper ctx (Two left k v right)
-      LT -> down (Cons (TwoLeft k1 v1 right) ctx) left
-      _  -> down (Cons (TwoRight left k1 v1) ctx) right
-  down ctx (Three left k1 v1 mid k2 v2 right) =
-    case comp k k1 of
-      EQ -> fromZipper ctx (Three left k v mid k2 v2 right)
-      c1 ->
-        case c1, comp k k2 of
-          _ , EQ -> fromZipper ctx (Three left k1 v1 mid k v right)
-          LT, _  -> down (Cons (ThreeLeft k1 v1 mid k2 v2 right) ctx) left
-          GT, LT -> down (Cons (ThreeMiddle left k1 v1 k2 v2 right) ctx) mid
-          _ , _  -> down (Cons (ThreeRight left k1 v1 mid k2 v2) ctx) right
-
-  up :: List (TreeContext k v) -> KickUp k v -> Map k v
-  up Nil (KickUp left k' v' right) = Two left k' v' right
-  up (Cons x ctx) kup =
-    case x, kup of
-      TwoLeft k1 v1 right, KickUp left k' v' mid -> fromZipper ctx (Three left k' v' mid k1 v1 right)
-      TwoRight left k1 v1, KickUp mid k' v' right -> fromZipper ctx (Three left k1 v1 mid k' v' right)
-      ThreeLeft k1 v1 c k2 v2 d, KickUp a k' v' b -> up ctx (KickUp (Two a k' v' b) k1 v1 (Two c k2 v2 d))
-      ThreeMiddle a k1 v1 k2 v2 d, KickUp b k' v' c -> up ctx (KickUp (Two a k1 v1 b) k' v' (Two c k2 v2 d))
-      ThreeRight a k1 v1 b k2 v2, KickUp c k' v' d -> up ctx (KickUp (Two a k1 v1 b) k2 v2 (Two c k' v' d))
+  go = case _ of
+    Leaf -> singleton k v
+    Node mh ms mk mv ml mr ->
+      case compare k mk of
+        LT -> runFn4 unsafeBalancedNode mk mv (go ml) mr
+        GT -> runFn4 unsafeBalancedNode mk mv ml (go mr)
+        EQ -> Node mh ms k v ml mr
 
 -- | Inserts or updates a value with the given function.
 -- |
 -- | The combining function is called with the existing value as the first
 -- | argument and the new value as the second argument.
 insertWith :: forall k v. Ord k => (v -> v -> v) -> k -> v -> Map k v -> Map k v
-insertWith f k v = alter (Just <<< maybe v (flip f v)) k
+insertWith app k v = go
+  where
+  go = case _ of
+    Leaf -> singleton k v
+    Node mh ms mk mv ml mr ->
+      case compare k mk of
+        LT -> runFn4 unsafeBalancedNode mk mv (go ml) mr
+        GT -> runFn4 unsafeBalancedNode mk mv ml (go mr)
+        EQ -> Node mh ms k (app mv v) ml mr
 
 -- | Delete a key and its corresponding value from a map.
 delete :: forall k v. Ord k => k -> Map k v -> Map k v
-delete k m = maybe m snd (pop k m)
+delete k = go
+  where
+  go = case _ of
+    Leaf -> Leaf
+    Node _ _ mk mv ml mr ->
+      case compare k mk of
+        LT -> runFn4 unsafeBalancedNode mk mv (go ml) mr
+        GT -> runFn4 unsafeBalancedNode mk mv ml (go mr)
+        EQ -> runFn2 unsafeJoinNodes ml mr
 
 -- | Delete a key and its corresponding value from a map, returning the value
 -- | as well as the subsequent map.
 pop :: forall k v. Ord k => k -> Map k v -> Maybe (Tuple v (Map k v))
-pop k = down Nil
-  where
-  comp :: k -> k -> Ordering
-  comp = compare
-
-  down :: List (TreeContext k v) -> Map k v -> Maybe (Tuple v (Map k v))
-  down ctx m = case m of
-    Leaf -> Nothing
-    Two left k1 v1 right ->
-      case right, comp k k1 of
-        Leaf, EQ -> Just (Tuple v1 (up ctx Leaf))
-        _   , EQ -> let max = maxNode left
-                     in Just (Tuple v1 (removeMaxNode (Cons (TwoLeft max.key max.value right) ctx) left))
-        _   , LT -> down (Cons (TwoLeft k1 v1 right) ctx) left
-        _   , _  -> down (Cons (TwoRight left k1 v1) ctx) right
-    Three left k1 v1 mid k2 v2 right ->
-      let leaves =
-            case left, mid, right of
-              Leaf, Leaf, Leaf -> true
-              _   , _   , _    -> false
-      in case leaves, comp k k1, comp k k2 of
-        true, EQ, _  -> Just (Tuple v1 (fromZipper ctx (Two Leaf k2 v2 Leaf)))
-        true, _ , EQ -> Just (Tuple v2 (fromZipper ctx (Two Leaf k1 v1 Leaf)))
-        _   , EQ, _  -> let max = maxNode left
-                         in Just (Tuple v1 (removeMaxNode (Cons (ThreeLeft max.key max.value mid k2 v2 right) ctx) left))
-        _   , _ , EQ -> let max = maxNode mid
-                         in Just (Tuple v2 (removeMaxNode (Cons (ThreeMiddle left k1 v1 max.key max.value right) ctx) mid))
-        _   , LT, _  -> down (Cons (ThreeLeft k1 v1 mid k2 v2 right) ctx) left
-        _   , GT, LT -> down (Cons (ThreeMiddle left k1 v1 k2 v2 right) ctx) mid
-        _   , _ , _  -> down (Cons (ThreeRight left k1 v1 mid k2 v2) ctx) right
-
-  up :: List (TreeContext k v) -> Map k v -> Map k v
-  up ctxs tree =
-    case ctxs of
-      Nil -> tree
-      Cons x ctx ->
-        case x, tree of
-          TwoLeft k1 v1 Leaf, Leaf -> fromZipper ctx (Two Leaf k1 v1 Leaf)
-          TwoRight Leaf k1 v1, Leaf -> fromZipper ctx (Two Leaf k1 v1 Leaf)
-          TwoLeft k1 v1 (Two m k2 v2 r), l -> up ctx (Three l k1 v1 m k2 v2 r)
-          TwoRight (Two l k1 v1 m) k2 v2, r -> up ctx (Three l k1 v1 m k2 v2 r)
-          TwoLeft k1 v1 (Three b k2 v2 c k3 v3 d), a -> fromZipper ctx (Two (Two a k1 v1 b) k2 v2 (Two c k3 v3 d))
-          TwoRight (Three a k1 v1 b k2 v2 c) k3 v3, d -> fromZipper ctx (Two (Two a k1 v1 b) k2 v2 (Two c k3 v3 d))
-          ThreeLeft k1 v1 Leaf k2 v2 Leaf, Leaf -> fromZipper ctx (Three Leaf k1 v1 Leaf k2 v2 Leaf)
-          ThreeMiddle Leaf k1 v1 k2 v2 Leaf, Leaf -> fromZipper ctx (Three Leaf k1 v1 Leaf k2 v2 Leaf)
-          ThreeRight Leaf k1 v1 Leaf k2 v2, Leaf -> fromZipper ctx (Three Leaf k1 v1 Leaf k2 v2 Leaf)
-          ThreeLeft k1 v1 (Two b k2 v2 c) k3 v3 d, a -> fromZipper ctx (Two (Three a k1 v1 b k2 v2 c) k3 v3 d)
-          ThreeMiddle (Two a k1 v1 b) k2 v2 k3 v3 d, c -> fromZipper ctx (Two (Three a k1 v1 b k2 v2 c) k3 v3 d)
-          ThreeMiddle a k1 v1 k2 v2 (Two c k3 v3 d), b -> fromZipper ctx (Two a k1 v1 (Three b k2 v2 c k3 v3 d))
-          ThreeRight a k1 v1 (Two b k2 v2 c) k3 v3, d -> fromZipper ctx (Two a k1 v1 (Three b k2 v2 c k3 v3 d))
-          ThreeLeft k1 v1 (Three b k2 v2 c k3 v3 d) k4 v4 e, a -> fromZipper ctx (Three (Two a k1 v1 b) k2 v2 (Two c k3 v3 d) k4 v4 e)
-          ThreeMiddle (Three a k1 v1 b k2 v2 c) k3 v3 k4 v4 e, d -> fromZipper ctx (Three (Two a k1 v1 b) k2 v2 (Two c k3 v3 d) k4 v4 e)
-          ThreeMiddle a k1 v1 k2 v2 (Three c k3 v3 d k4 v4 e), b -> fromZipper ctx (Three a k1 v1 (Two b k2 v2 c) k3 v3 (Two d k4 v4 e))
-          ThreeRight a k1 v1 (Three b k2 v2 c k3 v3 d) k4 v4, e -> fromZipper ctx (Three a k1 v1 (Two b k2 v2 c) k3 v3 (Two d k4 v4 e))
-          _, _ -> unsafeCrashWith "The impossible happened in partial function `up`."
-
-  maxNode :: Map k v -> { key :: k, value :: v }
-  maxNode m = case m of
-    Two _ k' v Leaf -> { key: k', value: v }
-    Two _ _ _ right -> maxNode right
-    Three _ _ _ _ k' v Leaf -> { key: k', value: v }
-    Three _ _ _ _ _ _ right -> maxNode right
-    _ -> unsafeCrashWith "The impossible happened in partial function `maxNode`."
-
-
-  removeMaxNode :: List (TreeContext k v) -> Map k v -> Map k v
-  removeMaxNode ctx m =
-    case m of
-      Two Leaf _ _ Leaf -> up ctx Leaf
-      Two left k' v right -> removeMaxNode (Cons (TwoRight left k' v) ctx) right
-      Three Leaf k1 v1 Leaf _ _ Leaf -> up (Cons (TwoRight Leaf k1 v1) ctx) Leaf
-      Three left k1 v1 mid k2 v2 right -> removeMaxNode (Cons (ThreeRight left k1 v1 mid k2 v2) ctx) right
-      _ -> unsafeCrashWith "The impossible happened in partial function `removeMaxNode`."
-
+pop k m = do
+  let (Split x l r) = runFn3 unsafeSplit compare k m
+  map (\a -> Tuple a (runFn2 unsafeJoinNodes l r)) x
 
 -- | Insert the value, delete a value, or update a value for a key in a map
 alter :: forall k v. Ord k => (Maybe v -> Maybe v) -> k -> Map k v -> Map k v
-alter f k m = case f (k `lookup` m) of
-  Nothing -> delete k m
-  Just v -> insert k v m
+alter f k m = do
+  let Split v l r = runFn3 unsafeSplit compare k m
+  case f v of
+    Nothing ->
+      runFn2 unsafeJoinNodes l r
+    Just v' ->
+      runFn4 unsafeBalancedNode k v' l r
 
 -- | Update or delete the value for a key in a map
 update :: forall k v. Ord k => (v -> Maybe v) -> k -> Map k v -> Map k v
-update f k m = alter (maybe Nothing f) k m
+update f k = go
+  where
+  go = case _ of
+    Leaf -> Leaf
+    Node mh ms mk mv ml mr ->
+      case compare k mk of
+        LT -> runFn4 unsafeBalancedNode mk mv (go ml) mr
+        GT -> runFn4 unsafeBalancedNode mk mv ml (go mr)
+        EQ ->
+          case f mv of
+            Nothing ->
+              runFn2 unsafeJoinNodes ml mr
+            Just mv' ->
+              Node mh ms mk mv' ml mr
 
 -- | Convert any foldable collection of key/value pairs to a map.
 -- | On key collision, later values take precedence over earlier ones.
@@ -609,9 +540,9 @@ fromFoldable = foldl (\m (Tuple k v) -> insert k v m) empty
 -- | Convert any foldable collection of key/value pairs to a map.
 -- | On key collision, the values are configurably combined.
 fromFoldableWith :: forall f k v. Ord k => Foldable f => (v -> v -> v) -> f (Tuple k v) -> Map k v
-fromFoldableWith f = foldl (\m (Tuple k v) -> alter (combine v) k m) empty where
-  combine v (Just v') = Just $ f v v'
-  combine v Nothing = Just v
+fromFoldableWith f = foldl (\m (Tuple k v) -> f' k v m) empty
+  where
+  f' = insertWith (flip f)
 
 -- | Convert any indexed foldable collection into a map.
 fromFoldableWithIndex :: forall f k v. Ord k => FoldableWithIndex k f => f v -> Map k v
@@ -619,18 +550,7 @@ fromFoldableWithIndex = foldlWithIndex (\k m v -> insert k v m) empty
 
 -- | Convert a map to an unfoldable structure of key/value pairs where the keys are in ascending order
 toUnfoldable :: forall f k v. Unfoldable f => Map k v -> f (Tuple k v)
-toUnfoldable m = unfoldr go (m : Nil) where
-  go Nil = Nothing
-  go (hd : tl) = case hd of
-    Leaf -> go tl
-    Two Leaf k v Leaf ->
-      Just $ Tuple (Tuple k v) tl
-    Two Leaf k v right ->
-      Just $ Tuple (Tuple k v) (right : tl)
-    Two left k v right ->
-      go $ left : singleton k v : right : tl
-    Three left k1 v1 mid k2 v2 right ->
-      go $ left : singleton k1 v1 : mid : singleton k2 v2 : right : tl
+toUnfoldable = unfoldr stepUnfoldr <<< toMapIter
 
 -- | Convert a map to an unfoldable structure of key/value pairs
 -- |
@@ -640,14 +560,7 @@ toUnfoldable m = unfoldr go (m : Nil) where
 -- |
 -- | If you are unsure, use `toUnfoldable`
 toUnfoldableUnordered :: forall f k v. Unfoldable f => Map k v -> f (Tuple k v)
-toUnfoldableUnordered m = unfoldr go (m : Nil) where
-  go Nil = Nothing
-  go (hd : tl) = case hd of
-    Leaf -> go tl
-    Two left k v right ->
-      Just $ Tuple (Tuple k v) (left : right : tl)
-    Three left k1 v1 mid k2 v2 right ->
-      Just $ Tuple (Tuple k1 v1) (singleton k2 v2 : left : mid : right : tl)
+toUnfoldableUnordered = unfoldr stepUnfoldrUnordered <<< toMapIter
 
 -- | Get a list of the keys contained in a map
 keys :: forall k v. Map k v -> List k
@@ -660,9 +573,7 @@ values = foldr Cons Nil
 -- | Compute the union of two maps, using the specified function
 -- | to combine values for duplicate keys.
 unionWith :: forall k v. Ord k => (v -> v -> v) -> Map k v -> Map k v -> Map k v
-unionWith f m1 m2 = foldlWithIndex go m2 m1
-  where
-  go k m v = alter (Just <<< maybe v (f v)) k m
+unionWith app m1 m2 = runFn4 unsafeUnionWith compare app m1 m2
 
 -- | Compute the union of two maps, preferring values from the first map in the case
 -- | of duplicate keys
@@ -676,15 +587,7 @@ unions = foldl union empty
 -- | Compute the intersection of two maps, using the specified function
 -- | to combine values for duplicate keys.
 intersectionWith :: forall k a b c. Ord k => (a -> b -> c) -> Map k a -> Map k b -> Map k c
-intersectionWith f m1 m2 = go (toUnfoldable m1 :: List (Tuple k a)) (toUnfoldable m2 :: List (Tuple k b)) empty
-  where
-  go Nil _ m = m
-  go _ Nil m = m
-  go as@(Cons (Tuple k1 a) ass) bs@(Cons (Tuple k2 b) bss) m =
-    case compare k1 k2 of
-         LT -> go ass bs m
-         EQ -> go ass bss (insert k1 (f a b) m)
-         GT -> go as bss m
+intersectionWith app m1 m2 = runFn4 unsafeIntersectionWith compare app m1 m2
 
 -- | Compute the intersection of two maps, preferring values from the first map in the case
 -- | of duplicate keys.
@@ -694,39 +597,70 @@ intersection = intersectionWith const
 -- | Difference of two maps. Return elements of the first map where
 -- | the keys do not exist in the second map.
 difference :: forall k v w. Ord k => Map k v -> Map k w -> Map k v
-difference m1 m2 = foldlWithIndex (\k m _ -> delete k m) m1 m2
+difference m1 m2 = runFn3 unsafeDifference compare m1 m2
 
 -- | Test whether one map contains all of the keys and values contained in another map
 isSubmap :: forall k v. Ord k => Eq v => Map k v -> Map k v -> Boolean
-isSubmap m1 m2 = LL.all f $ (toUnfoldable m1 :: LL.List (Tuple k v))
-  where f (Tuple k v) = lookup k m2 == Just v
+isSubmap = go
+  where
+  go m1 m2 = case m1 of
+    Leaf -> true
+    Node _ _ k v l r ->
+      case lookup k m2 of
+        Nothing -> false
+        Just v' ->
+          v == v' && go l m2 && go r m2
 
 -- | Calculate the number of key/value pairs in a map
 size :: forall k v. Map k v -> Int
-size Leaf = 0
-size (Two m1 _ _ m2) = 1 + size m1 + size m2
-size (Three m1 _ _ m2 _ _ m3) = 2 + size m1 + size m2 + size m3
+size = case _ of
+  Leaf -> 0
+  Node _ s _ _ _ _ -> s
 
 -- | Filter out those key/value pairs of a map for which a predicate
 -- | fails to hold.
 filterWithKey :: forall k v. Ord k => (k -> v -> Boolean) -> Map k v -> Map k v
-filterWithKey predicate =
-  fromFoldable <<< LL.filter (uncurry predicate) <<< toUnfoldable
+filterWithKey f = go
+  where
+  go = case _ of
+    Leaf -> Leaf
+    Node _ _ k v l r
+      | f k v ->
+          runFn4 unsafeBalancedNode k v (go l) (go r)
+      | otherwise ->
+          runFn2 unsafeJoinNodes (go l) (go r)
 
 -- | Filter out those key/value pairs of a map for which a predicate
 -- | on the key fails to hold.
 filterKeys :: forall k. Ord k => (k -> Boolean) -> Map k ~> Map k
-filterKeys predicate = filterWithKey $ const <<< predicate
+filterKeys f = go
+  where
+  go = case _ of
+    Leaf -> Leaf
+    Node _ _ k v l r
+      | f k ->
+          runFn4 unsafeBalancedNode k v (go l) (go r)
+      | otherwise ->
+          runFn2 unsafeJoinNodes (go l) (go r)
 
 -- | Filter out those key/value pairs of a map for which a predicate
 -- | on the value fails to hold.
 filter :: forall k v. Ord k => (v -> Boolean) -> Map k v -> Map k v
-filter predicate = filterWithKey $ const predicate
+filter = filterWithKey <<< const
 
 -- | Applies a function to each key/value pair in a map, discarding entries
 -- | where the function returns `Nothing`.
 mapMaybeWithKey :: forall k a b. Ord k => (k -> a -> Maybe b) -> Map k a -> Map k b
-mapMaybeWithKey f = foldrWithIndex (\k a acc → maybe acc (\b -> insert k b acc) (f k a)) empty
+mapMaybeWithKey f = go
+  where
+  go = case _ of
+    Leaf -> Leaf
+    Node _ _ k v l r ->
+      case f k v of
+        Just v' ->
+          runFn4 unsafeBalancedNode k v' (go l) (go r)
+        Nothing ->
+          runFn2 unsafeJoinNodes (go l) (go r)
 
 -- | Applies a function to each value in a map, discarding entries where the
 -- | function returns `Nothing`.
@@ -737,3 +671,296 @@ mapMaybe = mapMaybeWithKey <<< const
 -- | contain a value, creating a new map.
 catMaybes :: forall k v. Ord k => Map k (Maybe v) -> Map k v
 catMaybes = mapMaybe identity
+
+-- | Low-level Node constructor which maintains the height and size invariants
+-- | This is unsafe because it assumes the child Maps are ordered and balanced.
+unsafeNode :: forall k v. Fn4 k v (Map k v) (Map k v) (Map k v)
+unsafeNode = mkFn4 \k v l r -> case l of
+  Leaf ->
+    case r of
+      Leaf ->
+        Node 1 1 k v l r
+      Node h2 s2 _ _ _ _ ->
+        Node (1 + h2) (1 + s2) k v l r
+  Node h1 s1 _ _ _ _ ->
+    case r of
+      Leaf ->
+        Node (1 + h1) (1 + s1) k v l r
+      Node h2 s2 _ _ _ _ ->
+        Node (1 + if h1 > h2 then h1 else h2) (1 + s1 + s2) k v l r
+
+-- | Low-level Node constructor which maintains the balance invariants.
+-- | This is unsafe because it assumes the child Maps are ordered.
+unsafeBalancedNode :: forall k v. Fn4 k v (Map k v) (Map k v) (Map k v)
+unsafeBalancedNode = mkFn4 \k v l r -> case l of
+  Leaf ->
+    case r of
+      Leaf ->
+        singleton k v
+      Node rh _ rk rv rl rr
+        | rh > 1 ->
+            runFn7 rotateLeft k v l rk rv rl rr
+      _ ->
+        runFn4 unsafeNode k v l r
+  Node lh _ lk lv ll lr ->
+    case r of
+      Node rh _ rk rv rl rr
+        | rh > lh + 1 ->
+            runFn7 rotateLeft k v l rk rv rl rr
+        | lh > rh + 1 ->
+            runFn7 rotateRight k v lk lv ll lr r
+      Leaf
+        | lh > 1 ->
+            runFn7 rotateRight k v lk lv ll lr r
+      _ ->
+        runFn4 unsafeNode k v l r
+  where
+  rotateLeft :: Fn7 k v (Map k v) k v (Map k v) (Map k v) (Map k v)
+  rotateLeft = mkFn7 \k v l rk rv rl rr -> case rl of
+    Node lh _ lk lv ll lr
+      | lh > height rr ->
+          runFn4 unsafeNode lk lv (runFn4 unsafeNode k v l ll) (runFn4 unsafeNode rk rv lr rr)
+    _ ->
+      runFn4 unsafeNode rk rv (runFn4 unsafeNode k v l rl) rr
+
+  rotateRight :: Fn7 k v k v (Map k v) (Map k v) (Map k v) (Map k v)
+  rotateRight = mkFn7 \k v lk lv ll lr r -> case lr of
+    Node rh _ rk rv rl rr
+      | height ll <= rh ->
+          runFn4 unsafeNode rk rv (runFn4 unsafeNode lk lv ll rl) (runFn4 unsafeNode k v rr r)
+    _ ->
+      runFn4 unsafeNode lk lv ll (runFn4 unsafeNode k v lr r)
+
+  height :: Map k v -> Int
+  height = case _ of
+    Leaf -> 0
+    Node h _ _ _ _ _ -> h
+
+-- | Low-level Node constructor from two Maps.
+-- | This is unsafe because it assumes the child Maps are ordered.
+unsafeJoinNodes :: forall k v. Fn2 (Map k v) (Map k v) (Map k v)
+unsafeJoinNodes = mkFn2 case _, _ of
+  Leaf, b -> b
+  Node _ _ lk lv ll lr, r -> do
+    let (SplitLast k v l) = runFn4 unsafeSplitLast lk lv ll lr
+    runFn4 unsafeBalancedNode k v l r
+
+data SplitLast k v = SplitLast k v (Map k v)
+
+-- | Reassociates a node by moving the last node to the top.
+-- | This is unsafe because it assumes the key and child Maps are from
+-- | a balanced node.
+unsafeSplitLast :: forall k v. Fn4 k v (Map k v) (Map k v) (SplitLast k v)
+unsafeSplitLast = mkFn4 \k v l r -> case r of
+  Leaf -> SplitLast k v l
+  Node _ _ rk rv rl rr -> do
+    let (SplitLast k' v' t') = runFn4 unsafeSplitLast rk rv rl rr
+    SplitLast k' v' (runFn4 unsafeBalancedNode k v l t')
+
+data Split k v = Split (Maybe v) (Map k v) (Map k v)
+
+-- | Reassocates a Map so the given key is at the top.
+-- | This is unsafe because it assumes the ordering function is appropriate.
+unsafeSplit :: forall k v. Fn3 (k -> k -> Ordering) k (Map k v) (Split k v)
+unsafeSplit = mkFn3 \comp k m -> case m of
+  Leaf ->
+    Split Nothing Leaf Leaf
+  Node _ _ mk mv ml mr ->
+    case comp k mk of
+      LT -> do
+        let (Split b ll lr) = runFn3 unsafeSplit comp k ml
+        Split b ll (runFn4 unsafeBalancedNode mk mv lr mr)
+      GT -> do
+        let (Split b rl rr) = runFn3 unsafeSplit comp k mr
+        Split b (runFn4 unsafeBalancedNode mk mv ml rl) rr
+      EQ ->
+        Split (Just mv) ml mr
+
+-- | Low-level unionWith implementation.
+-- | This is unsafe because it assumes the ordering function is appropriate.
+unsafeUnionWith :: forall k v. Fn4 (k -> k -> Ordering) (v -> v -> v) (Map k v) (Map k v) (Map k v)
+unsafeUnionWith = mkFn4 \comp app l r -> case l, r of
+  Leaf, _ -> r
+  _, Leaf -> l
+  _, Node _ _ rk rv rl rr -> do
+    let (Split lv ll lr) = runFn3 unsafeSplit comp rk l
+    let l' = runFn4 unsafeUnionWith comp app ll rl
+    let r' = runFn4 unsafeUnionWith comp app lr rr
+    case lv of
+      Just lv' ->
+        runFn4 unsafeBalancedNode rk (app lv' rv) l' r'
+      Nothing ->
+        runFn4 unsafeBalancedNode rk rv l' r'
+
+-- | Low-level intersectionWith implementation.
+-- | This is unsafe because it assumes the ordering function is appropriate.
+unsafeIntersectionWith :: forall k a b c. Fn4 (k -> k -> Ordering) (a -> b -> c) (Map k a) (Map k b) (Map k c)
+unsafeIntersectionWith = mkFn4 \comp app l r -> case l, r of
+  Leaf, _ -> Leaf
+  _, Leaf -> Leaf
+  _, Node _ _ rk rv rl rr -> do
+    let (Split lv ll lr) = runFn3 unsafeSplit comp rk l
+    let l' = runFn4 unsafeIntersectionWith comp app ll rl
+    let r' = runFn4 unsafeIntersectionWith comp app lr rr
+    case lv of
+      Just lv' ->
+        runFn4 unsafeBalancedNode rk (app lv' rv) l' r'
+      Nothing ->
+        runFn2 unsafeJoinNodes l' r'
+
+-- | Low-level difference implementation.
+-- | This is unsafe because it assumes the ordering function is appropriate.
+unsafeDifference :: forall k v w. Fn3 (k -> k -> Ordering) (Map k v) (Map k w) (Map k v)
+unsafeDifference = mkFn3 \comp l r -> case l, r of
+  Leaf, _ -> Leaf
+  _, Leaf -> Leaf
+  _, Node _ _ rk _ rl rr -> do
+    let (Split _ ll lr) = runFn3 unsafeSplit comp rk l
+    let l' = runFn3 unsafeDifference comp ll rl
+    let r' = runFn3 unsafeDifference comp lr rr
+    runFn2 unsafeJoinNodes l' r'
+
+data MapIterStep k v
+  = IterDone
+  | IterNext k v (MapIter k v)
+
+-- | Low-level iteration state for a `Map`. Must be consumed using
+-- | an appropriate stepper.
+data MapIter k v
+  = IterLeaf
+  | IterEmit k v (MapIter k v)
+  | IterNode (Map k v) (MapIter k v)
+
+instance (Eq k, Eq v) => Eq (MapIter k v) where
+  eq = go
+    where
+    go a b = case stepAsc a of
+      IterNext k1 v1 a' ->
+        case stepAsc b of
+          IterNext k2 v2 b'
+            | k1 == k2 && v1 == v2 ->
+                go a' b'
+          _ ->
+            false
+      IterDone ->
+        true
+
+instance (Ord k, Ord v) => Ord (MapIter k v) where
+  compare = go
+    where
+    go a b = case stepAsc a, stepAsc b of
+      IterNext k1 v1 a', IterNext k2 v2 b' ->
+        case compare k1 k2 of
+          EQ ->
+            case compare v1 v2 of
+              EQ ->
+                go a' b'
+              other ->
+                other
+          other ->
+            other
+      IterDone, b'->
+        case b' of
+          IterDone ->
+            EQ
+          _ ->
+            LT
+      _, IterDone ->
+        GT
+
+-- | Converts a Map to a MapIter for iteration using a MapStepper.
+toMapIter :: forall k v. Map k v -> MapIter k v
+toMapIter = flip IterNode IterLeaf
+
+type MapStepper k v = MapIter k v -> MapIterStep k v
+
+type MapStepperCps k v = forall r. (Fn3 k v (MapIter k v) r) -> (Unit -> r) -> MapIter k v -> r
+
+-- | Steps a `MapIter` in ascending order.
+stepAsc :: forall k v. MapStepper k v
+stepAsc = stepAscCps (mkFn3 \k v next -> IterNext k v next) (const IterDone)
+
+-- | Steps a `MapIter` in descending order.
+stepDesc :: forall k v. MapStepper k v
+stepDesc = stepDescCps (mkFn3 \k v next -> IterNext k v next) (const IterDone)
+
+-- | Steps a `MapIter` in arbitrary order.
+stepUnordered :: forall k v. MapStepper k v
+stepUnordered = stepUnorderedCps (mkFn3 \k v next -> IterNext k v next) (const IterDone)
+
+-- | Steps a `MapIter` in ascending order with a CPS encoding.
+stepAscCps :: forall k v. MapStepperCps k v
+stepAscCps = stepWith iterMapL
+
+-- | Steps a `MapIter` in descending order with a CPS encoding.
+stepDescCps :: forall k v. MapStepperCps k v
+stepDescCps = stepWith iterMapR
+
+-- | Steps a `MapIter` in arbitrary order with a CPS encoding.
+stepUnorderedCps :: forall k v. MapStepperCps k v
+stepUnorderedCps = stepWith iterMapU
+
+stepUnfoldr :: forall k v. MapIter k v -> Maybe (Tuple (Tuple k v) (MapIter k v))
+stepUnfoldr = stepAscCps step (\_ -> Nothing)
+  where
+  step = mkFn3 \k v next ->
+    Just (Tuple (Tuple k v) next)
+
+stepUnfoldrUnordered :: forall k v. MapIter k v -> Maybe (Tuple (Tuple k v) (MapIter k v))
+stepUnfoldrUnordered = stepUnorderedCps step (\_ -> Nothing)
+  where
+  step = mkFn3 \k v next ->
+    Just (Tuple (Tuple k v) next)
+
+stepWith :: forall k v r. (MapIter k v -> Map k v -> MapIter k v) -> (Fn3 k v (MapIter k v) r) -> (Unit -> r) -> MapIter k v -> r
+stepWith f next done = go
+  where
+  go = case _ of
+    IterLeaf ->
+      done unit
+    IterEmit k v iter ->
+      runFn3 next k v iter
+    IterNode m iter ->
+      go (f iter m)
+
+iterMapL :: forall k v. MapIter k v -> Map k v -> MapIter k v
+iterMapL = go
+  where
+  go iter = case _ of
+    Leaf -> iter
+    Node _ _ k v l r ->
+      case r of
+        Leaf ->
+          go (IterEmit k v iter) l
+        _ ->
+          go (IterEmit k v (IterNode r iter)) l
+
+iterMapR :: forall k v. MapIter k v -> Map k v -> MapIter k v
+iterMapR = go
+  where
+  go iter = case _ of
+    Leaf -> iter
+    Node _ _ k v l r ->
+      case r of
+        Leaf ->
+          go (IterEmit k v iter) l
+        _ ->
+          go (IterEmit k v (IterNode l iter)) r
+
+iterMapU :: forall k v. MapIter k v -> Map k v -> MapIter k v
+iterMapU iter = case _ of
+  Leaf -> iter
+  Node _ _ k v l r ->
+    case l of
+      Leaf ->
+        case r of
+          Leaf ->
+            IterEmit k v iter
+          _ ->
+            IterEmit k v (IterNode r iter)
+      _ ->
+        case r of
+          Leaf ->
+            IterEmit k v (IterNode l iter)
+          _ ->
+            IterEmit k v (IterNode l (IterNode r iter))
