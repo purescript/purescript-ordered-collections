@@ -11,6 +11,10 @@ New features:
 Bugfixes:
 
 Other improvements:
+
+## [v3.1.0](https://github.com/purescript/purescript-ordered-collections/releases/tag/v3.1.0) - 2023-08-11
+
+Other improvements:
 - Speed up `difference` by using 1 fold instead of 2 (#64 by @JordanMartinez)
 - Rewrite internals for performance improvements (#66 by @natefaubion)
 
