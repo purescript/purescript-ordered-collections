@@ -10,9 +10,12 @@ New features:
 
 Bugfixes:
 
-- Fixes Map/Set difference, which was broken due to the internal rewrite (#68 @natefaubion)
-
 Other improvements:
+
+## [v3.1.1](https://github.com/purescript/purescript-ordered-collections/releases/tag/v3.1.1) - 2023-08-30
+
+Bugfixes:
+- Fixes Map/Set difference, which was broken due to the internal rewrite (#68 @natefaubion)
 
 ## [v3.1.0](https://github.com/purescript/purescript-ordered-collections/releases/tag/v3.1.0) - 2023-08-11
 
