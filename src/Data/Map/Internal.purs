@@ -813,7 +813,7 @@ unsafeIntersectionWith = mkFn4 \comp app l r -> case l, r of
 unsafeDifference :: forall k v w. Fn3 (k -> k -> Ordering) (Map k v) (Map k w) (Map k v)
 unsafeDifference = mkFn3 \comp l r -> case l, r of
   Leaf, _ -> Leaf
-  _, Leaf -> Leaf
+  _, Leaf -> l
   _, Node _ _ rk _ rl rr -> do
     let (Split _ ll lr) = runFn3 unsafeSplit comp rk l
     let l' = runFn3 unsafeDifference comp ll rl

@@ -251,8 +251,12 @@ mapTests = do
   log "difference"
   quickCheck $ \(TestMap m1) (TestMap m2) ->
     let d = M.difference (m1 :: M.Map SmallKey Int) (m2 :: M.Map SmallKey String)
-    in and (map (\k -> M.member k m1) (A.fromFoldable $ M.keys d)) &&
-       and (map (\k -> not $ M.member k d) (A.fromFoldable $ M.keys m2))
+    in
+      if M.size d == 0 then
+        and (map (\k -> M.member k m2) (A.fromFoldable $ M.keys m1))
+      else
+        and (map (\k -> M.member k m1) (A.fromFoldable $ M.keys d)) &&
+        and (map (\k -> not $ M.member k d) (A.fromFoldable $ M.keys m2))
 
   log "size"
   quickCheck $ \xs ->
