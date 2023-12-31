@@ -66,6 +66,7 @@ import Prelude
 
 import Control.Alt (class Alt)
 import Control.Plus (class Plus)
+import Data.Bifunctor (class Bifunctor)
 import Data.Eq (class Eq1)
 import Data.Foldable (class Foldable, foldl, foldr)
 import Data.FoldableWithIndex (class FoldableWithIndex, foldlWithIndex, foldrWithIndex)
@@ -154,6 +155,14 @@ instance functorWithIndexMap :: FunctorWithIndex k (Map k) where
       Leaf -> Leaf
       Node h s k v l r ->
         Node h s k (f k v) (go l) (go r)
+
+instance bifunctorMap :: Bifunctor Map where
+  bimap f g = go
+    where
+    go = case _ of
+      Leaf -> Leaf
+      Node h s k v l r ->
+        Node h s (f k) (g v) (go l) (go r)
 
 instance applyMap :: Ord k => Apply (Map k) where
   apply = intersectionWith identity
