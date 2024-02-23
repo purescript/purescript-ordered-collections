@@ -682,15 +682,7 @@ any predicate = go
   where
   go = case _ of
     Leaf                -> false
-    Node _ _ _ mv ml mr ->
-      if predicate mv then
-        true
-      else if go ml then
-        true
-      else if go mr then
-        true
-      else
-        false
+    Node _ _ _ mv ml mr -> predicate mv || go ml || go mr
 
 -- | Returns true if at least one map element satisfies the given predicate,
 -- | iterating the map only as necessary and stopping as soon as the predicate
@@ -700,15 +692,7 @@ anyWithKey predicate = go
   where
   go = case _ of
     Leaf                -> false
-    Node _ _ mk mv ml mr ->
-      if predicate mk mv then
-        true
-      else if go ml then
-        true
-      else if go mr then
-        true
-      else
-        false
+    Node _ _ mk mv ml mr -> predicate mk mv || go ml || go mr
 
 -- | Low-level Node constructor which maintains the height and size invariants
 -- | This is unsafe because it assumes the child Maps are ordered and balanced.
