@@ -46,6 +46,8 @@ module Data.Map.Internal
   , mapMaybeWithKey
   , mapMaybe
   , catMaybes
+  , any
+  , anyWithKey
   , MapIter
   , MapIterStep(..)
   , toMapIter
@@ -671,6 +673,42 @@ mapMaybe = mapMaybeWithKey <<< const
 -- | contain a value, creating a new map.
 catMaybes :: forall k v. Ord k => Map k (Maybe v) -> Map k v
 catMaybes = mapMaybe identity
+
+-- | Returns true if at least one map element satisfies the given predicateon the value,
+-- | iterating the map only as necessary and stopping as soon as the predicate
+-- | yields true.
+any :: forall k v. (v -> Boolean) -> Map k v -> Boolean
+any predicate = go
+  where
+  go = case _ of
+    Leaf                -> false
+    Node _ _ _ mv ml mr ->
+      if predicate mv then
+        true
+      else if go ml then
+        true
+      else if go mr then
+        true
+      else
+        false
+
+-- | Returns true if at least one map element satisfies the given predicate,
+-- | iterating the map only as necessary and stopping as soon as the predicate
+-- | yields true.
+anyWithKey :: forall k v. (k -> v -> Boolean) -> Map k v -> Boolean
+anyWithKey predicate = go
+  where
+  go = case _ of
+    Leaf                -> false
+    Node _ _ mk mv ml mr ->
+      if predicate mk mv then
+        true
+      else if go ml then
+        true
+      else if go mr then
+        true
+      else
+        false
 
 -- | Low-level Node constructor which maintains the height and size invariants
 -- | This is unsafe because it assumes the child Maps are ordered and balanced.
