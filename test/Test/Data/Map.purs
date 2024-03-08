@@ -19,6 +19,7 @@ import Data.Semigroup.Last (Last(..))
 import Data.Tuple (Tuple(..), fst, snd, uncurry)
 import Effect (Effect)
 import Effect.Console (log)
+import Effect.Exception (throwException, error)
 import Partial.Unsafe (unsafePartial)
 import Test.QuickCheck ((<?>), (<=?), (===), quickCheck, quickCheck')
 import Test.QuickCheck.Arbitrary (class Arbitrary, arbitrary)
@@ -457,6 +458,9 @@ mapTests = do
             Nothing -> true
             Just l  -> M.any (\x -> x == snd h) m && M.any (\x -> x == snd l) m
 
+  log "any with empty map"
+  when (M.any (\_ -> true) (M.empty :: M.Map SmallKey Int)) $ throwException $ error "Test any with empty map failed"
+
   log "anyWithKey"
   quickCheck $ \(TestMap m :: TestMap SmallKey Int) ->
     let list = M.toUnfoldable m
@@ -465,6 +469,10 @@ mapTests = do
           Just h  -> case last list of
             Nothing -> true
             Just l  -> M.anyWithKey (\k v -> k == fst h && v == snd h) m && M.anyWithKey (\k v -> k == fst l && v == snd l) m
+  
+  log "anyWithKey with empty map"
+  when (M.anyWithKey (\_ _ -> true) (M.empty :: M.Map SmallKey Int)) $ throwException $ error "Test anyWithKey with empty map failed"
+
 
 smSingleton :: forall key value. key -> value -> M.SemigroupMap key value
 smSingleton k v = M.SemigroupMap (M.singleton k v)
