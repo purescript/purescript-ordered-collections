@@ -7,8 +7,8 @@ Notable changes to this project are documented in this file. The format is based
 Breaking changes:
 
 New features:
-* Add `Data.Map.any`
-* Add `Data.Map.anyWithKey`
+* Add `Data.Map.any` (#73 by @flip111)
+* Add `Data.Map.anyWithKey` (#73 by @flip111)
 
 Bugfixes:
 
