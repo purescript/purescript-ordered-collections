@@ -365,10 +365,9 @@ findMin = case _ of
       Leaf -> Just { key: k, value: v }
       _ -> findMin l
 
--- | Fold over the entries of a given map where the key is between a lower and
--- | an upper bound. Passing `Nothing` as either the lower or upper bound
--- | argument means that the fold has no lower or upper bound, i.e. the fold
--- | starts from (or ends with) the smallest (or largest) key in the map.
+-- | Fold over the entries of a given map that have keys within a lower and
+-- | upper bound (including keys equal to those bounds). `Nothing` is treated as
+-- | unbounded.
 -- |
 -- | ```purescript
 -- | foldSubmap (Just 1) (Just 2) (\_ v -> [v])
@@ -420,10 +419,9 @@ foldSubmapBy appendFn memptyValue kmin kmax f =
   in
     go
 
--- | Returns a new map containing all entries of the given map which lie
--- | between a given lower and upper bound, treating `Nothing` as no bound i.e.
--- | including the smallest (or largest) key in the map, no matter how small
--- | (or large) it is. For example:
+-- | Returns a new map containing all entries with keys that fall within a
+-- | specified lower and upper bound (including keys equal to those bounds).
+-- | `Nothing` is treated as unbounded.
 -- |
 -- | ```purescript
 -- | submap (Just 1) (Just 2)
