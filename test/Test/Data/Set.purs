@@ -37,3 +37,8 @@ setTests = do
 
   log "toggle - deletes item"
   assert $ S.toggle 1 (S.fromFoldable [1]) == S.empty
+
+  log "range"
+  do let s1 = S.fromFoldable [1,2,3,4,5]
+         s2 = S.fromFoldable [2,3]
+     assert $ S.range (Just 2) (Just 3) s1 == s2

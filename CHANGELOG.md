@@ -7,6 +7,7 @@ Notable changes to this project are documented in this file. The format is based
 Breaking changes:
 
 New features:
+- Add `Data.Set.range` which works like `Data.Map.submap`.
 
 Bugfixes:
 

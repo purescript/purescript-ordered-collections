@@ -18,6 +18,7 @@ module Data.Set
   , size
   , findMin
   , findMax
+  , range
   , union
   , unions
   , difference
@@ -135,6 +136,11 @@ findMin (Set m) = Prelude.map _.key (M.findMin m)
 
 findMax :: forall a. Set a -> Maybe a
 findMax (Set m) = Prelude.map _.key (M.findMax m)
+
+-- | Return the set limited to the lower and upper bounds (including keys equal
+-- | to those bounds).
+range :: forall a. Ord a => Maybe a -> Maybe a -> Set a -> Set a
+range kmin kmax (Set m) = Set (M.submap kmin kmax m)
 
 -- | Form the union of two sets
 -- |
