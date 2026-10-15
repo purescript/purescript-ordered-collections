@@ -372,8 +372,10 @@ mapTests = do
     in
       (if (maybe true (\min -> min <= key) mmin &&
           maybe true (\max -> max >= key) mmax)
-        then M.lookup key m == M.lookup key m'
-        else (not (M.member key m')))
+        then
+          M.lookup key m == M.lookup key m'
+        else
+          (not (M.member key m')))
       <?> "m: " <> show m
        <> ", mmin: " <> show mmin
        <> ", mmax: " <> show mmax

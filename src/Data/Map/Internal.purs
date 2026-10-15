@@ -441,8 +441,10 @@ foldSubmapBy appendFn memptyValue kmin kmax f =
 -- |   let m' = submap mmin mmax m in
 -- |     if (maybe true (\min -> min <= key) mmin &&
 -- |         maybe true (\max -> max >= key) mmax)
--- |       then lookup key m == lookup key m'
--- |       else not (member key m')
+-- |       then
+-- |         lookup key m == lookup key m'
+-- |       else
+-- |         not (member key m')
 -- | ```
 submap :: forall k v. Ord k => Maybe k -> Maybe k -> Map k v -> Map k v
 submap kmin kmax = foldSubmapBy union empty kmin kmax singleton
