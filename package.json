@@ -1,16 +1,18 @@
 {
   "private": true,
   "scripts": {
-    "clean": "rimraf output && rimraf .pulp-cache",
-    "build": "pulp build -- --censor-lib --strict",
-    "test": "pulp build -I test -- --censor-lib && node --input-type=module --eval \"import * as Test_Main from './output/Test.Main/index.js';Test_Main.main()\"",
-    "bench:build": "purs compile \"bench/**/*.purs\" \"src/**/*.purs\" \"bower_components/*/src/**/*.purs\"",
+    "build": "spago build -p ordered-collections",
+    "test": "spago test -p ordered-collections",
+    "bench:build": "spago build -p ordered-collections-bench",
     "bench:run": "node --expose-gc --input-type=module --eval \"import * as Bench_Main from './output/Bench.Main/index.js';Bench_Main.main()\"",
-    "bench": "npm run bench:build && npm run bench:run"
+    "bench": "npm run bench:build && npm run bench:run",
+    "format": "purs-tidy format-in-place src test bench/src && oxfmt --write .",
+    "format:check": "purs-tidy check src test bench/src && oxfmt --check ."
   },
   "devDependencies": {
-    "pulp": "16.0.0-0",
-    "purescript-psa": "^0.8.2",
-    "rimraf": "^3.0.2"
+    "oxfmt": "^0.73.0",
+    "purescript": "^0.15.16",
+    "purs-tidy": "^0.11.1",
+    "spago": "^1.0.5"
   }
 }

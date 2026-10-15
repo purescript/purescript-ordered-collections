@@ -2,16 +2,14 @@
 
 Notable changes to this project are documented in this file. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
-
-Breaking changes:
+## [v3.3.0](https://github.com/purescript/purescript-ordered-collections/releases/tag/v3.3.0)
 
 New features:
-- Add `Data.Set.range` which works like `Data.Map.submap`.
-
-Bugfixes:
+- Add `Data.Set.range` which works like `Data.Map.submap` (#75 by @tomcumming).
 
 Other improvements:
+- Migrate from Bower/Pulp to Spago and update CI.
+- Improve documentation for Map functions with bounds parameters (#74 by @aranchelk).
 
 ## [v3.2.0](https://github.com/purescript/purescript-ordered-collections/releases/tag/v3.2.0) - 2024-03-19
 
