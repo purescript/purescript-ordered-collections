@@ -5,35 +5,42 @@ Notable changes to this project are documented in this file. The format is based
 ## [v3.3.0](https://github.com/purescript/purescript-ordered-collections/releases/tag/v3.3.0)
 
 New features:
+
 - Add `Data.Set.range` which works like `Data.Map.submap` (#75 by @tomcumming).
 
 Other improvements:
+
 - Migrate from Bower/Pulp to Spago and update CI.
 - Improve documentation for Map functions with bounds parameters (#74 by @aranchelk).
 
 ## [v3.2.0](https://github.com/purescript/purescript-ordered-collections/releases/tag/v3.2.0) - 2024-03-19
 
 New features:
-* Add `Data.Map.any` (#73 by @flip111)
-* Add `Data.Map.anyWithKey` (#73 by @flip111)
+
+- Add `Data.Map.any` (#73 by @flip111)
+- Add `Data.Map.anyWithKey` (#73 by @flip111)
 
 ## [v3.1.1](https://github.com/purescript/purescript-ordered-collections/releases/tag/v3.1.1) - 2023-08-30
 
 Bugfixes:
+
 - Fixes Map/Set difference, which was broken due to the internal rewrite (#68 @natefaubion)
 
 ## [v3.1.0](https://github.com/purescript/purescript-ordered-collections/releases/tag/v3.1.0) - 2023-08-11
 
 Other improvements:
+
 - Speed up `difference` by using 1 fold instead of 2 (#64 by @JordanMartinez)
 - Rewrite internals for performance improvements (#66 by @natefaubion)
 
 ## [v3.0.0](https://github.com/purescript/purescript-ordered-collections/releases/tag/v3.0.0) - 2022-04-27
 
 Breaking changes:
+
 - Update project and deps to PureScript v0.15.0 (#53 by @JordanMartinez)
 
 New features:
+
 - Exported `Data.Map.Internal` data constructors (#52 by @natefaubion)
 - Add unbiased `Semigroup`/`Monoid` instances to `Map` with `Warn` (#54 by @JordanMartinez)
 - Improved speed of `foldr`, `foldl`, `foldMap`, `foldlWithIndex`, `foldrWithIndex`, `foldMapWithIndex`, `unionWith`, `keys` and `values` (#60 by @xgrommx, #61 and #62 by @JordanMartinez)
@@ -43,21 +50,25 @@ Bugfixes:
 ## [v2.0.2](https://github.com/purescript/purescript-ordered-collections/releases/tag/v2.0.2) - 2021-08-27
 
 New features:
+
 - Added `toggle` for `Set`
 
 ## [v2.0.1](https://github.com/purescript/purescript-ordered-collections/releases/tag/v2.0.1) - 2021-04-20
 
 Other improvements:
+
 - Fix warnings revealed by v0.14.1 PureScript release (#48 by @JordanMartinez)
 
 ## [v2.0.0](https://github.com/purescript/purescript-ordered-collections/releases/tag/v2.0.0) - 2021-02-26
 
 Breaking changes:
+
 - Added support for PureScript 0.14 and dropped support for all previous versions (#35, #43)
 - Dropped `Map`'s `Semigroup` and `Monoid` instances and provide unbiased instances via a `SemigroupMap` newtype instead (#38)
 - Updated the `Show` instances for (non empty) sets (#46)
 
 New features:
+
 - Added `Apply` instance for `Map` (#16)
 - Added `Alt` and `Plus` instances for `Map` (#38)
 - Added `catMaybes` for maps and sets (#25)
@@ -66,6 +77,7 @@ New features:
 Bugfixes:
 
 Other improvements:
+
 - Migrated CI to GitHub Actions and updated installation instructions to use Spago (#37)
 - Tests: Add parens to account for changed precedence of `::` in PureScript 0.13 (#23)
 - Tests: Converted from `NonEmpty Array` to `NonEmptyArray` to accommodate QuickCheck changes (#42)
