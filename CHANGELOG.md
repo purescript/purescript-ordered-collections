@@ -10,7 +10,7 @@ New features:
 
 Other improvements:
 
-- Migrate from Bower/Pulp to Spago and update CI.
+- Migrate from Bower/Pulp to Spago and update CI (#76 by @thomashoneyman).
 - Improve documentation for Map functions with bounds parameters (#74 by @aranchelk).
 
 ## [v3.2.0](https://github.com/purescript/purescript-ordered-collections/releases/tag/v3.2.0) - 2024-03-19
