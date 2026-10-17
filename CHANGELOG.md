@@ -18,6 +18,10 @@ New features:
 
 - Add `Data.Set.range` which works like `Data.Map.submap` (#75 by @tomcumming).
 
+Bugfixes:
+
+- Preserve tree balance when joining subtrees of unequal heights, fixing unbalanced results from operations including `Data.Map.submap` and `Data.Set.range` (#78 by @thomashoneyman).
+
 Other improvements:
 
 - Migrate from Bower/Pulp to Spago and update CI (#76 by @thomashoneyman).
