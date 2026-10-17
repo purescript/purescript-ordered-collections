@@ -226,8 +226,9 @@ empty = Leaf
 
 -- | Test if a map is empty
 isEmpty :: forall k v. Map k v -> Boolean
-isEmpty Leaf = true
-isEmpty _ = false
+isEmpty = case _ of
+  Leaf -> true
+  _ -> false
 
 -- | Create a map with one key/value pair
 singleton :: forall k v. k -> v -> Map k v
@@ -369,7 +370,7 @@ foldSubmap :: forall k v m. Ord k => Monoid m => Maybe k -> Maybe k -> (k -> v -
 foldSubmap = foldSubmapBy (<>) mempty
 
 foldSubmapBy :: forall k v m. Ord k => (m -> m -> m) -> m -> Maybe k -> Maybe k -> (k -> v -> m) -> Map k v -> m
-foldSubmapBy appendFn memptyValue kmin kmax f =
+foldSubmapBy appendFn memptyValue kmin kmax f = do
   let
     tooSmall =
       case kmin of
@@ -425,8 +426,7 @@ foldSubmapBy appendFn memptyValue kmin kmax f =
           `appendFn` (if tooSmall k2 || tooLarge k1 then memptyValue else go mid)
           `appendFn` (if inBounds k2 then f k2 v2 else memptyValue)
           `appendFn` (if tooLarge k2 then memptyValue else go right)
-  in
-    go
+  go
 
 -- | Returns a new map containing all entries of the given map which lie
 -- | between a given lower and upper bound, treating `Nothing` as no bound i.e.
@@ -448,13 +448,16 @@ foldSubmapBy appendFn memptyValue kmin kmax f =
 -- |
 -- | ```purescript
 -- | Given any m :: Map k v, mmin :: Maybe k, mmax :: Maybe k, key :: k,
--- |   let m' = submap mmin mmax m in
--- |     if (maybe true (\min -> min <= key) mmin &&
--- |         maybe true (\max -> max >= key) mmax)
--- |       then
--- |         lookup key m == lookup key m'
--- |       else
--- |         not (member key m')
+-- |   do
+-- |     let
+-- |       m' = submap mmin mmax m
+-- |       inBounds =
+-- |         maybe true (\min -> min <= key) mmin &&
+-- |           maybe true (\max -> max >= key) mmax
+-- |     if inBounds then
+-- |       lookup key m == lookup key m'
+-- |     else
+-- |       not (member key m')
 -- | ```
 submap :: forall k v. Ord k => Maybe k -> Maybe k -> Map k v -> Map k v
 submap kmin kmax = foldSubmapBy union empty kmin kmax singleton
@@ -541,36 +544,32 @@ pop k = down Nil
     Two left k1 v1 right ->
       case right, comp k k1 of
         Leaf, EQ -> Just (Tuple v1 (up ctx Leaf))
-        _, EQ ->
+        _, EQ -> do
           let
             max = maxNode left
-          in
-            Just (Tuple v1 (removeMaxNode (Cons (TwoLeft max.key max.value right) ctx) left))
+          Just (Tuple v1 (removeMaxNode (Cons (TwoLeft max.key max.value right) ctx) left))
         _, LT -> down (Cons (TwoLeft k1 v1 right) ctx) left
         _, _ -> down (Cons (TwoRight left k1 v1) ctx) right
-    Three left k1 v1 mid k2 v2 right ->
+    Three left k1 v1 mid k2 v2 right -> do
       let
         leaves =
           case left, mid, right of
             Leaf, Leaf, Leaf -> true
             _, _, _ -> false
-      in
-        case leaves, comp k k1, comp k k2 of
-          true, EQ, _ -> Just (Tuple v1 (fromZipper ctx (Two Leaf k2 v2 Leaf)))
-          true, _, EQ -> Just (Tuple v2 (fromZipper ctx (Two Leaf k1 v1 Leaf)))
-          _, EQ, _ ->
-            let
-              max = maxNode left
-            in
-              Just (Tuple v1 (removeMaxNode (Cons (ThreeLeft max.key max.value mid k2 v2 right) ctx) left))
-          _, _, EQ ->
-            let
-              max = maxNode mid
-            in
-              Just (Tuple v2 (removeMaxNode (Cons (ThreeMiddle left k1 v1 max.key max.value right) ctx) mid))
-          _, LT, _ -> down (Cons (ThreeLeft k1 v1 mid k2 v2 right) ctx) left
-          _, GT, LT -> down (Cons (ThreeMiddle left k1 v1 k2 v2 right) ctx) mid
-          _, _, _ -> down (Cons (ThreeRight left k1 v1 mid k2 v2) ctx) right
+      case leaves, comp k k1, comp k k2 of
+        true, EQ, _ -> Just (Tuple v1 (fromZipper ctx (Two Leaf k2 v2 Leaf)))
+        true, _, EQ -> Just (Tuple v2 (fromZipper ctx (Two Leaf k1 v1 Leaf)))
+        _, EQ, _ -> do
+          let
+            max = maxNode left
+          Just (Tuple v1 (removeMaxNode (Cons (ThreeLeft max.key max.value mid k2 v2 right) ctx) left))
+        _, _, EQ -> do
+          let
+            max = maxNode mid
+          Just (Tuple v2 (removeMaxNode (Cons (ThreeMiddle left k1 v1 max.key max.value right) ctx) mid))
+        _, LT, _ -> down (Cons (ThreeLeft k1 v1 mid k2 v2 right) ctx) left
+        _, GT, LT -> down (Cons (ThreeMiddle left k1 v1 k2 v2 right) ctx) mid
+        _, _, _ -> down (Cons (ThreeRight left k1 v1 mid k2 v2) ctx) right
 
   up :: List (TreeContext k v) -> Map k v -> Map k v
   up ctxs tree =

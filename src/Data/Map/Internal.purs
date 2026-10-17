@@ -245,8 +245,9 @@ empty = Leaf
 
 -- | Test if a map is empty
 isEmpty :: forall k v. Map k v -> Boolean
-isEmpty Leaf = true
-isEmpty _ = false
+isEmpty = case _ of
+  Leaf -> true
+  _ -> false
 
 -- | Create a map with one key/value pair
 singleton :: forall k v. k -> v -> Map k v
@@ -384,7 +385,7 @@ foldSubmap :: forall k v m. Ord k => Monoid m => Maybe k -> Maybe k -> (k -> v -
 foldSubmap = foldSubmapBy (<>) mempty
 
 foldSubmapBy :: forall k v m. Ord k => (m -> m -> m) -> m -> Maybe k -> Maybe k -> (k -> v -> m) -> Map k v -> m
-foldSubmapBy appendFn memptyValue kmin kmax f =
+foldSubmapBy appendFn memptyValue kmin kmax f = do
   let
     tooSmall =
       case kmin of
@@ -418,8 +419,7 @@ foldSubmapBy appendFn memptyValue kmin kmax f =
         (if tooSmall k then memptyValue else go left)
           `appendFn` (if inBounds k then f k v else memptyValue)
           `appendFn` (if tooLarge k then memptyValue else go right)
-  in
-    go
+  go
 
 -- | Returns a new map containing all entries with keys that fall within a
 -- | specified lower and upper bound (including keys equal to those bounds).
@@ -440,13 +440,16 @@ foldSubmapBy appendFn memptyValue kmin kmax f =
 -- |
 -- | ```purescript
 -- | Given any m :: Map k v, mmin :: Maybe k, mmax :: Maybe k, key :: k,
--- |   let m' = submap mmin mmax m in
--- |     if (maybe true (\min -> min <= key) mmin &&
--- |         maybe true (\max -> max >= key) mmax)
--- |       then
--- |         lookup key m == lookup key m'
--- |       else
--- |         not (member key m')
+-- |   do
+-- |     let
+-- |       m' = submap mmin mmax m
+-- |       inBounds =
+-- |         maybe true (\min -> min <= key) mmin &&
+-- |           maybe true (\max -> max >= key) mmax
+-- |     if inBounds then
+-- |       lookup key m == lookup key m'
+-- |     else
+-- |       not (member key m')
 -- | ```
 submap :: forall k v. Ord k => Maybe k -> Maybe k -> Map k v -> Map k v
 submap kmin kmax = foldSubmapBy union empty kmin kmax singleton
