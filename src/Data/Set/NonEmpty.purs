@@ -34,7 +34,7 @@ import Data.List.NonEmpty (NonEmptyList)
 import Data.Map.Internal as Internal
 import Data.Maybe (Maybe(..), fromJust)
 import Data.Ord (class Ord1)
-import Data.Semigroup.Foldable (class Foldable1, foldMap1, foldr1, foldl1)
+import Data.Semigroup.Foldable (class Foldable1, foldMap1, foldl1, foldr1)
 import Data.Set (Set)
 import Data.Set as Set
 import Data.Tuple (Tuple(..))

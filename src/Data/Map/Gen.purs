@@ -4,14 +4,14 @@ import Prelude
 
 import Control.Monad.Gen (class MonadGen, chooseInt, resize, sized, unfoldable)
 import Control.Monad.Rec.Class (class MonadRec)
+import Data.List (List)
 import Data.Map (Map, fromFoldable)
 import Data.Tuple (Tuple(..))
-import Data.List (List)
 
 -- | Generates a `Map` using the specified key and value generators.
 genMap
   :: forall m a b
-  . MonadRec m
+   . MonadRec m
   => MonadGen m
   => Ord a
   => m a

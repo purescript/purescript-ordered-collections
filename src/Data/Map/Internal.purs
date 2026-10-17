@@ -76,7 +76,7 @@ import Data.FunctorWithIndex (class FunctorWithIndex)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
 import Data.Ord (class Ord1, abs)
-import Data.Traversable (traverse, class Traversable)
+import Data.Traversable (class Traversable, traverse)
 import Data.TraversableWithIndex (class TraversableWithIndex)
 import Data.Tuple (Tuple(Tuple))
 import Data.Unfoldable (class Unfoldable, unfoldr)
@@ -125,14 +125,16 @@ instance semigroupMap ::
   ( Warn (Text "Data.Map's `Semigroup` instance is now unbiased and differs from the left-biased instance defined in PureScript releases <= 0.13.x.")
   , Ord k
   , Semigroup v
-  ) => Semigroup (Map k v) where
+  ) =>
+  Semigroup (Map k v) where
   append = unionWith append
 
 instance monoidSemigroupMap ::
   ( Warn (Text "Data.Map's `Semigroup` instance is now unbiased and differs from the left-biased instance defined in PureScript releases <= 0.13.x.")
   , Ord k
   , Semigroup v
-  ) => Monoid (Map k v) where
+  ) =>
+  Monoid (Map k v) where
   mempty = empty
 
 instance altMap :: Ord k => Alt (Map k) where
@@ -233,7 +235,7 @@ showTree = go ""
   go ind = case _ of
     Leaf -> ind <> "Leaf"
     Node h _ k v l r ->
-      (ind <> "[" <> show h  <> "] " <> show k <> " => " <> show v <> "\n")
+      (ind <> "[" <> show h <> "] " <> show k <> " => " <> show v <> "\n")
         <> (go (ind <> "    ") l <> "\n")
         <> (go (ind <> "    ") r)
 
@@ -243,8 +245,9 @@ empty = Leaf
 
 -- | Test if a map is empty
 isEmpty :: forall k v. Map k v -> Boolean
-isEmpty Leaf = true
-isEmpty _ = false
+isEmpty = case _ of
+  Leaf -> true
+  _ -> false
 
 -- | Create a map with one key/value pair
 singleton :: forall k v. k -> v -> Map k v
@@ -351,7 +354,7 @@ lookupGT k = go
 findMax :: forall k v. Map k v -> Maybe { key :: k, value :: v }
 findMax = case _ of
   Leaf -> Nothing
-  Node _ _ k v  _ r ->
+  Node _ _ k v _ r ->
     case r of
       Leaf -> Just { key: k, value: v }
       _ -> findMax r
@@ -382,7 +385,7 @@ foldSubmap :: forall k v m. Ord k => Monoid m => Maybe k -> Maybe k -> (k -> v -
 foldSubmap = foldSubmapBy (<>) mempty
 
 foldSubmapBy :: forall k v m. Ord k => (m -> m -> m) -> m -> Maybe k -> Maybe k -> (k -> v -> m) -> Map k v -> m
-foldSubmapBy appendFn memptyValue kmin kmax f =
+foldSubmapBy appendFn memptyValue kmin kmax f = do
   let
     tooSmall =
       case kmin of
@@ -413,11 +416,10 @@ foldSubmapBy appendFn memptyValue kmin kmax f =
       Leaf ->
         memptyValue
       Node _ _ k v left right ->
-                    (if tooSmall k then memptyValue else go left)
-        `appendFn` (if inBounds k then f k v else memptyValue)
-        `appendFn` (if tooLarge k then memptyValue else go right)
-  in
-    go
+        (if tooSmall k then memptyValue else go left)
+          `appendFn` (if inBounds k then f k v else memptyValue)
+          `appendFn` (if tooLarge k then memptyValue else go right)
+  go
 
 -- | Returns a new map containing all entries with keys that fall within a
 -- | specified lower and upper bound (including keys equal to those bounds).
@@ -438,11 +440,16 @@ foldSubmapBy appendFn memptyValue kmin kmax f =
 -- |
 -- | ```purescript
 -- | Given any m :: Map k v, mmin :: Maybe k, mmax :: Maybe k, key :: k,
--- |   let m' = submap mmin mmax m in
--- |     if (maybe true (\min -> min <= key) mmin &&
--- |         maybe true (\max -> max >= key) mmax)
--- |       then lookup key m == lookup key m'
--- |       else not (member key m')
+-- |   do
+-- |     let
+-- |       m' = submap mmin mmax m
+-- |       inBounds =
+-- |         maybe true (\min -> min <= key) mmin &&
+-- |           maybe true (\max -> max >= key) mmax
+-- |     if inBounds then
+-- |       lookup key m == lookup key m'
+-- |     else
+-- |       not (member key m')
 -- | ```
 submap :: forall k v. Ord k => Maybe k -> Maybe k -> Map k v -> Map k v
 submap kmin kmax = foldSubmapBy union empty kmin kmax singleton
@@ -679,7 +686,7 @@ any :: forall k v. (v -> Boolean) -> Map k v -> Boolean
 any predicate = go
   where
   go = case _ of
-    Leaf                -> false
+    Leaf -> false
     Node _ _ _ mv ml mr -> predicate mv || go ml || go mr
 
 -- | Returns true if at least one map element satisfies the given predicate,
@@ -689,7 +696,7 @@ anyWithKey :: forall k v. (k -> v -> Boolean) -> Map k v -> Boolean
 anyWithKey predicate = go
   where
   go = case _ of
-    Leaf                -> false
+    Leaf -> false
     Node _ _ mk mv ml mr -> predicate mk mv || go ml || go mr
 
 -- | Low-level Node constructor which maintains the height and size invariants
@@ -879,7 +886,7 @@ instance (Ord k, Ord v) => Ord (MapIter k v) where
                 other
           other ->
             other
-      IterDone, b'->
+      IterDone, b' ->
         case b' of
           IterDone ->
             EQ

@@ -15,30 +15,37 @@ setTests = do
   assert $ S.fromFoldable [] == (S.empty :: Set Unit)
 
   log "fromFoldable - non empty"
-  do let set = S.fromFoldable [0, 1, 1, 2]
-     assert $ S.size set == 3
-     assert $ S.member 0 set
-     assert $ S.member 1 set
-     assert $ S.member 2 set
+  do
+    let set = S.fromFoldable [ 0, 1, 1, 2 ]
+    assert $ S.size set == 3
+    assert $ S.member 0 set
+    assert $ S.member 1 set
+    assert $ S.member 2 set
 
   log "intersection"
-  do let s1 = S.fromFoldable [1,2,3,4,5]
-         s2 = S.fromFoldable [2,4,6,8,10]
-         s3 = S.fromFoldable [2,4]
-     assert $ S.intersection s1 s2 == s3
+  do
+    let
+      s1 = S.fromFoldable [ 1, 2, 3, 4, 5 ]
+      s2 = S.fromFoldable [ 2, 4, 6, 8, 10 ]
+      s3 = S.fromFoldable [ 2, 4 ]
+    assert $ S.intersection s1 s2 == s3
 
   log "catMaybes - drops Nothing values"
-  do let s1 = S.fromFoldable [Just 1,Just 2,Just 3,Nothing]
-         s2 = S.fromFoldable [1,2,3]
-     assert $ S.catMaybes s1 == s2
+  do
+    let
+      s1 = S.fromFoldable [ Just 1, Just 2, Just 3, Nothing ]
+      s2 = S.fromFoldable [ 1, 2, 3 ]
+    assert $ S.catMaybes s1 == s2
 
   log "toggle - inserts item"
-  assert $ S.toggle 1 S.empty == S.fromFoldable [1]
+  assert $ S.toggle 1 S.empty == S.fromFoldable [ 1 ]
 
   log "toggle - deletes item"
-  assert $ S.toggle 1 (S.fromFoldable [1]) == S.empty
+  assert $ S.toggle 1 (S.fromFoldable [ 1 ]) == S.empty
 
   log "range"
-  do let s1 = S.fromFoldable [1,2,3,4,5]
-         s2 = S.fromFoldable [2,3]
-     assert $ S.range (Just 2) (Just 3) s1 == s2
+  do
+    let
+      s1 = S.fromFoldable [ 1, 2, 3, 4, 5 ]
+      s2 = S.fromFoldable [ 2, 3 ]
+    assert $ S.range (Just 2) (Just 3) s1 == s2

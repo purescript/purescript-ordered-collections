@@ -2,11 +2,11 @@ module Bench.Data.Map where
 
 import Prelude
 
-import Data.List as L
-import Data.Map as M
 import Bench.Data.Mapf149d5 as Mapf149d5
 import Data.Foldable as F
 import Data.FoldableWithIndex as FI
+import Data.List as L
+import Data.Map as M
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Console (log)
@@ -109,7 +109,7 @@ benchMap = do
     benchWith 100 \_ -> M.size midMap'
 
     log $ "size: big map (" <> show (M.size bigMap') <> ")"
-    benchWith 10  \_ -> M.size bigMap'
+    benchWith 10 \_ -> M.size bigMap'
 
   benchFoldable = do
     log $ "Mapf149d5.foldr big map (" <> show size <> ")"
@@ -149,9 +149,10 @@ benchMap = do
     benchWith 10 \_ -> FI.foldMapWithIndex (\_ _ -> unit) bigMap'
 
   benchFromFoldable = do
-    let natStrs = show <$> nats
-        natStrsPairs = (flip Tuple) unit <$> natStrs
-        shortPairList = L.take 10000 natStrsPairs
+    let
+      natStrs = show <$> nats
+      natStrsPairs = (flip Tuple) unit <$> natStrs
+      shortPairList = L.take 10000 natStrsPairs
 
     log $ "fromFoldable (" <> show (L.length shortPairList) <> ")"
     benchWith 100 \_ -> M.fromFoldable shortPairList
@@ -173,10 +174,10 @@ benchMap = do
     benchWith 100 \_ -> M.difference midMap' midMap'
 
     log $ "Mapf149d5.difference: big map (" <> show (Mapf149d5.size bigMap) <> ")"
-    benchWith 10  \_ -> Mapf149d5.difference bigMap midMap
+    benchWith 10 \_ -> Mapf149d5.difference bigMap midMap
 
     log $ "M.difference: big map (" <> show (M.size bigMap') <> ")"
-    benchWith 10  \_ -> M.difference bigMap' midMap'
+    benchWith 10 \_ -> M.difference bigMap' midMap'
 
   benchEq = do
     log $ "Mapf149d5.eq: small map (" <> show (Mapf149d5.size smallMap) <> ")"
@@ -192,7 +193,7 @@ benchMap = do
     benchWith 100 \_ -> midMap' == midMap'
 
     log $ "Mapf149d5.eq: big map (" <> show (Mapf149d5.size bigMap) <> ")"
-    benchWith 10  \_ -> bigMap == bigMap
+    benchWith 10 \_ -> bigMap == bigMap
 
     log $ "M.eq: big map (" <> show (M.size bigMap') <> ")"
-    benchWith 10  \_ -> bigMap' == bigMap'
+    benchWith 10 \_ -> bigMap' == bigMap'
