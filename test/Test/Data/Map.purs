@@ -370,6 +370,12 @@ mapTests = do
   quickCheck \(TestMap m :: TestMap SmallKey Int) ->
     M.submap Nothing Nothing m === m
 
+  log "submap preserves balance across unequal subtree heights"
+  let
+    rangeInput = M.fromFoldable (map (\k -> Tuple k (k * 3)) (A.range 0 5))
+    bounded = M.submap (Just 0) (Just 5) rangeInput
+  quickCheck' 1 (M.checkValid bounded && bounded == rangeInput)
+
   log "submap with lower bound"
   quickCheck' 1 $
     M.submap (Just B) Nothing (M.fromFoldable [ Tuple A 0, Tuple B 0 ])
@@ -389,14 +395,15 @@ mapTests = do
   quickCheck' 1000 \(TestMap m :: TestMap SmallKey Int) mmin mmax key -> do
     let
       m' = M.submap mmin mmax m
-    ( if
-        ( maybe true (\min -> min <= key) mmin &&
-            maybe true (\max -> max >= key) mmax
-        ) then
-        M.lookup key m == M.lookup key m'
-      else
-        (not (M.member key m'))
-    )
+      inRange =
+        maybe true (\min -> min <= key) mmin &&
+          maybe true (\max -> max >= key) mmax
+      matchesExpected =
+        if inRange then
+          M.lookup key m == M.lookup key m'
+        else
+          not (M.member key m')
+    M.checkValid m' && matchesExpected
       <?> "m: " <> show m <> ", mmin: " <> show mmin <> ", mmax: " <> show mmax <> ", key: " <> show key
 
   log "foldrWithIndex maintains order"
