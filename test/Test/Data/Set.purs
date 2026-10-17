@@ -49,3 +49,8 @@ setTests = do
       s1 = S.fromFoldable [ 1, 2, 3, 4, 5 ]
       s2 = S.fromFoldable [ 2, 3 ]
     assert $ S.range (Just 2) (Just 3) s1 == s2
+    let
+      s3 = S.fromFoldable [ 0, 1, 2, 3, 4, 5 ]
+      ranged = S.range (Just 0) (Just 5) s3
+    assert $ ranged == s3
+    assert $ S.checkValid ranged

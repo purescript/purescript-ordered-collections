@@ -717,31 +717,42 @@ unsafeNode = mkFn4 \k v l r -> case l of
         Node (1 + if h1 > h2 then h1 else h2) (1 + s1 + s2) k v l r
 
 -- | Low-level Node constructor which maintains the balance invariants.
--- | This is unsafe because it assumes the child Maps are ordered.
+-- | This is unsafe because it assumes the child Maps are ordered and balanced.
+-- | Their heights may differ arbitrarily: join along the taller tree's inner
+-- | spine before restoring balance on the way back up.
 unsafeBalancedNode :: forall k v. Fn4 k v (Map k v) (Map k v) (Map k v)
-unsafeBalancedNode = mkFn4 \k v l r -> case l of
-  Leaf ->
-    case r of
-      Leaf ->
-        singleton k v
-      Node rh _ rk rv rl rr
-        | rh > 1 ->
-            runFn7 rotateLeft k v l rk rv rl rr
-      _ ->
-        runFn4 unsafeNode k v l r
-  Node lh _ lk lv ll lr ->
-    case r of
-      Node rh _ rk rv rl rr
-        | rh > lh + 1 ->
-            runFn7 rotateLeft k v l rk rv rl rr
-        | lh > rh + 1 ->
-            runFn7 rotateRight k v lk lv ll lr r
-      Leaf
-        | lh > 1 ->
-            runFn7 rotateRight k v lk lv ll lr r
-      _ ->
-        runFn4 unsafeNode k v l r
+unsafeBalancedNode = mkFn4 \k v l r -> case l, r of
+  Node lh _ lk lv ll lr, _ | lh > height r + 1 ->
+    runFn4 balance lk lv ll (runFn4 unsafeBalancedNode k v lr r)
+  _, Node rh _ rk rv rl rr | rh > height l + 1 ->
+    runFn4 balance rk rv (runFn4 unsafeBalancedNode k v l rl) rr
+  _, _ ->
+    runFn4 unsafeNode k v l r
   where
+  balance :: Fn4 k v (Map k v) (Map k v) (Map k v)
+  balance = mkFn4 \k v l r -> case l of
+    Leaf ->
+      case r of
+        Leaf ->
+          singleton k v
+        Node rh _ rk rv rl rr
+          | rh > 1 ->
+              runFn7 rotateLeft k v l rk rv rl rr
+        _ ->
+          runFn4 unsafeNode k v l r
+    Node lh _ lk lv ll lr ->
+      case r of
+        Node rh _ rk rv rl rr
+          | rh > lh + 1 ->
+              runFn7 rotateLeft k v l rk rv rl rr
+          | lh > rh + 1 ->
+              runFn7 rotateRight k v lk lv ll lr r
+        Leaf
+          | lh > 1 ->
+              runFn7 rotateRight k v lk lv ll lr r
+        _ ->
+          runFn4 unsafeNode k v l r
+
   rotateLeft :: Fn7 k v (Map k v) k v (Map k v) (Map k v) (Map k v)
   rotateLeft = mkFn7 \k v l rk rv rl rr -> case rl of
     Node lh _ lk lv ll lr
