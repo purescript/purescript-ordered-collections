@@ -452,7 +452,42 @@ foldSubmapBy appendFn memptyValue kmin kmax f = do
 -- |       not (member key m')
 -- | ```
 submap :: forall k v. Ord k => Maybe k -> Maybe k -> Map k v -> Map k v
-submap kmin kmax = foldSubmapBy union empty kmin kmax singleton
+submap kmin kmax m = case kmin, kmax of
+  Just lo, Just hi | lo > hi -> Leaf
+  _, _ -> go m
+  where
+  -- Trimming only removes entries, so unchanged size means nothing was removed.
+  go tree = case tree of
+    Leaf -> Leaf
+    Node _ _ k v l r -> case kmin, kmax of
+      Just lo, _ | k < lo -> go r
+      _, Just hi | k > hi -> go l
+      _, _ -> do
+        let
+          l' = trimLower kmin l
+          r' = trimUpper kmax r
+        if size l' == size l && size r' == size r then tree
+        else runFn4 unsafeBalancedNode k v l' r'
+
+  trimLower Nothing tree = tree
+  trimLower bound@(Just lo) tree = case tree of
+    Leaf -> Leaf
+    Node _ _ k v l r
+      | k < lo -> trimLower bound r
+      | otherwise -> do
+          let l' = trimLower bound l
+          if size l' == size l then tree
+          else runFn4 unsafeBalancedNode k v l' r
+
+  trimUpper Nothing tree = tree
+  trimUpper bound@(Just hi) tree = case tree of
+    Leaf -> Leaf
+    Node _ _ k v l r
+      | k > hi -> trimUpper bound l
+      | otherwise -> do
+          let r' = trimUpper bound r
+          if size r' == size r then tree
+          else runFn4 unsafeBalancedNode k v l r'
 
 -- | Test if a key is a member of a map
 member :: forall k v. Ord k => k -> Map k v -> Boolean

@@ -370,11 +370,22 @@ mapTests = do
   quickCheck \(TestMap m :: TestMap SmallKey Int) ->
     M.submap Nothing Nothing m === m
 
-  log "submap preserves balance across unequal subtree heights"
+  log "submap preserves a six-entry map over its full range"
   let
     rangeInput = M.fromFoldable (map (\k -> Tuple k (k * 3)) (A.range 0 5))
     bounded = M.submap (Just 0) (Just 5) rangeInput
   quickCheck' 1 (M.checkValid bounded && bounded == rangeInput)
+
+  log "submap trims asymmetric boundaries and preserves all retained entries"
+  for_ [ A.range 0 63, A.reverse (A.range 0 63) ] \keys -> do
+    let input = M.fromFoldable (map (\k -> Tuple k (3 * k + 1)) keys)
+    for_ [ Nothing, Just (-1), Just 0, Just 1, Just 17, Just 48, Just 63, Just 64 ] \lo ->
+      for_ [ Nothing, Just (-1), Just 0, Just 16, Just 31, Just 62, Just 63, Just 64 ] \hi -> do
+        let
+          result = M.submap lo hi input
+          inRange k = maybe true (\min -> min <= k) lo && maybe true (\max -> k <= max) hi
+          expected = map (\k -> Tuple k (3 * k + 1)) (A.filter inRange (A.range 0 63))
+        quickCheck' 1 (M.checkValid result && M.toUnfoldable result == expected)
 
   log "submap with lower bound"
   quickCheck' 1 $
