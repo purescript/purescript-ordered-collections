@@ -12,6 +12,10 @@ Bugfixes:
 
 Other improvements:
 
+- Add focused Minibench workloads with correctness validation for construction, joins, ranges, and subsequent access (#79).
+- Trim `Map.submap` and `Set.range` at their boundaries instead of rebuilding retained entries (#79).
+- Use insertion-specific balancing and singleton-union insertion paths without changing general tree joins (#79).
+
 ## [v3.3.0](https://github.com/purescript/purescript-ordered-collections/releases/tag/v3.3.0) - 2026-10-17
 
 New features:

@@ -30,6 +30,14 @@ newtype TestMap k v = TestMap (M.Map k v)
 instance arbTestMap :: (Eq k, Ord k, Arbitrary k, Arbitrary v) => Arbitrary (TestMap k v) where
   arbitrary = TestMap <$> genMap arbitrary arbitrary
 
+newtype TaggedKey = TaggedKey { key :: Int, tag :: String }
+
+instance eqTaggedKey :: Eq TaggedKey where
+  eq (TaggedKey a) (TaggedKey b) = a.key == b.key
+
+instance ordTaggedKey :: Ord TaggedKey where
+  compare (TaggedKey a) (TaggedKey b) = compare a.key b.key
+
 data SmallKey = A | B | C | D | E | F | G | H | I | J
 
 derive instance eqSmallKey :: Eq SmallKey
@@ -236,6 +244,25 @@ mapTests = do
       Just v -> Just v == v2
       Nothing -> not (in1 || in2)
 
+  log "Singleton unions preserve balance, persistence, and combining argument order"
+  for_ [ A.range 0 127, A.reverse (A.range 0 127), map (\k -> (k * 37) `mod` 128) (A.range 0 127) ] \ks ->
+    for_ [ false, true ] \singletonLeft -> do
+      let
+        join = if singletonLeft then flip (M.unionWith (-)) else M.unionWith (-)
+        initial = foldl (\m k -> join m (M.singleton k (3 * k + 10))) M.empty ks
+        combined = foldl (\m k -> join m (M.singleton k (k + 1))) initial ks
+        expected = map (\k -> Tuple k (if singletonLeft then -2 * k - 9 else 2 * k + 9)) (A.range 0 127)
+      quickCheck' 1 (M.checkValid combined && M.toUnfoldable combined == expected)
+      quickCheck' 1 (M.checkValid initial && M.toUnfoldable initial == map (\k -> Tuple k (3 * k + 10)) (A.range 0 127))
+
+  log "Singleton unions keep the right-hand representative key"
+  let
+    tagged = M.fromFoldable (map (\k -> Tuple (TaggedKey { key: k, tag: "tree" }) (k * 3 + 10)) (A.range 0 2))
+    taggedOne = M.singleton (TaggedKey { key: 1, tag: "singleton" }) 9
+    tags m = map (\(Tuple (TaggedKey k) v) -> Tuple k.tag v) (M.toUnfoldable m :: Array (Tuple TaggedKey Int))
+  quickCheck' 1 (tags (M.unionWith (-) tagged taggedOne) == [ Tuple "tree" 10, Tuple "singleton" 4, Tuple "tree" 16 ])
+  quickCheck' 1 (tags (M.unionWith (-) taggedOne tagged) == [ Tuple "tree" 10, Tuple "tree" (-4), Tuple "tree" 16 ])
+
   log "Lookup from intersection"
   quickCheck $ \(TestMap m1) (TestMap m2) k ->
     M.lookup (smallKey k) (M.intersection (m1 :: M.Map SmallKey Int) (m2 :: M.Map SmallKey Int)) ==
@@ -370,11 +397,22 @@ mapTests = do
   quickCheck \(TestMap m :: TestMap SmallKey Int) ->
     M.submap Nothing Nothing m === m
 
-  log "submap preserves balance across unequal subtree heights"
+  log "submap preserves a six-entry map over its full range"
   let
     rangeInput = M.fromFoldable (map (\k -> Tuple k (k * 3)) (A.range 0 5))
     bounded = M.submap (Just 0) (Just 5) rangeInput
   quickCheck' 1 (M.checkValid bounded && bounded == rangeInput)
+
+  log "submap trims asymmetric boundaries and preserves all retained entries"
+  for_ [ A.range 0 63, A.reverse (A.range 0 63) ] \keys -> do
+    let input = M.fromFoldable (map (\k -> Tuple k (3 * k + 1)) keys)
+    for_ [ Nothing, Just (-1), Just 0, Just 1, Just 17, Just 48, Just 63, Just 64 ] \lo ->
+      for_ [ Nothing, Just (-1), Just 0, Just 16, Just 31, Just 62, Just 63, Just 64 ] \hi -> do
+        let
+          result = M.submap lo hi input
+          inRange k = maybe true (\min -> min <= k) lo && maybe true (\max -> k <= max) hi
+          expected = map (\k -> Tuple k (3 * k + 1)) (A.filter inRange (A.range 0 63))
+        quickCheck' 1 (M.checkValid result && M.toUnfoldable result == expected)
 
   log "submap with lower bound"
   quickCheck' 1 $
