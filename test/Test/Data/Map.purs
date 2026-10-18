@@ -30,6 +30,14 @@ newtype TestMap k v = TestMap (M.Map k v)
 instance arbTestMap :: (Eq k, Ord k, Arbitrary k, Arbitrary v) => Arbitrary (TestMap k v) where
   arbitrary = TestMap <$> genMap arbitrary arbitrary
 
+newtype TaggedKey = TaggedKey { key :: Int, tag :: String }
+
+instance eqTaggedKey :: Eq TaggedKey where
+  eq (TaggedKey a) (TaggedKey b) = a.key == b.key
+
+instance ordTaggedKey :: Ord TaggedKey where
+  compare (TaggedKey a) (TaggedKey b) = compare a.key b.key
+
 data SmallKey = A | B | C | D | E | F | G | H | I | J
 
 derive instance eqSmallKey :: Eq SmallKey
@@ -235,6 +243,25 @@ mapTests = do
       Just v | in1 -> Just v == v1
       Just v -> Just v == v2
       Nothing -> not (in1 || in2)
+
+  log "Singleton unions preserve balance, persistence, and combining argument order"
+  for_ [ A.range 0 127, A.reverse (A.range 0 127), map (\k -> (k * 37) `mod` 128) (A.range 0 127) ] \ks ->
+    for_ [ false, true ] \singletonLeft -> do
+      let
+        join = if singletonLeft then flip (M.unionWith (-)) else M.unionWith (-)
+        initial = foldl (\m k -> join m (M.singleton k (3 * k + 10))) M.empty ks
+        combined = foldl (\m k -> join m (M.singleton k (k + 1))) initial ks
+        expected = map (\k -> Tuple k (if singletonLeft then -2 * k - 9 else 2 * k + 9)) (A.range 0 127)
+      quickCheck' 1 (M.checkValid combined && M.toUnfoldable combined == expected)
+      quickCheck' 1 (M.checkValid initial && M.toUnfoldable initial == map (\k -> Tuple k (3 * k + 10)) (A.range 0 127))
+
+  log "Singleton unions keep the right-hand representative key"
+  let
+    tagged = M.fromFoldable (map (\k -> Tuple (TaggedKey { key: k, tag: "tree" }) (k * 3 + 10)) (A.range 0 2))
+    taggedOne = M.singleton (TaggedKey { key: 1, tag: "singleton" }) 9
+    tags m = map (\(Tuple (TaggedKey k) v) -> Tuple k.tag v) (M.toUnfoldable m :: Array (Tuple TaggedKey Int))
+  quickCheck' 1 (tags (M.unionWith (-) tagged taggedOne) == [ Tuple "tree" 10, Tuple "singleton" 4, Tuple "tree" 16 ])
+  quickCheck' 1 (tags (M.unionWith (-) taggedOne tagged) == [ Tuple "tree" 10, Tuple "tree" (-4), Tuple "tree" 16 ])
 
   log "Lookup from intersection"
   quickCheck $ \(TestMap m1) (TestMap m2) k ->

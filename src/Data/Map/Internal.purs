@@ -71,7 +71,7 @@ import Control.Plus (class Plus)
 import Data.Eq (class Eq1)
 import Data.Foldable (class Foldable, foldl, foldr)
 import Data.FoldableWithIndex (class FoldableWithIndex, foldlWithIndex, foldrWithIndex)
-import Data.Function.Uncurried (Fn2, Fn3, Fn4, Fn7, mkFn2, mkFn3, mkFn4, mkFn7, runFn2, runFn3, runFn4, runFn7)
+import Data.Function.Uncurried (Fn2, Fn3, Fn4, Fn5, Fn7, mkFn2, mkFn3, mkFn4, mkFn5, mkFn7, runFn2, runFn3, runFn4, runFn5, runFn7)
 import Data.FunctorWithIndex (class FunctorWithIndex)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
@@ -615,7 +615,12 @@ values = foldr Cons Nil
 -- | Compute the union of two maps, using the specified function
 -- | to combine values for duplicate keys.
 unionWith :: forall k v. Ord k => (v -> v -> v) -> Map k v -> Map k v -> Map k v
-unionWith app m1 m2 = runFn4 unsafeUnionWith compare app m1 m2
+unionWith app m1 m2 = case m1, m2 of
+  Leaf, _ -> m2
+  _, Leaf -> m1
+  _, Node _ _ _ _ Leaf Leaf -> runFn5 unsafeUnionSingleton compare app false m2 m1
+  Node _ _ _ _ Leaf Leaf, _ -> runFn5 unsafeUnionSingleton compare app true m1 m2
+  _, _ -> runFn4 unsafeUnionWith compare app m1 m2
 
 -- | Compute the union of two maps, preferring values from the first map in the case
 -- | of duplicate keys
@@ -751,6 +756,26 @@ unsafeNode = mkFn4 \k v l r -> case l of
       Node h2 s2 _ _ _ _ ->
         Node (1 + if h1 > h2 then h1 else h2) (1 + s1 + s2) k v l r
 
+-- | Rebalance after a single insertion. Both children must be balanced and
+-- | ordered, and their heights must differ by at most two.
+unsafeInsertNode :: forall k v. Fn4 k v (Map k v) (Map k v) (Map k v)
+unsafeInsertNode = mkFn4 \k v l r -> case l, r of
+  Node lh _ lk lv ll lr, _ | lh > height r + 1 ->
+    case lr of
+      Node rh _ rk rv rl rr | rh > height ll ->
+        runFn4 unsafeNode rk rv (runFn4 unsafeNode lk lv ll rl) (runFn4 unsafeNode k v rr r)
+      _ -> runFn4 unsafeNode lk lv ll (runFn4 unsafeNode k v lr r)
+  _, Node rh _ rk rv rl rr | rh > height l + 1 ->
+    case rl of
+      Node lh _ lk lv ll lr | lh > height rr ->
+        runFn4 unsafeNode lk lv (runFn4 unsafeNode k v l ll) (runFn4 unsafeNode rk rv lr rr)
+      _ -> runFn4 unsafeNode rk rv (runFn4 unsafeNode k v l rl) rr
+  _, _ -> runFn4 unsafeNode k v l r
+  where
+  height = case _ of
+    Leaf -> 0
+    Node h _ _ _ _ _ -> h
+
 -- | Low-level Node constructor which maintains the balance invariants.
 -- | This is unsafe because it assumes the child Maps are ordered and balanced.
 -- | Their heights may differ arbitrarily: join along the taller tree's inner
@@ -848,6 +873,35 @@ unsafeSplit = mkFn3 \comp k m -> case m of
         Split b (runFn4 unsafeBalancedNode mk mv ml rl) rr
       EQ ->
         Split (Just mv) ml mr
+
+-- | Insert a map containing at most one entry into another map.
+-- | This is unsafe because it assumes that size bound and appropriate ordering.
+-- | `singletonLeft` identifies the singleton's original union side. Collisions
+-- | keep the original right operand's key; `app` receives left then right values.
+unsafeUnionSingleton :: forall k v. Fn5 (k -> k -> Ordering) (v -> v -> v) Boolean (Map k v) (Map k v) (Map k v)
+unsafeUnionSingleton = mkFn5 \comp app singletonLeft single tree -> case single of
+  Leaf -> tree
+  Node _ _ k v _ _ -> do
+    let
+      -- Insertion grows a child by at most one. Below the old parent height,
+      -- the parent remains balanced with the same height.
+      go = case _ of
+        Leaf -> single
+        Node h s mk mv l r -> case comp k mk of
+          LT -> do
+            let l' = go l
+            case l' of
+              Node lh ls _ _ _ _ | lh < h -> Node h (1 + ls + size r) mk mv l' r
+              _ -> runFn4 unsafeInsertNode mk mv l' r
+          GT -> do
+            let r' = go r
+            case r' of
+              Node rh rs _ _ _ _ | rh < h -> Node h (1 + size l + rs) mk mv l r'
+              _ -> runFn4 unsafeInsertNode mk mv l r'
+          EQ ->
+            if singletonLeft then Node h s mk (app v mv) l r
+            else Node h s k (app mv v) l r
+    go tree
 
 -- | Low-level unionWith implementation.
 -- | This is unsafe because it assumes the ordering function is appropriate.
