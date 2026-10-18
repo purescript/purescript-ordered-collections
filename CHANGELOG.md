@@ -12,6 +12,8 @@ Bugfixes:
 
 Other improvements:
 
+- Add focused Minibench workloads with correctness validation for construction, joins, ranges, and subsequent access.
+
 ## [v3.3.0](https://github.com/purescript/purescript-ordered-collections/releases/tag/v3.3.0) - 2026-10-17
 
 New features:

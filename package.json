@@ -6,6 +6,7 @@
     "bench:build": "spago build -p ordered-collections-bench",
     "bench:run": "node --expose-gc --input-type=module --eval \"import * as Bench_Main from './output/Bench.Main/index.js';Bench_Main.main()\"",
     "bench": "npm run bench:build && npm run bench:run",
+    "bench:join": "npm run bench:build && node --expose-gc --input-type=module --eval \"import('./output/Bench.Join/index.js').then(m => m.main())\"",
     "format": "purs-tidy format-in-place src test bench/src && oxfmt --write .",
     "format:check": "purs-tidy check src test bench/src && oxfmt --check ."
   },
