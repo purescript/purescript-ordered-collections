@@ -17,33 +17,3 @@ spago install ordered-collections
 ## Documentation
 
 Module documentation is [published on Pursuit](http://pursuit.purescript.org/packages/purescript-ordered-collections).
-
-## Performance benchmarks
-
-Run `npm run bench:join` to measure construction, ranges, bulk operations, and
-subsequent access at 1,000 and 100,000 entries. Ordinary Map/Set construction and
-updates are measured separately from singleton unions. Construction-plus-lookup
-cases also measure the combined workload.
-`npm run bench` retains the existing comparison with the historical implementation.
-
-The suite validates contents and tree invariants during five untimed warmups and
-fails on invalid results, then takes 20 timed samples with results retained.
-Fixture construction and validation are outside timing except where construction
-is the operation being measured.
-Minibench requests GC before each case; GC occurring during samples is included.
-
-To compare revisions, use the same Node version, compiler, dependency versions,
-hardware, and benchmark source in both checkouts. Build first, then alternate at
-least three fresh-process runs of each revision using:
-
-```sh
-node --expose-gc --input-type=module --eval "import('./output/Bench.Join/index.js').then(m => m.main())"
-```
-
-Record the commit IDs, `node --version`, `npx purs --version`, and complete output.
-Compare repeated runs and variation, not a single mean. These deterministic
-integer-key workloads are diagnostic, not a model of every application; include
-application-specific keys and access patterns when making performance decisions.
-For operations that take only a few microseconds, use timed batches to distinguish
-small improvements from timer and harness overhead; the suite times individual calls.
-Do not use elapsed-time thresholds as CI correctness tests on shared runners.

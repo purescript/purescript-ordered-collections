@@ -1,3 +1,29 @@
+-- | Run these benchmarks from the repository's root directory:
+-- |
+-- | ```sh
+-- | npm install
+-- | npm run bench:join
+-- | ```
+-- |
+-- | This builds the code and measures Map and Set operations on collections with
+-- | 1,000 and 100,000 entries. Each case checks its answers and tree balance during
+-- | five practice runs, then times 20 runs. Incorrect results stop the benchmark.
+-- | Setup and checks are not timed; building a collection is timed when that is
+-- | the operation being measured. Results stay in memory until the next run, and
+-- | any memory cleanup during a timed run counts toward its time.
+-- |
+-- | `mean` is the average time; lower is faster. `stddev`, `min`, and `max` show
+-- | how much the times vary. A small difference may just be measurement noise.
+-- | To compare two versions, run each at least three times, alternating versions.
+-- | Use the same computer, Node/compiler/dependency versions, and benchmark code.
+-- | Close other busy programs and do not run the two versions at the same time.
+-- | Save the full output, commit IDs, `node --version`, and `npx purs --version`.
+-- |
+-- | These integer-key examples do not represent every application. Ordinary
+-- | insertion and singleton unions are different workloads; compare the cases
+-- | your code actually uses. Very short operations need timed batches to measure
+-- | small differences reliably. Do not make CI fail on timing thresholds.
+-- | `npm run bench` runs the separate comparison with the historical implementation.
 module Bench.Join (main) where
 
 import Prelude
